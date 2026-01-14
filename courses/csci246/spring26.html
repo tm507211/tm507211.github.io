@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>CSCI 246: Discrete Structures</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+</head>
+<body>
+  <div class="container">
+    <div class="page-header text-center">
+      <h1>CSCI 246: Discrete Structures</h1>
+      <h3>Spring Semester 2026</h3>
+    </div>
+
+    <h2>Meeting Times and Locations</h2>
+    <ul>
+      <li>Lecture: Monday, Wednesday, and Friday 1410-1500</li>
+    </ul>
+
+    <h2>Instructor</h2>
+    <ul>
+      <li>
+        <a href="../../index.html">Charlie Murphy</a>: Office Hours are Monday, Wednesday, and Friday from 1510-1600 and by appointment.
+      </li>
+    </ul>
+
+    <h2>Textbook and Resources</h2>
+    <ul>
+      <li>
+        <a href="https://isbnsearch.org/isbn/9781285402062">Mathematics: A Discrete Introduction</a> by Edward A. Scheinerman, 3rd Edition.
+      </li>
+      <li>
+        Alternative textbook: <a href="https://isbnsearch.org/isbn/9780495391326">Discrete Mathematics with Applications</a> by Susanna S. Epp, 4th Edition.
+      </li>
+      <li>
+        Computer Science <a href="https://www.cs.montana.edu/student-success-center.html">Help Center</a>.
+      </li>
+      <li>
+        Private tutors can be arranged through <a href="https://www.montana.edu/advising/smartycats/">SmartyCats</a>" for $2/hour.
+      </li>
+    </ul>
+
+    <h2>Catalog Description</h2>
+    <p>
+      This course covers logic, discrete probability, recurrence relations, Boolean algebra, sets, relations, counting,
+      functions, maps, Big-O notation, proof techniques including induction, and proof by contradiction
+    </p>
+
+    <h2>Course Outcomes</h2>
+    <ol>
+      <li>Apply formal proof techniques, including mathematical induction and proof by contradiction.</li>
+      <li>Use algorithmic complexity to compare different program designs for a problem.</li>
+      <li>Solve problems that require logic, sets, combinations, permutations and functions.</li>
+      <li>Solve problems that require discrete probability.</li>
+      <li>Solve problems that use basic graph theory.</li>
+    </ol>
+
+    <h2>Graded Items</h2>
+    <ul>
+      <li>
+        Attendence - 10%.<br/>
+        Experiences has shown that students who attend class regularly tend to perform better than students who do not.
+        If you attend at least 80% of the days attendence are taken, you will earn the entire 10%. Otherwise, your
+        percent will reflect your attendance rate when attendance is taken.
+      </li>
+      <li>
+        Participation - 5%.<br/>
+        Experience shows that students who actively participate in class perform better than students who do not.
+        You are expected to answer questions and attempt solutions when called upon. It is normal and expected that
+        you may not know every answer or solution; attempting is sufficient for full credit.
+      </li>
+      <li>Assignments - 50% (all weighted equally).</li>
+      <li>Final Presentation - 35%.</li>
+    </ul>
+
+    <h2>Grading Policy</h2>
+    Grades will be determined (after any curving takes place) based on your class average as follows:
+    <ul>
+      <li>93+: A</li>
+      <li>90+: A-</li>
+      <li>87+: B+</li>
+      <li>83+: B</li>
+      <li>80+: B-</li>
+      <li>77+: C+</li>
+      <li>73+: C</li>
+      <li>70+: C-</li>
+      <li>67+: D+</li>
+      <li>63+: D</li>
+      <li>60+: D-</li>
+    </ul>
+
+    <h2>Collaboration Policy</h2>
+    <p>All students should read the <a href="https://www.montana.edu/policy/student_conduct/#codeofconduct">MSU Student Conduct Code</a>.</p>
+    <p>
+      When it comes to assignments, you should do your own work but you <em>may</em>
+      <ul>
+        <li>Work with other people in your group (if groups are allowed). Each assignment will specify the maximum number of people per team.</li>
+        <li>Share ideas with people in other teams.</li>
+        <li>Discuss high level proof and problem solving techniques.</li>
+      </ul>
+
+      If you discuss with someone from another team, you are expected to list each person and what you discussed for each problem of each assignment.
+
+      You may not
+      <ul>
+        <li>Copy anothers or share your own solution to assignments.</li>
+        <li>Post assignments or problems to the internet.</li>
+      </ul>
+    </p>
+    <p>
+      Academic misconduct will result in an "F" for the course and being reported to the Dean of Students.
+    </p>
+
+    <h2>Generative AI Policy</h2>
+    <p>
+      Similar to the collaboration policy, students should treat interacting with
+      Generative AI chatbots (e.g., chatgpt, claude, gemini) as interacting with
+      another student in a separate team. You are expected to completely understand
+      and come-up with solutions yourself (or with your team if applicable).
+    </p>
+
+    <p>
+      When it comes to assignments, you <em>may</em>
+      <ul>
+        <li>Discuss high level proof and problem solving techniques.</li>
+        <li>Seek solutions to similar but distinct problems.</li>
+      </ul>
+
+      When you interact with a generative AI on an assignment, you must cite which
+      generative AI chatbot you interacted with for each problem on each assignment.
+      Additionally, you should provide what was discussed with the chatbot and/or provide
+      the prompts used.
+
+      You may not
+      <ul>
+        <li>Prompt a generative AI chatbot/Agent to solve a problem for you.</li>
+        <li>Post the entire assignment or problem to the AI chatbot/Agent.</li>
+      </ul>
+    </p>
+    <p>
+      Academic misconduct will result in an "F" for the course and being reported to the Dean of Students.
+    </p>
+
+    <h2>Course Calendar</h2>
+    Schedule is subject to change
+    <div class="table-responsive">
+      <table class="table table-hover" cellpadding="3">
+        <thead>
+          <tr>
+            <th>Date / Class Recordings</th>
+            <th>Lecture Topic</th>
+            <th>Readings</th>
+            <th>Assignments Due</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>
+              Wednesday, January 14<br />
+              Friday, January 16
+            </td>
+
+            <td>
+              Intro &amp; Syllabus<br />
+              Definitions
+            </td>
+
+            <td>
+              Ch. 1 Sec. 1-2<br />
+              Ch. 1 Sec. 3
+            </td>
+
+            <td>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, January 19<br />
+              Wednesday, January 21<br />
+              Friday, January 23
+            </td>
+
+            <td>
+              No class - MLK Day<br />
+              Theorems<br/>
+              Proofs
+            </td>
+
+            <td>
+              <br />
+              Ch. 1 Sec. 4<br />
+              Ch. 1 Sec. 5
+            </td>
+
+            <td>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, January 26<br />
+              Wednesday, January 28<br />
+              Friday, January 30
+            </td>
+
+            <td>
+              Counter Examples<br />
+              Boolean Algebra<br />
+              Review of Proofs
+            </td>
+
+            <td>
+              Ch 1. Sec. 6<br />
+              Ch 1. Sec. 7
+            </td>
+
+            <td>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, February 2<br />
+              Wednesday, February 4<br />
+              Friday, February 6
+            </td>
+
+            <td>
+              Lists<br />
+              Factorial<br />
+              Sets
+            </td>
+
+            <td>
+              Ch. 2 Sec. 8<br />
+              Ch. 2 Sec. 9<br />
+              Ch. 2 Sec. 10
+            </td>
+
+            <td>
+              Assignment 1
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, February 9<br />
+              Wednesday, February 11<br />
+              Friday, February 13
+            </td>
+
+            <td>
+              Quantifiers<br />
+              Set Operations<br />
+              Relations<br />
+            </td>
+
+            <td>
+              Ch. 2 Sec. 11<br />
+              Ch. 2 Sec. 12-13<br />
+              Ch. 3 Sec. 14
+            </td>
+
+            <td>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, February 16<br />
+              Wednesday, February 18<br />
+              Friday, February 20
+            </td>
+
+            <td>
+              No class - Presidents Day<br />
+              Equivalance Relations<br />
+              Partitions<br />
+            </td>
+
+            <td>
+              <br />
+              Ch. 3 Sec. 15<br />
+              Ch. 3 Sec. 16
+            </td>
+
+            <td>
+              <br />
+              Assignment 2
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, February 23<br />
+              Wednesday, February 25<br />
+              Friday, February 27
+            </td>
+
+            <td>
+              Binomial Coefficients<br />
+              Contradition<br/>
+              Smallest Counter-Example
+            </td>
+
+            <td>
+              Ch. 3 Sec. 17<br />
+              Ch. 4 Sec. 20<br />
+              Ch. 4 Sec. 21
+            </td>
+
+            <td>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, March 2<br />
+              Wednesday, March 4<br />
+              Friday, March 6
+            </td>
+
+            <td>
+              Induction<br />
+              Recurrence<br />
+              Functions
+            </td>
+
+            <td>
+              Ch. 4 Section 22<br />
+              Ch. 4 Section 23<br />
+              Ch. 5 Section 24
+            </td>
+
+            <td>
+              Assignment 3
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, March 9<br />
+              Wednesday, March 11<br />
+              Friday, March 13
+            </td>
+
+            <td>
+              Real Functions<br />
+              Big-O Notation<br />
+              Algorithm Efficiency
+            </td>
+
+            <td>
+              Epp Ch. 11.1<br />
+              Ch. 5 Sec. 19<br />
+              Epp Ch. 11.2-11.3
+            </td>
+
+            <td>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, March 16<br />
+              Wednesday, March 18<br />
+              Friday, March 20
+            </td>
+
+            <td>
+              Probability I<br />
+              Probability II<br />
+              Probability III
+            </td>
+
+            <td>
+              Ch. 6 Sec. 30<br />
+              Ch. 6 Sec. 31<br />
+              Ch. 6 Sec. 32
+            </td>
+
+            <td>
+              Assignment 3
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, March 23<br />
+              Wednesday, March 25<br />
+              Friday, March 27
+            </td>
+            <td colspan="3">
+                <br />
+                No class - Spring Break
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, March 30<br />
+              Wednesday, April 1<br />
+              Friday, April 3
+            </td>
+
+            <td>
+              Random Variables<br />
+              Expectation &amp; Variance<br />
+              No class - University Day
+            </td>
+
+            <td>
+              Ch. 6 Sec. 33<br />
+              Ch. 6 Sec. 34
+            </td>
+
+            <td>
+              Assignment 4
+            </td>
+          </tr>
+  
+          <tr>
+            <td>
+              Monday, April 6<br />
+              Wednesday, April 8<br />
+              Friday, April 10
+            </td>
+
+            <td>
+              Graphs I<br />
+              Graphs II<br />
+              Graphs III
+            </td>
+
+            <td>
+              Ch. 9 Sec. 47<br />
+              Ch. 9 Sec. 48<br />
+              Ch. 9 Sec. 49
+            </td>
+
+            <td>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, April 13<br />
+              Wednesday, April 15<br />
+              Friday, April 17
+            </td>
+
+            <td>
+              Trees<br />
+              Graph Coloring<br />
+              Catch-Up/Adv Topic
+            </td>
+
+            <td>
+              Ch. 9 Sec. 50<br />
+              Ch. 9 Sec. 52-53<br />
+            </td>
+
+            <td>
+              Assignment 5
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, April 20<br />
+              Wednesday, April 22<br />
+              Friday, April 24
+            </td>
+
+            <td>
+              Catch-Up/Adv Topic<br />
+              Catch-Up/Adv Topic<br />
+              Presentation Setup
+            </td>
+
+            <td>
+            </td>
+
+            <td>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, April 27<br />
+              Wednesday, April 29<br />
+              Friday, May 1
+            </td>
+
+            <td>
+              Work Session<br />
+              Work Session<br />
+              Final Presentations
+            </td>
+
+            <td>
+            </td>
+
+            <td>
+              Assignment 6
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Monday, May 4<br />
+              Wednesday, May 6
+            </td>
+
+            <td>
+              Final Presentations<br />
+              Final Presentations
+            </td>
+
+            <td>
+            </td>
+
+            <td>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+
+    <hr />
+    <address>
+      Last modified: January 13, 2026
+    </address>
+  </div>
+</body>
