@@ -1,0 +1,83 @@
+@media (min-width: 1200px) {
+    .container {
+        width: 950px;
+    }
+}
+
+.myface {
+    max-width:200px;
+}
+
+.navbar {
+    margin-bottom:0;
+}
+.jumbotron {
+    margin-bottom:0;
+    padding-bottom:30px;
+    background-color: rgb(212, 212, 212);
+}
+
+@media screen and (min-width: 768px) {
+  .jumbotron h3 {
+    font-size: 36px; /* Larger size for tablets and up */
+  }
+}
+
+.pre-scrollable {
+    max-height:340px;
+}
+
+.aut{
+    font-style:italic;
+}
+.tit{
+    font-style:italic;
+}
+.ven{
+    font-weight:normal;
+    font-style:italic;
+}
+.vensmall{
+    padding-left:0cm;
+}
+
+.navbar-default .navbar-nav > .active > a:hover, .navbar-default .navbar-nav > .active > a:focus {
+    background-color: #BBB;
+}
+
+.smalldt {
+    max-width: 55px !important;
+    width: 55px !important;
+}
+
+.smalldd {
+    margin-left: 70px !important;
+}
+
+.confdt {
+    max-width: 108px !important;
+    width: 108px !important;
+}
+
+.summitdt {
+    max-width: 80px !important;
+    width: 80px !important;
+}
+
+.confdd {
+    margin-left: 120px !important;
+}
+.summitdd {
+    margin-left: 92px !important;
+}
+
+.tg  {border-collapse:collapse;border-spacing:0;border:none;width:100%;}
+.tg td{ font-family:sans-serif;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+.tg th{ font-family:sans-serif;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;font-weight:bold;}
+.tg tr:nth-child(4n) {background-color:#efefef;color:#000000}
+.tg tr:nth-child(4n+1) {background-color:#efefef;color:#000000}
+
+dd {
+    white-space: normal;
+    margin-bottom: 4px;
+}
