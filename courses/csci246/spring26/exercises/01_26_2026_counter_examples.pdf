@@ -1,0 +1,78 @@
+\documentclass[10pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb, graphicx, multicol, array}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{problem}[2][Problem]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\begin{document}
+ 
+\title{Counter Examples: Group Exercises}
+\author{CSCI 246}
+\date{January 26, 2026}
+\maketitle
+
+\begin{problem}{1}
+  Provide a counter example to if $a$ and $b$ are odd, then $a + b$ is odd.
+  \vspace*{1em}
+
+  \textit{Ans}. $a = 1$, $b = 1$. Both $a$ and $b$ are odd, but $a + b$ is even.
+  \vspace*{3em}
+\end{problem}
+
+\begin{problem}{2}
+  Provide a counter example to if $ab$ is even, then $a$ and $b$ are even.
+  \vspace*{1em}
+
+  \textit{Ans}. $a = 1$, $b = 2$. $ab$ is even but $a$ is odd.
+  \vspace*{3em}
+\end{problem}
+
+\begin{problem}{3}
+  Provide a counter example to if $a$ does not divide $b$ and $b$ does not divide $a$, then $a$ or $b$ is prime.
+  \vspace*{1em}
+
+  \textit{Ans}. $a = 4$, $b = 6$. Neither $a$ divides $b$ nor $b$ divides $a$ and neither $a$ nor $b$ are prime.
+  \vspace*{3em}
+\end{problem}
+
+\begin{problem}{4}
+  \textbf{Definition} We say integers $a$ and $b$ are \textit{coprime} if and only if $a$ and $b$ share no positive factors other than $1$.
+  \vspace*{1em}
+
+  Provide a counter example to if $a$ does not divide $b$ and $b$ does not divide $a$, then $a$ and $b$ are coprime.
+  \vspace*{1em}
+
+  \textit{Ans}. $a = 4$, $b = 6$. Neither $a$ divides $b$ nor $b$ divides $a$ and $a$ and $b$ are not coprime because
+  $2$ is a divisor of both $a$ and $b$.
+  \vspace*{3em}
+\end{problem}
+
+\begin{problem}{5}
+  Provide a counter example to if $a$ is coprime with $b$ and $b$ is coprime with $c$, then
+  $a$ and $c$ are coprime.
+  \vspace*{1em}
+
+  \textit{Ans}. $a = 4$, $b = 9$, $c = 32$. $a$ and $b$ are coprime and $b$ and $c$ are coprime, but
+  $a$ and $c$ are not coprime because $2$ divides both $a$ and $c$.
+  \vspace*{3em}
+\end{problem}
+
+\begin{problem}{6}
+  Provide a counter example to if $P(a)$ is true for infinitely many integers $a$, then $P(a)$
+  is true for all sufficiently large $a$.
+  \vspace*{1em}
+
+  \textit{Ans}. Let $P(a)$ be the statement, ``$a$ is even.'' $P(a)$ is true for infinitely many integers
+  (all integers $a = 2k$ for any $k$). But there is no $n$ such that all $a \geq n$ $P(a)$ is true.
+  In particular, for any $n$ either $n$ is odd or $n + 1$ is odd.
+\end{problem}
+
+\end{document}
