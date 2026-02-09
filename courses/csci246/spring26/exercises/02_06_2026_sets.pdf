@@ -1,0 +1,190 @@
+\documentclass[10pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb, graphicx, multicol, array}
+
+\usepackage{xcolor}
+\usepackage{soul}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{problem}[2][Problem]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\begin{document}
+ 
+\title{Sets: Group Exercises}
+\author{CSCI 246}
+\date{February 6, 2026}
+\maketitle
+
+\begin{problem}{1}
+  Consider the sets $A = \{1 , \{1\}, \{1, 2\}\}$ and $B = \{1, 2\}$. Determine whether each state is true or false.
+
+  \vspace*{0.5em}
+
+  \textbf{A}. $1 \in A$. \qquad \qquad true \qquad \qquad because 1 is an element of $A = \{\colorbox{yellow}{1}, \{1\}, \{1,2\}\}$.
+  \vspace*{0.5em}
+
+  \textbf{B}. $\{1\} \in A$. ~~ \qquad true \qquad \qquad because $\{1\}$ is an element of $A = \{1, \colorbox{yellow}{\{1\}}, \{1,2\}\}$
+  \vspace*{0.5em}
+
+  \textbf{C}. $\{1\} \subseteq A$. ~~ \qquad true \qquad \qquad because 1 is an element of $A = \{\colorbox{yellow}{1}, \{1\}, \{1,2\}\}$.
+  \vspace*{0.5em}
+
+  \textbf{D}. $\{1\} \in B$, ~~~ \qquad false \qquad \qquad because $\{1\}$ is not an element of $B$.
+  \vspace*{0.5em}
+
+  \textbf{E}. $\{1\} \subseteq B$. ~~~ \qquad true \qquad \qquad because $1$ appears in $B = \{\colorbox{yellow}{1}, 2\}$.
+  \vspace*{0.5em}
+
+  \textbf{F}. $\{1, 2\} \in A$. ~ \qquad true \qquad \qquad because $\{1, 2\}$ appears in $A = \{1, \{1\}, \colorbox{yellow}{\{1, 2\}}\}$.
+  \vspace*{0.5em}
+
+  \textbf{G}. $\{1, 2\} \subseteq A$. \hspace*{0.5mm} \qquad false \qquad \qquad because 2 is not an element of $A$.
+  \vspace*{1.5em}
+\end{problem}
+
+\begin{problem}{2}
+  Translate each description into \emph{set-builder notation}, then list the set of elements explicitly.
+  \vspace*{0.5em}
+
+  \textbf{A}. The set of integers whose square is less than 20.
+  \[\{x \in \Z : x^2 \leq 20\} = \{-4, -3, -2, -1, 0, 1, 2, 3, 4\}\]
+  \vspace*{0.5em}
+
+  \textbf{B}. The set of natural numbers that divide 144.
+  \[\{x \in \N : x | 144\} = \{1,2,3,4,6,8,9,12,16,18,24,36,48,72,144\}\]
+  \vspace*{0.5em}
+
+  \textbf{C}. The set of binary numbers with exactly two $1$s and up to 4 $0$s.
+  You may assume $\mathit{count}(b, 1)$ counts the number of $1$s appearing in the
+  binary number $b$ and similarly $\mathit{count}(b, 0)$ counts the number of $0$s.
+  \[\{x\text{ is a binary number} : \mathit{count}(x, 1) = 2 \text{ and } \mathit{count}(x, 0) \leq 4 \}\]
+  \[\left\{\begin{array}{c}
+      11,\\
+      011, 101, 110,\\
+      0011, 0101, 0110, 1001, 1010, 1100,\\
+      00011, 00101, 00110, 01001, 01010, 01100, 10001, 10010, 10100, 11000,\\
+      000011, 000101, 000110, 001001, 001010, 001100, 010001, 010010,\\
+      010100, 011000, 100001, 100010, 100100, 101000, 110000
+      \end{array}
+    \right\}
+  \]
+\end{problem}
+
+\pagebreak
+
+\begin{problem}{3}
+  Describe the set defined by the following set-builder notations.
+  \vspace*{0.5em}
+
+  \textbf{A}. $\{x \in \Z: x \equiv 1 (mod 3)\}$.
+  \vspace*{0.5em}
+
+  The set of integer numbers that when divided by 3 have a remainder of 1.
+  \vspace*{1.5em}
+
+  \textbf{B}. $\{x \in \Z: 1 < x \text{ and there is no } y \in Z \text{ s.t. } 1 < y < x \text{ and } y | x\}$
+  \vspace*{0.5em}
+
+  The set of prime numbers.
+  \vspace*{1.5em}
+
+  \textbf{C}. $\{x \in \Z: 0 \leq x\}$
+  \vspace*{0.5em}
+
+  The whole numbers
+  \vspace*{1.5em}
+\end{problem}
+
+
+\begin{problem}{4}
+  Let $A = \{a, b, c, d\}$.
+  \vspace*{0.5em}
+
+  \textbf{A}. List all subsets of $A$.
+  \[
+    \begin{array}{c}
+      \emptyset\\
+      \{a\} \qquad \{b\} \qquad \{c\} \qquad \{d\}\\
+      \{a,b\} \qquad \{a,c\} \qquad \{a,d\} \qquad \{b,c\} \qquad \{b,d\} \qquad \{c,d\}\\
+      \{a, b, c\} \qquad \{a, b, d\} \qquad \{a, c, d\} \qquad \{b, c, d\}\\
+      \{a, b, c, d\}
+    \end{array}
+  \]
+
+  \textbf{B}. Count the number of subsets by \emph{cardinality}.
+  \vspace*{0.5em}
+
+  Subsets of size 0: $1$
+
+  Subsets of size 1: $4$
+
+  Subsets of size 2: $6$
+
+  Subsets of size 3: $4$
+
+  Subsets of size 4: $1$
+  \vspace*{0.5em}
+
+  Total number of subsets: $16$
+  \vspace*{0.5em}
+
+  \textbf{C}. Write the powerset of $A$ (i.e., $2^A$ / $\mathcal{P}(A)$).
+  \[
+    \left\{
+    \begin{array}{c}
+      \emptyset,\\
+      \{a\}, \qquad \{b\}, \qquad \{c\}, \qquad \{d\},\\
+      \{a,b\}, \qquad \{a,c\}, \qquad \{a,d\}, \qquad \{b,c\}, \qquad \{b,d\}, \qquad \{c,d\},\\
+      \{a, b, c\}, \qquad \{a, b, d\}, \qquad \{a, c, d\}, \qquad \{b, c, d\},\\
+      \{a, b, c, d\}
+    \end{array}
+    \right\}
+  \]
+
+  \textbf{D}. What is the cardinality of $\mathcal{P}(A)$?
+  \vspace*{0.25em}
+
+  16
+  \vspace*{1.25em}
+\end{problem}
+
+\begin{problem}{5}
+  For each statement, decide whether its true for all sets or give a counter-example.
+
+  \textbf{A}. if $A \subseteq B$, then $\mathcal{P}(A) \subseteq \mathcal{P}(B)$. \hfill true \hspace*{7cm}
+  \vspace*{2em}
+
+  \textbf{B}. if $A \subset B$, then $\mathcal{P}(A) \subseteq \mathcal{P}(B)$. \hfill true \hspace*{7cm}
+  \vspace*{2em}
+
+  \textbf{C}. $A \subseteq B$ and $B \subseteq A$ if and only if $A = B$. \hfill true \hspace*{7cm}
+  \vspace*{2em}
+
+  \textbf{D}. If $A \subset B$, then $|A| < |B|$. \hfill true \hspace*{7cm}
+  \vspace*{2em}
+
+  \textbf{E}. If $A \subseteq B$, then $|\mathcal{P}(A)| < |\mathcal{P}(B)|$. \hfill false. Consider $A = B = \emptyset$ \hspace*{3.7cm}
+\end{problem}
+
+\pagebreak
+
+\begin{problem}{6}
+  Let $A = \{x \in Z: x \text{ is even}\}$ and $B = \{x \in Z: 4 | x\}$. Prove $B \subseteq A$.
+  \vspace*{0.5em}
+
+  \begin{proof}
+    Let $x$ be an arbitrary element of $B$. Since $x \in B$, we know $4 | x$. Thus, by definition
+    there is some $k \in Z$ such that $x = 4k$. Clearly, $x$ is even (i.e., $x = 2(2k)$). Thus,
+    $x \in A$. Since, we chose $x$ arbitrarily, we know that every element of $B$ is also an
+    element of $B$. Thus, by definition $B$ is a subset of $A$.
+  \end{proof}
+\end{problem}
+
+\end{document}

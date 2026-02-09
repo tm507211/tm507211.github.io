@@ -1,0 +1,155 @@
+\documentclass[10pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb, graphicx, multicol, array}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\newenvironment{problem}[2][Problem]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\begin{document}
+ 
+\title{Factorial: Group Exercises}
+\author{CSCI 246}
+\date{February 4, 2026}
+\maketitle
+
+\begin{problem}{1}
+  Suppose you have $n$ books and $n$ shelves on your bookshelf. 
+  How many ways can you arrange the books so that each shelf has
+  exactly one book?
+  \vspace*{0.5em}
+
+  \textbf{A}. $n = 1$: \qquad $1! = 1$
+  \vspace*{0.75em}
+
+  \textbf{B}. $n = 2$: \qquad $2! = 2$
+  \vspace*{0.75em}
+
+  \textbf{C}. $n = 3$: \qquad $3! = 6$
+  \vspace*{0.75em}
+
+  \textbf{D}. $n = 4$: \qquad $4! = 24$
+  \vspace*{0.75em}
+
+  \textbf{E}. $n = 5$: \qquad $5! = 120$
+  \vspace*{0.75em}
+
+  \textbf{F}. $n = 6$: \qquad $6! = 720$
+  \vspace*{1.5em}
+\end{problem}
+
+\begin{problem}{2}~
+
+  \textbf{A}. Give a relationship between orderings of lists and factorials.
+  \vspace*{0.5em}
+
+  The number of permutations of a list of length $n$ is $n!$. Or alternatively,
+  the number of lists of length $n$ from $n$ elements with no repeats is $(n)_n = n!$
+  \vspace*{5.5em}
+
+  \textbf{B}. Define $n!$ in terms of a product (e.g., $n! = \Pi_{k=...}^{...} e_k$)
+  \vspace*{0.5em}
+  \[
+    n! = n(n-1)(n-2)...1 = \prod_{k=1}^{n} k
+  \]
+  \vspace*{0.5em}
+\end{problem}
+
+\begin{problem}{3}
+  Give an explanation \emph{in terms of counting} why $(n)_k = \frac{n!}{(n-k)!}$.
+  \vspace*{0.5em}
+
+  The number of lists of length $k$ with no repeats from $n$ distinct elements is $(n)_k$.
+  Similarly, the number of lists of length $n$ with no repeats from $n$ distinc elements is $n!$.
+
+  One way to count the number of lists of length $k$ with no repeats from $n$ elements, is to first
+  count the number of lists with no repeats that uses all $n$ elements (i.e., $n!$ total lists).
+  However, we are only concerned with how many unique prefixes of length $k$ there are. Thus, we wish
+  to ignore the last $(n - k)$ elements of the $n$ length lists. For each unique $k$ length prefix, there
+  are a total of $(n - k)!$ ways to complete the list. Hence, why there are a total of $(n)_k = \frac{n!}{(n - k)!}$
+  unique $k$ length prefixes of the $n$-length lists with no repeats.
+\end{problem}
+
+\pagebreak
+
+\begin{problem}{4}
+  Let $A = \{a, b, c, d, e\}$ be a set of elements.
+
+  \textbf{A}. How many lists of length $5$ can be made with elements of $A$? \qquad $5^5 = 3125$
+  \vspace*{1em}
+
+  \textbf{B}. How many lists of length $5$ with no repeats? \qquad $5! = 120$
+  \vspace*{1em}
+
+  \textbf{C}. How many subsets of $A$ have size $5$? \qquad $1$
+  \vspace*{1em}
+
+  \textbf{D}. How many lists of length $2$?  \qquad $5^2 = 25$
+  \vspace*{1em}
+
+  \textbf{E}. How many lists of length $2$ with no repeats? \qquad $(5)_2 = 5*4 = 20$
+  \vspace*{1em}
+
+  \textbf{F}. How many subsets of size $2$? \qquad $(5)_2 / 2! = 5 * 4 / 2 = 10$.
+  \vspace*{1em}
+
+  \textbf{G}. How many lists of length 3 that begin with $a$? \qquad $1 * 5^2 = 25$
+  \vspace*{1em}
+
+  \textbf{H}. How many lists of length 3 with no repeats that begin with $a$? \qquad $1 * (4)_2 = 1 * 4 * 3 = 12$.
+  \vspace{1em}
+
+  \textbf{I}. How many subsets of size 3 that contain $a$? \qquad $1 * (4)_2 / 2! = 1  * 4 * 3 / 2 = 6$
+  \vspace*{3em}
+\end{problem}
+
+\begin{problem}{5}
+  Suppose you have 5 French books, 3 Spanish Books, 4 English Books, and 12 German books
+  and you want to order them on your book shelf.
+  \vspace*{0.5em}
+
+  \textbf{A}. How many ways can you order the books?
+  \vspace*{0.5em}
+
+  $(5 + 3 + 4 + 12)! = 24! = 620448401733239439360000$
+  \vspace*{1em}
+
+  \textbf{B}. How many ways if you want to keep books organized by language?
+  \vspace*{0.5em}
+
+  (number of ways to order languages) $\times$ (number of ways to order books within each language)
+
+  $4! \times (5! \times 3! \times 4! \times 12!) = 24 \times (120 \times 6 \times 24 \times 479001600) = 198651543552000$
+  \vspace*{1em}
+\end{problem}
+
+\begin{problem}{6}
+  Make a conjecture to the value of the following summation:
+\[
+  \sum_{k=1}^{n} k \times k! = \sum_{k=1}^{n} (k + 1 - 1) \times k! = \sum_{k=1}^{n} (k + 1)k! - k! = \sum_{k=1}^{n} (k+1)! - k!
+\]
+\[
+  \sum_{k=1}^{n} (k+1)! - k! = (2! - 1!) + (3! -2!) + ... ((n + 1)! - n!) = (n + 1)! - 1
+\]
+\end{problem}
+
+\begin{problem}{7}
+  Give an argument why for any integers $k$ and $n$, if $2 \leq k \leq n$, then $n! + k$ is composite.
+  \vspace*{0.5em}
+
+  \begin{proof}
+  Note, by definition $n! = 1 \times 2 \times 3 \times \dots \times n$. Since $2 \leq k \leq n$, we know that
+  $k$ must be one of the factors of $n!$ (i.e, $k | n!$). Necessarily, there must be some integer $m$ such that
+  $n! = k \times m$. Now consider, $n! + k = k \times m + k = k(m + 1)$. Clearly, $k | (n! +k)$. Necesarrily,
+  $1 < k < n! + k$. Thus, $n! + k$ is composite.
+  \end{proof}
+\end{problem}
+
+
+\end{document}
