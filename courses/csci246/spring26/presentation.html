@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>CSCI 246: Discrete Structures</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+</head>
+<body>
+  <div class="container">
+    <div class="page-header text-center">
+      <h1>CSCI 246: Discrete Structures</h1>
+      <h3>Spring Semester 2026</h3>
+    </div>
+    <div class="text-center">
+      <h2>Final Presentation</h2>
+    </div>
+    <h3>Description</h3>
+    <p>
+      You are to split up into teams of 3-4 students to create a 12-15 minute presentation with 3-5 minutes of Q&amp;A.
+      As a team you are to pick a topic/application in computer science you are interested in and explain the mathematics that underlies the topic/application.
+      A successful presentation will introduce the core mathematical concepts underlying the chosen computer science topic / application, explain the computer
+      science topic / application, and conclude with an example / demonstration of how the mathematical concepts are used in the CS topic / application. Each
+      member of the team is expected to contribute to the presentation's design and delivery.
+    </p>
+    <h3>Generative AI Use</h3>
+    <p>
+      On the final presentation, you may use generative AI to explore computer science topics and their connection with mathematical concepts; however, as a team you are
+      responsible for ensuring that the information you present is correct and accurate. The presentation should be your own work but may be informed /
+      assisted by your use of generative AI. Additionally, the presentation will consist of some time for Q&A, you as a team are expected to be able to answer
+      questions about your presentation / topic.
+    </p>
+    <h3>Grading Criteria</h3>
+    <ul>
+      <li>
+        <b>40 pts</b> of your grade will be based on the factual correctness of your presentation
+        (minor issues or typos will not significantly impact your grade).
+      </li>
+      <li>
+        <b>30 pts</b> of your grade will be based on the quality of the presentation:
+        <ul>
+          <li>Is it self-contained?</li>
+          <li>Does it have a clear logical flow?</li>
+          <li>Does it clearly explain the key concepts?</li>
+          <li>Does it include meaningful examples or demonstrations?</li>
+          <li>Is the topic appropriately scoped?</li>
+        </ul>
+      </li>
+      <li>
+        <b>10 pts</b> of your grade will be based on your delivery:
+        <ul>
+          <li>Is the presentation clear and easy to follow?</li>
+          <li>Is the pacing appropriate?</li>
+          <li>Are you speaking clearly?</li>
+          <li>Are you engaging with the audience rather than reading directly from slides?</li>
+        </ul>
+      </li>
+      <li>
+        <b>20 pts</b> of your grade will be based on the Q&amp;A portion:
+          <ul>
+          <li>Are you able to answer on-topic questions?</li>
+          <li>Do you demonstrate understanding of the material?</li>
+        </ul>
+        (You are not expected to answer every question, but should be prepared to discuss the material you present.)
+      </li>
+    </ul>
+    <p>
+      Note: Strong presentations require both correct content and clear communication.
+      Even technically correct presentations may lose points if they are difficult to follow.
+    </p>
+    <h3>Potential Topics</h3>
+    <h4>Graph Theory</h4>
+    <ul>
+      <li>Bipartite graph matching and resource allocation, scheduling, job assignments, etc.</li>
+      <li>PageRank and Random walks and Search Engines</li>
+      <li>Weighted graphs and shortest path algorithms (and e.g., Google Maps routing)</li>
+    </ul>
+    <h4>Algorithms and Complexity</h4>
+    <ul>
+      <li>Asymptotic Analysis and Algorithmic Tradeoffs (pick a specific algorithmic problem)</li>
+      <li>Modular arithmetic and Probability theory and Hashing</li>
+      <li>Optimization and Greedy Algorithms (interval scheduling, coin change, etc.)</li>
+      <li>Recurrence relations and Dynamic Programming</li>
+      <li>Probability and Randomized Algorithms</li>
+    </ul>
+    <h4>Cryptography and Security</h4>
+    <ul>
+      <li>Modular Arithmetic, Prime numbers, Number theory and (RSA) Encryption</li>
+      <li>One way functions and probability theory and Cryptographic Hashing/Passwords</li>
+      <li>Graph theory and exploit chains</li>
+    </ul>
+    <h4>Data and Encoding</h4>
+    <ul>
+      <li>Probability theory and Bloom filters</li>
+      <li>Probability theory/Hamming distances/Algebra and Error Correcting Codes (data transmission and QR codes)</li>
+      <li>Trees, Greedy Algorithms, Probability Theory and Huffman Coding (compression)</li>
+    </ul>
+    <h4>Automated Reasoning about Software</h4>
+    <ul>
+      <li>Logic and Satisfiability and program correctness</li>
+      <li>Graph theory and program representations (data flow, control flow, etc.)</li>
+      <li>Logic and Satisfiability and verified Hardware</li>
+    </ul>
+    <h4>Compilers and Automata</h4>
+    <ul>
+      <li>State machines (labeled graphs) and regular expressions</li>
+      <li>Graph coloring and register allocation</li>
+      <li>Graph and tree algorithms and Abstract syntax trees (and program optimizations)</li>
+    </ul>
+
+    <h3>Tips for Presentation</h3>
+    <p>
+      You should assume your audience understands basic discrete mathematics, but not your specific topic.
+    </p>
+
+    <h4>What makes a good presentation</h4>
+    <ol>
+      <li><b>Motivation (1-2 minutes):</b> What is the problem or application? Why should we care?</li>
+      <li><b>Mathematical Background (3-5 minutes):</b> Introduce the key concepts (definitions, small examples).</li>
+      <li><b>CS Application (3-5 minutes):</b> Explain how the math is used in the application.</li>
+      <li><b>Worked Example / Demo (2-4 minutes):</b> Walk through a concrete example.</li>
+      <li><b>Summary (1 minute):</b> Recap the key idea and takeaway.</li>
+    </ol>
+
+    <h4>Common Pitfalls</h4>
+    <ul>
+      <li>Spending too much time on the application and not enough on mathematical concepts.</li>
+      <li>Introducing technical definitions without an example.</li>
+      <li>Choosing a topic that is too broad (e.g., "machine learning").</li>
+      <li>Including too many slides (estimate 1 minute per slide).</li>
+      <li>Too much text on slides. Reading directly from slides.</li>
+      <li>Not practicing what to say on each slide / practicing transitions.</li>
+      <li>Not including page numbers on slides (helpful for questions).</li>
+    </ul>
+
+    <h4>Choosing a Topic</h4>
+    <p>
+      Your topic should be narrow enough to explain clearly in a 10–15 minute presentation.
+      For example, <b>"Graph Coloring for Register Allocation"</b> is a good topic, while
+      <b>"Compilers," "Machine Learning,"</b> or <b>"Databases"</b> are too broad.
+      If you choose a topic covered in class, you are expected to go beyond what was discussed
+      (e.g., more detailed examples, variations, or deeper explanation).
+    </p>
+
+    <h4>Important Note</h4>
+    <p>
+      A strong presentation explains a small number of ideas clearly and connects them directly to a concrete example.
+    </p>
+
+    <h4>Example: Graph Coloring and Register Allocation</h4>
+    <p>
+      In a recent lecture, we discussed how graph coloring is used in register allocation.
+      The full topic fit within a 10–15 minute lecture; however, the focus was more on
+      graph coloring itself rather than the application.
+    </p>
+
+    <p>
+      If this were structured as a final presentation, the focus would shift toward
+      the application and how the mathematics supports it. A strong presentation might
+      be organized as follows:
+    </p>
+
+    <ol>
+      <li>
+        <b>Motivation:</b>
+        Compilers must assign variables to a limited number of CPU registers so that programs run efficiently.
+      </li>
+      <li>
+        <b>Problem Setup:</b>
+        Variables that are <i>live at the same time</i> cannot share the same register.
+      </li>
+      <li>
+        <b>Mathematical Model:</b>
+        <span>Construct an <b>interference graph</b>, where:</span>
+        <ul>
+          <li>Vertices represent variables</li>
+          <li>Edges connect variables that cannot share a register</li>
+        </ul>
+      </li>
+      <li>
+        <b>Key Insight:</b>
+        Assigning registers becomes a <b>graph coloring problem</b>, where adjacent vertices must receive different colors.
+      </li>
+      <li>
+        <b>Mathematical Concepts:</b>
+        Define graph coloring and the <b>chromatic number</b>.  
+        If a graph is <i>k-colorable</i>, then the program can be executed using <i>k</i> registers.
+      </li>
+      <li>
+        <b>Worked Example:</b>
+        Start with a small program, construct its interference graph, determine a valid coloring,
+        and show the resulting register assignment.
+      </li>
+      <li>
+        <b>Takeaway:</b>
+        Any program can be modeled as an interference graph. If the graph is k-colorable,
+        then the variables can be assigned to k registers accordingly.
+      </li>
+    </ol>
+
+    <p>
+      Your final presentation should follow a similar pattern: introduce the problem,
+      explain the mathematical model, and demonstrate how the math is used in practice.
+    </p>
+    <p>
+      Note: The goal is not to cover everything about graph coloring, but to explain just enough
+      mathematics to clearly support the application.
+    </p>
+
+    <h3>Grading Rubric</h3>
+    <p>
+      Each category will be graded holistically within the ranges shown below.
+    </p>
+    <div class="panel panel-default">
+      <div class="panel-heading"><b>Mathematical Correctness (40 points)</b></div>
+      <div class="panel-body">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Criteria</th>
+              <th>Weight</th>
+              <th>Excellent</th>
+              <th>Satisfactory</th>
+              <th>Needs Improvement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Accuracy of Concepts</b></td>
+              <td>20 pts</td>
+              <td>
+                All mathematical definitions and statements are correct and clearly stated (15-20pts).
+              </td>
+              <td>
+                Minor errors or imprecise definitions (10-15pts).
+              </td>
+              <td>
+                Major misunderstandings or incorrect statements (0-10pts).
+              </td>
+            </tr>
+            <tr>
+              <td><b>Use of Mathematics</b></td>
+              <td>20 pts</td>
+              <td>
+                Mathematics is used appropriately and meaningfully in the presentation (15-20pts).
+              </td>
+              <td>
+                Some connection to math, but shallow or partially unclear (10-15 pts).
+              </td>
+              <td>
+                Little to no meaningful use of mathematics (0-10pts).
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><b>Presentation Quality and Structure (30 points)</b></div>
+      <div class="panel-body">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Criteria</th>
+              <th>Weight</th>
+              <th>Excellent</th>
+              <th>Satisfactory</th>
+              <th>Needs Improvement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Organization &amp; Flow</b></td>
+              <td>10 pts</td>
+              <td>
+                Clear easy to follow structure (8-10 pts).
+              </td>
+              <td>
+                Some structure, but transitions unclear (4-7 pts).
+              </td>
+              <td>
+                Disorganized or hard to follow (0-3 pts).
+              </td>
+            </tr>
+            <tr>
+              <td><b>Clarity of Explanation</b></td>
+              <td>10 pts</td>
+              <td>
+                Concepts explained clearly with appropriate level of detail (8-10 pts).
+              </td>
+              <td>
+                Some explanations unclear or rushed (4-7pts).
+              </td>
+              <td>
+                Difficult to understand (0-3 pts).
+              </td>
+            </tr>
+            <tr>
+              <td><b>Examples / Demonstration</b></td>
+              <td>5 pts</td>
+              <td>
+                Includes a clear, relevant worked example or demo (4-5 pts).
+              </td>
+              <td>
+                Example present but incomplete or unclear (2-3 pts).
+              </td>
+              <td>
+                No meaningful example (0-1 pts).
+              </td>
+            </tr>
+            <tr>
+              <td><b>Scope &amp; Focus</b></td>
+              <td>5 pts</td>
+              <td>
+                Topic is well-scoped for 12-15 minutes (4-5 pts).
+              </td>
+              <td>
+                Slightly too broad/narrow (2-3 pts).
+              </td>
+              <td>
+                Poorly scoped (0-1 pts).
+              </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><b>Delivery and Slides (10 points)</b></div>
+      <div class="panel-body">
+        <table class="table table-bordered table-striped">
+          <thead>
+           <tr>
+              <th>Criteria</th>
+              <th>Weight</th>
+              <th>Excellent</th>
+              <th>Satisfactory</th>
+              <th>Needs Improvement</th>
+            </tr>
+          </thead>
+          <tbody>
+          <tr>
+              <td><b>Delivery</b></td>
+              <td>5 pts</td>
+              <td>
+                Clear speaking, good pacing, minimal reliance on reading slides (4-5 pts).
+              </td>
+              <td>
+                Some reading or pacing issues (2-3 pts).
+              </td>
+              <td>
+                Mostly reading slides or difficult to hear/follow (0-1 pts).
+              </td>
+            </tr>
+            <tr>
+              <td><b>Slide Quality</b></td>
+              <td>5 pts</td>
+              <td>
+                Slides are clear, readable, and not overly dense (4-5 pts).
+              </td>
+              <td>
+                Some clutter or too much text (2-3 pts).
+              </td>
+              <td>
+                Slides are hard to read or poorly designed (0-1 pts).
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><b>Q&amp;A (20 points)</b></div>
+      <div class="panel-body">
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <th>Criteria</th>
+              <th>Weight</th>
+              <th>Excellent</th>
+              <th>Satisfactory</th>
+              <th>Needs Improvement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Understanding of Topic</b></td>
+              <td>10 pts</td>
+              <td>
+                Demonstrates strong understanding when answering questions (8-10 pts).
+              </td>
+              <td>
+                Partial understanding (4-7 pts).
+              </td>
+              <td>
+                Unable to answer basic questions (0-3 pts).
+              </td>
+            </tr>
+            <tr>
+              <td><b>Engagement in Q&amp;A</b></td>
+              <td>10 pts</td>
+              <td>
+                Multiple team members contribute; answers are thoughtful (8-10 pts).
+              </td>
+              <td>
+                Limited participation or shallow answers (4-7pts).
+              </td>
+              <td>
+                Minimal engagement (0-3 pts).
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <hr />
+    <address>
+      Last modified: April 16, 2026
+    </address>
+  </div>
+</body>
