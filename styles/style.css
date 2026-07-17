@@ -8,6 +8,33 @@
     max-width:200px;
 }
 
+.student-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 30px;
+}
+.student {
+    width: 180px;
+    margin-bottom: 25px;
+}
+.student-photo {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+.student-name {
+    font-weight: 500;
+}
+.student-name a {
+    color: inherit;
+}
+.student-note {
+    font-size: 13px;
+    color: #777;
+}
+
 .navbar {
     margin-bottom:0;
 }
