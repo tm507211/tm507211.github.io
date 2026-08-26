@@ -1,0 +1,455 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Syntax and semantics - A Practical Introduction to Programming Language Design</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Learn how programming languages work by building one: an interpreter, in Rust, for a small multi-paradigm language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../css/book-271586e2.css">
+        <link rel="stylesheet" href="../css/timeline-b697568e.css">
+        <link rel="stylesheet" href="../css/highlight-fixes-88adc288.css">
+        <link rel="stylesheet" href="../css/under-construction-17603da8.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-223022c2.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-83408d21.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">A Practical Introduction to Programming Language Design</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="syntax-and-semantics"><a class="header" href="#syntax-and-semantics">Syntax and Semantics</a></h1>
+<!-- AUTHORING NOTE (not rendered)
+     lecture: History II: language paradigms; syntax vs. semantics (second half).
+     SEAM: why-interpreter drew the pipeline and said this book lives to the right
+     of the AST; history.md handed the BNF thread here explicitly. This chapter
+     makes the syntax/semantics distinction precise and hands off to ast.md, the
+     concrete artifact.
+     DO NOT re-derive why-interpreter's syntax->mathematical-object mapping, and
+     do NOT repeat its "parsing belongs to compilers" point. This chapter supplies
+     the surrounding vocabulary — concrete vs. abstract syntax, static vs. dynamic
+     semantics — and leans back on the earlier mapping in one sentence.
+     Design-space beat, closing section ("Does the spelling matter?"): show that
+     spelling shapes how a program is read/written/understood — converged
+     expectations (for = iterate, := = update) and ergonomics — then frame the
+     book's start at the abstract syntax as a SCOPE choice (subject is meaning,
+     assigned to structure not surface), not a claim that syntax is cosmetic. Show
+     via examples; no narrator verdict. Iverson/APL in Further reading anchors the
+     notation-shapes-thought side.
+     History woven in the syntax section: ALGOL 60 report + BNF, the moment syntax
+     became formally specified. Backus's notation is 1959 (ALGOL 58), whose report
+     still described syntax in prose; BNF-AS-DEFINITION is 1960. Keep that hedge.
+     NOTATION: the expression judgment is `\env \vdash e \evalto v` (environment only).
+     The store `\store` is deliberately not threaded here; it enters with mutable
+     references in Part IV (e.g. deref), which will grow the judgment (and, with
+     effects, a resulting store). Kept to the immutable fragment so this Part I taste
+     needs no store or locations.
+     VERIFIED CITATIONS (metadata + DOIs checked 2026-08-25 against DBLP plus
+     publisher/Crossref; each DOI resolved to the exact paper):
+       - Naur (ed.), "Report on the Algorithmic Language ALGOL 60," CACM 3:5
+         (1960), doi 10.1145/367236.367262. Inline anchor for BNF.
+       - Hoare, "An Axiomatic Basis for Computer Programming," CACM 12:10 (1969),
+         pp. 576-580, 583, doi 10.1145/363235.363259. Further-reading link.
+       - Iverson, "Notation as a Tool of Thought" (1979 Turing lecture, pub. 1980),
+         CACM 23:8, pp. 444-465, doi 10.1145/358896.358899. Further-reading link.
+       - Winskel, *The Formal Semantics of Programming Languages: An Introduction*
+         (MIT Press, 1993), ISBN 0-262-23169-7. Print, no DOI, no link (in copyright).
+       - Plotkin, "A Structural Approach to Operational Semantics," Aarhus DAIMI
+         FN-19 (1981); repr. J. Logic & Algebraic Programming 60-61 (2004), pp.
+         17-139, doi 10.1016/j.jlap.2004.05.001 (DBLP omits this DOI; Crossref and
+         doi.org confirm it). Double volume 60-61, not a single volume.
+       - Kahn, "Natural Semantics," STACS 87, LNCS 247 (Springer, 1987), pp. 22-39,
+         doi 10.1007/BFb0039592. Big-step form.
+       - Gentzen, "Untersuchungen über das logische Schließen. I, II," Mathematische
+         Zeitschrift 39 (1935 — NOT 1934), two parts: I pp. 176-210 (doi
+         10.1007/BF01201353), II pp. 405-431 (doi 10.1007/BF01201363). Source of the
+         premises-over-line rule format. Body text says only "the 1930s," which is safe.
+     No direct quotations are made from any source here.
+-->
+<p>A programming language is described in two parts. Its <strong>syntax</strong> fixes what counts as a program: the
+rules that decide whether a string of characters is one at all. Its <strong>semantics</strong> gives each program
+a meaning: what it computes, and how. The two are separable: one meaning can be given more than one
+syntax, and one syntax more than one meaning. For example <code>x / y</code> in one language divides the values
+as integers and in another as reals. Similarly, within a single language <code>x + y</code> may add two numbers
+or concatenate two strings depending on what values <code>x</code> and <code>y</code> store.</p>
+<p>When you have a bug in your program, it is either a syntax error — an error caused by misspelling
+your program: an unmatched parenthesis, a misspelled keyword, an unknown language construct — or
+a logical error: one that results in a program that behaves in an unexpected or inconsistent way.
+Syntax errors are typically trivial to detect and relatively easy to fix. Logic errors are harder:
+the program runs, but does the wrong thing, often in subtle ways. Much of what programmers spend
+their time on (i.e., testing, debugging, verification) is closing the gap between the program written
+and the program intended, and all of it rests on being able to say precisely what a program means.
+That meaning is the focus of this book.</p>
+<h2 id="syntax-what-counts-as-a-program"><a class="header" href="#syntax-what-counts-as-a-program">Syntax: what counts as a program</a></h2>
+<p>A language’s syntax is the set of rules that decide which strings of characters are programs and
+what structure each one has: characters grouped into tokens, tokens assembled into a tree. Those
+rules are given by a <strong>grammar</strong> — a finite set of productions a mechanical procedure can check a
+candidate program against, and the same productions a parser follows to recover a program’s
+structure. Whether a string is a legal program is, once the grammar is fixed, a question with a
+definite answer.</p>
+<p>Two layers hide inside the word <em>syntax</em>. The <strong>concrete syntax</strong> is the text as written — every
+parenthesis, the choice of <code>&amp;&amp;</code> over <code>and</code>, the whitespace, the fact that multiplication binds
+tighter than addition. The <strong>abstract syntax</strong> is the structure that remains once those surface
+choices have done their one job of disambiguating: a tree commonly referred to as the abstract
+syntax tree (AST), which records only how the pieces of a program fit together.</p>
+<p>The gap between the concrete and abstract syntax is easiest to see by holding the abstract structure
+fixed, while varying how that structure is concretely written.
+These three expressions are spelled by different rules:</p>
+<pre><code class="language-text">x + y          (+ x y)          x y +
+</code></pre>
+<p>The first is infix, an operator written between its operands, the arrangement most languages inherit
+from arithmetic. The second is prefix, the operator first, as in Lisp, where every call takes this
+parenthesized form. The third is postfix, the operator last, as in the input to a
+<a href="https://en.wikipedia.org/wiki/Reverse_Polish_notation">reverse-Polish</a> calculator.
+Three concrete syntaxes — yet a parser for any of them produces the same abstract structure, an
+addition with <code>x</code> and <code>y</code> beneath it, and an evaluator handed that structure cannot tell which
+spelling it came from. The surface can be redrawn without disturbing what is underneath, which is
+why this book starts at the AST: the structure is where meaning will be assigned, and the
+<a href="ast.html">AST</a> is the form the rest of the book works on.</p>
+<p>In the decade preceding ALGOL 60, a programming language’s syntax was described the same way as a
+natural language: in prose, with examples, but ultimately determined by the programs its compiler
+accepted. The <a href="https://doi.org/10.1145/367236.367262">ALGOL 60 report</a> gave the language’s syntax in
+a formal notation instead — now called Backus–Naur Form — precise enough that whether a string is a
+legal program became a mechanical question the report itself settled, ahead of and independent of
+any compiler. Backus had introduced the notation a year earlier for ALGOL 58, whose own report still
+described its syntax in prose; the 1960 report is where a formal grammar became the definition.
+Syntax has had a clean formal footing ever since.</p>
+<h2 id="semantics-what-a-program-means"><a class="header" href="#semantics-what-a-program-means">Semantics: what a program means</a></h2>
+<p>Once a string counts as a program, the question becomes what that program means. Previously, we
+framed meaning as a mapping from a piece of syntax to a mathematical object — the value an
+expression evaluates to, or a coarser object such as its type. Formally, that mapping is called the
+semantics of the programming language. A semantics falls into one of two kinds, based on whether the
+meaning it assigns can be determined without ever running the program.</p>
+<p>A semantics is <strong>static</strong> when the meaning it assigns can be determined by inspecting the program’s
+text alone, without ever running it. For example, determining whether every identifier a program
+uses is declared and in scope at each of its uses is a static question (cf. Part III)<!-- xref:../binding/lexical-scope.md -->
+that can be answered without ever running the program on any inputs. Similarly, type checking is
+normally a static check (cf. Part VI)<!-- xref:../types/type-checker.md -->: whether an operation is
+applied to a value of the right kind. Consider writing a program where a number is added to a
+function. A parser would happily parse the expression <code>x + f</code>, because at the time of parsing both
+<code>x</code> and <code>f</code> are simply names. Type checking, however, would determine that <code>x</code> is a name
+representing an <code>integer</code> and <code>f</code> is a function, and thus be able to reject the expression <code>x + f</code>
+as nonsense.</p>
+<p>A semantics is <strong>dynamic</strong> when the meaning it assigns can only be determined by executing the
+program. The quintessential dynamic semantics is the <strong>concrete semantics</strong>: it traces how concrete
+inputs flow through the program to produce its concrete outputs. The interpreter you build
+throughout this book, beginning in Part II<!-- xref:../eval/tree-walking.md -->, computes exactly
+this, one construct at a time. When we ask what a program <em>means</em>, we typically mean its concrete
+semantics. A program can pass every static check and still not be the program we intended — i.e.,
+the program can be well-formed, well-scoped, well-typed, and still compute the wrong answer. Static
+semantics is useful for confirming a program is well-behaved (as prescribed by the static check),
+whereas dynamic semantics describes its actual observed behavior.</p>
+<h2 id="a-notation-for-meaning"><a class="header" href="#a-notation-for-meaning">A notation for meaning</a></h2>
+<p>ALGOL 60 gave a program’s syntax a formal notation, but its meaning was still written informally, in
+prose. The written description of the program’s semantics was ambiguous and allows multiple
+interpretations and open questions about how a program should behave. For example, should an operand
+short-circuit and not evaluate the right-hand operand when the left-hand one already decides the
+result? Does an assignment produce a value, and if so which one? Since prose can leave such questions
+open, two reasonable implementors can read the same description and produce two disagreeing
+implementations.</p>
+<p>Over the years and decades since ALGOL 60, several notations were developed to give a program’s
+meaning unambiguously (cf. <a href="../eval/big-step.html">Program semantics</a>). For evaluating expressions,
+this book uses the following notation</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">e</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span></span></p>
+<p>which can be read as <em>in the environment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span></span></span></span>, the expression <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">e</span></span></span></span> evaluates to the value <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span></em>. The
+environment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span></span></span></span> supplies the value of every name in scope, so a variable can be looked
+up (cf. Part III<!-- xref:../binding/environments.md -->). The meaning of an expression is given by
+rules that tell us how to derive the meaning of an expression from the evaluation of the
+expression’s sub-expressions. Below we show three example rules in turn. The first rule says that
+the literal <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span> evaluates to itself — as does every literal — regardless of the environment.</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.6304em;vertical-align:-0.8804em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">0</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">0</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Lit</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The next rule states that the variable <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> evaluates to the value <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span> <em>assuming</em> that in the
+environment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span></span></span></span> the variable <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> is bound to the value <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span>.</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.3074em;vertical-align:-0.8804em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Var</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The final rule states that the sum of two expressions is simply the sum of the evaluation
+of each of those expressions.</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.2519em;vertical-align:-0.8804em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Add</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>This style of writing rules has deep roots in logic and computer science: that the fact below the
+line is true exactly when every assumption above the line is true. This style of rules dates back to
+Gentzen’s work in the 1930s on logic, and it’s been used by computer scientists to define how a
+program executes since Plotkin in 1981 (<em>operational semantics</em>) and Kahn in 1987 (<em>big-step
+semantics</em>). Throughout this book, we develop these rules into a full account of Bridger’s concrete
+semantics.</p>
+<h2 id="does-the-spelling-matter"><a class="header" href="#does-the-spelling-matter">Does the spelling matter?</a></h2>
+<p>How a program is spelled shapes how easily it can be read, written, and understood. Over the years,
+concrete forms have converged on shared expectations about meaning: a <code>for</code> loop is read as
+iterating over a collection, <code>x := e</code> as updating the value a variable holds, infix <code>+</code> as
+arithmetic. A reader draws on those expectations from the spelling alone, before working through
+what any rule says. The surface governs what a language makes easy to express and easy to grasp, and
+a form that cuts against a reader’s expectations misleads about as readily as a poor name.</p>
+<p>This book starts past that point, at the abstract syntax — not because spelling is a cosmetic
+detail, but because this book’s subject is meaning, and meaning is assigned to a program’s structure rather
+than its surface syntax. How a language chooses its surface, and how that choice shapes the programs people
+actually write, is a real question with a study of its own; this book simply begins where meaning
+does.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Giving meaning a formal footing</strong>: after BNF gave syntax a formal definition, doing the same for
+meaning took most of the following decade and produced several styles at once. Glynn Winskel’s <em>The
+Formal Semantics of Programming Languages: An Introduction</em> (MIT Press, 1993) is an accessible
+book-length review of those semantics, building each from small example languages. C. A. R. Hoare’s
+“<a href="https://doi.org/10.1145/363235.363259">An Axiomatic Basis for Computer Programming</a>” (1969) is the
+primary source for one of those styles, reasoning about what a program establishes rather than
+tracing what it does; the operational style the rule above is written in is developed further in
+<a href="../eval/big-step.html">Program semantics</a>.</p>
+<p><strong>Whether notation shapes thought</strong>: Kenneth Iverson’s Turing Award lecture “<a href="https://doi.org/10.1145/358896.358899">Notation as a Tool of
+Thought</a>” (1980) argues the design-space question from the
+side that says syntax is far from cosmetic — that a well-chosen notation does part of a programmer’s
+reasoning for them, using the array notation of APL to make the case.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>A program is turned away before it runs because it uses a variable that was never declared. Is that a syntax error or a semantics error?</summary>
+<p>A semantics error — a static-semantics one, specifically. The program is well-formed as text: the
+grammar has a production for a variable reference, so the parser accepts it and builds an abstract
+syntax tree. Nothing about the <em>shape</em> of the program is wrong. What fails is a rule about meaning —
+that a name must refer to something in scope — which is checked by inspecting the program before it
+runs. It is easy to lump every error the tool catches up front under “syntax,” but scope and type
+checking are a form of semantic checks, applied to programs the grammar has already accepted.</p>
+</details>
+<details>
+<summary>The expressions <code>x + y</code>, <code>(+ x y)</code>, and <code>x y +</code> are spelled by different rules. What do they share, and why can one evaluator serve all three?</summary>
+<p>They share their abstract syntax: each parses to the same tree, an addition with <code>x</code> and <code>y</code> as its
+operands. Infix, prefix, and postfix are three concrete syntaxes for that one structure. An evaluator
+is defined over the tree, not the text, so by the time it runs, the choice of spelling is gone — the
+information that distinguished the three was consumed by the parser in recovering the structure. A
+new surface syntax for the same language only requires a new parser and can continue using the same
+evaluator.</p>
+</details>
+<details>
+<summary>Why do we write the semantics as the rule `E-Add` defined above rather than describing it in English prose?</summary>
+<p>Because English leaves gaps precisely where meaning is contested. A sentence like “an addition
+evaluates its operands and adds them” does not say whether the operands are evaluated left to right,
+whether either is skipped, or what happens if one fails — and different implementers will fill those
+gaps differently, each thinking their implementation is the correct one. An unambiguous rule like
+<code>E-Add</code> fixes this issue: it names both sub-evaluations as premises and the combined result as the
+conclusion, with no room left for a reader to differ. That precision is what lets a definition also
+serve as a specification an implementation can be checked against.</p>
+</details>
+<details>
+<summary>If a language's surface syntax can be replaced without changing what its programs mean, is syntax merely cosmetic?</summary>
+<p>It is cosmetic to the <em>meaning</em> — swap infix for prefix and every program computes the same thing —
+and isolating exactly that is the job of the syntax/semantics distinction. It is not cosmetic to the
+<em>programmer</em>. How a program is spelled governs how easily it can be read, written, and understood,
+and concrete forms carry expectations that have converged over time — a <code>for</code> loop reads as
+iteration, <code>x := e</code> as updating a variable — so spelling shapes what a reader expects a program to
+mean and what is comfortable to write, and what is comfortable to write is what gets written. Two
+languages with identical semantics can therefore steer people toward different programs.</p>
+</details>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../foundations/paradigms.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../foundations/ast.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../foundations/paradigms.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../foundations/ast.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-1c64dc54.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

@@ -3,7 +3,8 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>About This Book - A Practical Introduction to Programming Language Design</title>
+        <title>Page not found - A Practical Introduction to Programming Language Design</title>
+        <base href="/">
 
 
         <!-- Custom HTML head -->
@@ -178,123 +179,14 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="about-this-book"><a class="header" href="#about-this-book">About This Book</a></h1>
-<p>This is an introduction to the <strong>concepts used to design programming languages</strong> — paradigms,
-scope, binding, types, evaluation — taught not by touring a handful of languages but by
-<strong>building one</strong>. Over the course of the book you implement an interpreter, in
-<a href="https://www.rust-lang.org/">Rust</a>, for a single language that grows from a calculator into a
-small multi-paradigm language named <strong>Bridger</strong>, with imperative, functional, and declarative
-features.</p>
-<p>It grew out of an undergraduate programming-languages course, but it is written to stand on its
-own. You do not need to be enrolled anywhere to use it: if you read the chapters and build the
-interpreter as you go, you will learn the same material and end up with the same working language.</p>
-<h2 id="why-an-interpreter"><a class="header" href="#why-an-interpreter">Why an interpreter?</a></h2>
-<p>There are two ways to give a programming language a precise meaning, and they lead to two
-different kinds of book.</p>
-<ul>
-<li>A <strong>compiler</strong> foregrounds <em>translation</em>: it turns your program into another language (machine
-code, bytecode, a lower-level IR) and cares deeply about code generation, optimization, and the
-constraints of the target machine.</li>
-<li>An <strong>interpreter</strong> foregrounds <em>meaning</em>: it says directly what a program <em>is</em> and <em>does</em>. You
-write down a rule like <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">e</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span> (“expression <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">e</span></span></span></span> evaluates to value <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span>”), and the
-evaluator you build <strong>is</strong> that rule, made executable.</li>
-</ul>
-<p>This book takes the <strong>semantics lens</strong>. That single choice explains most of what follows —
-including why we hand you a parser instead of making you write one: parsing is a translation
-problem that belongs to the compiler’s world, and a course on it already exists in most
-curricula. Here we start from the abstract syntax tree and spend our time on what programs <em>mean</em>.
-Code generation, optimization, and register allocation are real and important; they are simply a
-different book, and we point you to good ones where the boundary comes up.</p>
-<h2 id="who-this-book-is-for"><a class="header" href="#who-this-book-is-for">Who this book is for</a></h2>
-<p>Anyone who wants to learn how programming languages work, with a practical flair. Whether you are
-reading it as the companion to a course or working through it on your own, this text is designed
-to be <strong>self-contained</strong>: the concepts, the specifications, and the build are all here, and the
-scaffolding you build on top of is publicly available. It assumes you can program in <em>some</em>
-language and are curious about what is going on underneath — not that you already know Rust, type
-theory, or logic programming.</p>
-<h2 id="how-the-book-is-organized"><a class="header" href="#how-the-book-is-organized">How the book is organized</a></h2>
-<p>The chapters follow the arc of the language as it grows, and each part from Part II onward closes
-with a <strong>project milestone</strong> (M1–M8). Treat the milestones as a <em>learning structure</em>: a checkpoint
-that says “build this much next, and here is how to know it works.” By the end you will have built:</p>
-<ul>
-<li>a tree-walking evaluator with clear runtime errors,</li>
-<li>lexical scope, and the closures that make it observable,</li>
-<li>first-class functions and closures,</li>
-<li>a <strong>static type checker</strong> that rules out whole classes of runtime errors before a program
-runs,</li>
-<li>a <strong>relational (Datalog-style) sublanguage</strong> you can query from ordinary code,</li>
-<li>algebraic data types with pattern matching, and</li>
-<li>objects built as structs with methods and traits.</li>
-</ul>
-<p><strong>Every chapter follows a similar narrative.</strong> Each chapter will broadly introduce the relevant
-programming-language concepts: what they are meant to capture, and the history of how they
-emerged and changed over time and across communities. It will then discuss how those
-concepts shape the design decisions underlying Bridger. Then the lens widens to the design space:
-how ML, Rust, Prolog, or Python answer the same questions, and the pros and cons of each design.
-Some of those questions Bridger answers by declining — negation in logic rules, full type
-inference, classical inheritance — and those forks get the same treatment, with pointers for
-reading further.</p>
-<h3 id="the-starter-repository"><a class="header" href="#the-starter-repository">The starter repository</a></h3>
-<p>Because the book is meant to be self-contained, the <strong>scaffolding you build on top of ships
-publicly</strong>: the <code>Value</code> type, the environment structure, error and source-span types, the AST, and
-the parser. You implement <em>semantics</em> — the evaluator, the type checker, unification — not the
-memory plumbing that would otherwise have you fighting the borrow checker instead of learning what
-a closure is. The repository link and setup live alongside this book.</p>
-<h2 id="how-to-read-this-book"><a class="header" href="#how-to-read-this-book">How to read this book</a></h2>
-<ul>
-<li>
-<p><strong>Code you implement</strong> is shown in Rust. Where a snippet is self-contained you can press the
-play button to run it.</p>
-<pre class="playground"><code class="language-rust">fn main() {
-    println!("Hello from the metalanguage.");
-}</code></pre>
-<p>You do <strong>not</strong> need to know Rust first. Each construct is introduced where the interpreter first
-needs it (<code>enum</code>/<code>match</code> at the AST, <code>Rc&lt;RefCell&gt;</code> at closures, <code>Result</code>/<code>Option</code> at error
-handling), as a short aside you can skip if you’re already familiar with Rust. For those looking
-for a slightly more in-depth introduction, <strong><a href="appendix/rust-reference.html">Appendix A</a></strong> is a
-self-contained tutorial with an M0 warm-up milestone.</p>
-</li>
-<li>
-<p><strong>Programs in <em>Bridger</em></strong> are shown in monospace, highlighted approximately (the real
-highlighter comes once the language stabilizes):</p>
-<pre><code class="language-ocaml">let rec fib n =
-  if n &lt; 2 then n else fib (n - 1) + fib (n - 2)
-in fib 10
-</code></pre>
-</li>
-<li>
-<p><strong>Specifications</strong> are written as inference rules. For example, addition evaluates its operands
-and adds the results:</p>
-<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.2519em;vertical-align:-0.8804em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Add</span></span><span class="mclose">)</span></span></span></span></span></p>
-<p>The <a href="appendix/notation.html">notation reference</a> collects the symbols and rule shapes we use.</p>
-</li>
-</ul>
-<h2 id="a-note-on-tools-and-ai-assistants"><a class="header" href="#a-note-on-tools-and-ai-assistants">A note on tools and AI assistants</a></h2>
-<p>Syntax is the part that varies. Every language spells the same idea differently, and the spelling
-changes with every release — which is exactly the kind of detail a coding assistant handles well.
-It handles semantics well too: ask one to explain closures or type inference and you will usually
-get a fluent and largely correct answer. The limit is not that these tools only know syntax.</p>
-<p>The limit is accountability. An assistant can make a design decision; it cannot be answerable for
-one. Whether a problem wants a relation or a fold, what a representation choice will cost three
-modules later, which trade-off a language made and whether it was the right one for your system —
-those are judgments you own, and owning them means understanding the concepts well enough to
-<em>evaluate</em> an answer rather than accept it.</p>
-<p>The test arrives when someone asks why a system is built the way it is. “The assistant did that”
-reports only that nobody decided; the engineer who can explain the reasoning understood the choice,
-whether or not an assistant helped reach it.</p>
-<p>That is what this book is for: the concepts, where they came from, and the pros and cons that make
-one design fit where another fights. It is what you need in order to design and assess systems —
-including the ones you build with an assistant’s help.</p>
+                        <h1 id="document-not-found-404"><a class="header" href="#document-not-found-404">Document not found (404)</a></h1>
+<p>This URL is invalid, sorry. Please use the navigation bar or search to continue.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
 
-                            <a rel="next prefetch" href="foundations/why-interpreter.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
-                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -303,9 +195,6 @@ including the ones you build with an assistant’s help.</p>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
 
-                    <a rel="next prefetch" href="foundations/why-interpreter.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
-                    </a>
             </nav>
 
         </div>

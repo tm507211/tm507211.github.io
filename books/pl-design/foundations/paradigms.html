@@ -1,0 +1,543 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>The paradigm branches - A Practical Introduction to Programming Language Design</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Learn how programming languages work by building one: an interpreter, in Rust, for a small multi-paradigm language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../css/book-271586e2.css">
+        <link rel="stylesheet" href="../css/timeline-b697568e.css">
+        <link rel="stylesheet" href="../css/highlight-fixes-88adc288.css">
+        <link rel="stylesheet" href="../css/under-construction-17603da8.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-223022c2.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-83408d21.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">A Practical Introduction to Programming Language Design</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="the-paradigm-branches"><a class="header" href="#the-paradigm-branches">The Paradigm Branches</a></h1>
+<!-- AUTHORING NOTE (not rendered)
+     lecture: History II: language paradigms; syntax vs. semantics (first half).
+     SEAM: history.md took the story to Algol — one line of descent, still over
+     the machine's store-and-command model. This chapter is where the line forks,
+     and it doubles as the map of the whole book: each branch named here is
+     re-introduced when its feature arrives (imperative core Parts II–IV,
+     functional Part V, declarative Part VII, ADTs Part VIII, objects Part IX).
+     Keep it a MAP, not a survey — the depth belongs in the parts themselves.
+     Orientation/map chapter: six-beat template applies loosely, like
+     why-interpreter. No Bridger build yet; the "Bridger decision" beat is the
+     multi-paradigm choice, the "design space" beat is whether paradigm is even
+     the right unit (mixtures are the norm).
+     Types are handled as a discipline ACROSS paradigms, not a fifth branch —
+     keep that framing so Part VI reads as layering onto the core, not a new
+     paradigm.
+     VERIFIED CITATIONS (titles/venues/DOIs confirmed via ACM/Crossref):
+       - Floyd, "The Paradigms of Programming," CACM 22:8 (1979), 455-460,
+         doi 10.1145/359138.359140. He imports "paradigm" from Kuhn.
+       - Backus, "Can Programming Be Liberated from the von Neumann Style?…",
+         CACM 21:8 (1978), 613-641, doi 10.1145/359576.359579. Coins "von Neumann
+         bottleneck."
+       - Kowalski, "Algorithm = Logic + Control," CACM 22:7 (1979), 424-436,
+         doi 10.1145/359131.359136 (Further reading).
+       - Kowalski, "Predicate Logic as Programming Language," IFIP Congress 74,
+         North-Holland, 569-574 — the exact source for "logic viewed as a program"
+         (cited inline, not 1979). No DOI; author-hosted copy at
+         doc.ic.ac.uk/~rak/papers/IFIP%2074.pdf resolves (HTTP 200, labelled on
+         Kowalski's homepage).
+       - Church, "An Unsolvable Problem of Elementary Number Theory," Amer. J.
+         Math. 58 (1936), 345-363, doi 10.2307/2371045 (JSTOR) — inline cite for
+         the λ-calculus; introduces λ-definability.
+       - Colmerauer & Roussel, "The birth of Prolog," HOPL II (1993), 37-52,
+         doi 10.1145/154766.155362.
+       - Kay, "The Early History of Smalltalk," HOPL II (1993),
+         doi 10.1145/154766.155364 (inline + Further reading). Backs the
+         messaging-over-objects emphasis — objects as cells "interacting only
+         through messages" (verified in the paper). Kay's "regretted coining
+         'objects'" remark is NOT in this paper (it is his 1998 squeak-dev
+         email); omitted rather than mis-cited to the HOPL paper.
+       - Nygaard & Dahl, "The development of the SIMULA languages," HOPL I (1978),
+         245-272, doi 10.1145/800025.1198392 (inline cite for Simula 67). ACM
+         DOIs 403 to curl (bot protection) but resolve in-browser to dl.acm.org.
+       - Van Roy, "Programming Paradigms for Dummies," 2009 (author's PDF at
+         webperso.info.ucl.ac.be/~pvr/VanRoyChapter.pdf).
+       No direct quotations are made from any of these; titles only, content
+       paraphrased. Kay's "messaging over objects" is paraphrased, not quoted.
+-->
+<p>The previous chapter followed a single idea of what a program is. Machine code gave way to
+assembly, assembly to Fortran and Algol, and each step handed more bookkeeping to the translator —
+addresses, instruction selection, the region in which a name is valid. What none of those steps
+touched was the idea underneath: a program is a sequence of commands that change the machine’s
+state, one after another. Fortran raised the level of the commands and Algol organized them into
+blocks, but a program was still a list of commands to modify the machine’s store.</p>
+<p>That idea is an answer to a question the languages in that chapter never stopped to ask, because
+the machine answered it for them. The question is: what is a program? The store-and-command picture
+is one answer, and it is the machine’s own answer, lifted through levels of abstraction; however,
+there are other notions of what a program is. These notions differ from the store-and-command notion,
+and from each other, not in how their programs are spelled but in what they take a program to be. This
+chapter lays out the main answers and the communities that gave them, and marks which part of the book
+describes each one.</p>
+<h2 id="what-does-it-mean-to-be-a-program"><a class="header" href="#what-does-it-mean-to-be-a-program">What does it mean to be a program?</a></h2>
+<p>The word <em>paradigm</em> entered programming through Robert Floyd’s 1978
+<a href="https://doi.org/10.1145/359138.359140">Turing Award lecture</a>, which borrowed it from Thomas Kuhn’s
+account of how a scientific field settles on a shared way of framing its problems. A programming
+paradigm is that: a shared idea of what a program is and how you go about writing one. Four such
+ideas organize most of the languages in use, and each can be stated as an answer to <em>what is a
+program?</em></p>
+<p><strong>A sequence of commands.</strong> A program is a list of instructions that read and change a shared,
+mutable state, carried out in order. This is the <strong>imperative</strong> view of what a program is. This view
+derives from the machine’s model of a program, often abstracted to higher-level notation: assigning
+to a variable, looping, iterating through an array. Each of these operations is about <em>doing
+something to</em> the state of the program that persists between each step of the program.</p>
+<p>Consider the following task: given a set of directed edges and a starting node, which nodes can
+be reached? Below is an imperative program that accomplishes this task. The program works by keeping
+two pieces of state: a set of nodes already <code>visited</code>, and a <code>frontier</code> of reached nodes whose
+outgoing edges it has not yet examined.</p>
+<pre><code class="language-python">visited  = { start }
+frontier = [ start ]
+while frontier is not empty:
+    n = frontier.pop()
+    for each edge (n, m):
+        if m not in visited:
+            visited.add(m)
+            frontier.push(m)
+return visited
+</code></pre>
+<p>Both <code>visited</code> and <code>frontier</code> hold only the <code>start</code> node in the beginning. Each pass through
+the loop takes a node off the frontier, looks at every edge leaving it, and for each target it
+has not seen before adds that target to the <code>visited</code> set and pushes it onto the <code>frontier</code>
+to examine later. When the frontier is empty, every reachable node has been visited, and
+<code>visited</code> is the set of nodes reachable from <code>start</code>.</p>
+<p><strong>The application of functions to values.</strong> A program is an expression, and running it means
+evaluating that expression to a value. There is no store being modified in the background; a name
+stands for a value and is not modified. This is the <strong>functional</strong> view of programming. Its origins
+predate any computer, in Alonzo Church’s <a href="https://doi.org/10.2307/2371045">λ-calculus</a> of the 1930s,
+a formalism in which everything is a function and computation is substitution. John McCarthy’s Lisp,
+whose <code>eval</code> we discussed previously, was the first functional language, borrowing Church’s notation
+for functions if not the whole calculus. Where the imperative program says <em>do this, and update that</em>,
+the functional program says <em>the answer is this expression</em>, and leaves the order of evaluation as a
+detail.</p>
+<p>Below is a functional program for the same graph reachability task. It names the reachable set as
+the result of growing a set of reached nodes one edge-step at a time, until a step adds nothing more:</p>
+<pre><code class="language-haskell">step(seen) = seen ∪ { m | n ∈ seen and (n, m) is an edge }
+
+grow(seen) = if step(seen) = seen then seen else grow(step(seen))
+
+grow({ start })
+</code></pre>
+<p>The function <code>step</code> takes a set of nodes reached within <code>n</code> steps and returns a new set with every node
+reached within <code>n+1</code> steps, without modifying the input set. The function <code>grow</code> repeatedly applies <code>step</code>
+until the set of seen nodes has reached a fixed point (the same before and after applying the <code>step</code> function).
+That stable set of nodes is the answer; it is obtained by evaluating an expression rather than accumulated
+by a loop that updates the set of seen nodes.</p>
+<p><strong>A set of facts and rules.</strong> A program states what is true — these edges exist; a path exists when
+an edge does, or when a path reaches an edge — and running it means asking what else must be true and
+letting the system work it out. Nothing in the program says <em>how</em> to search. This is the <strong>declarative</strong>,
+or logic, view of programming. It grew out of automated theorem proving in the early 1970s,
+when Robert Kowalski argued that a piece of logic could be
+<a href="http://www.doc.ic.ac.uk/~rak/papers/IFIP%2074.pdf">viewed as a program</a> and Alain Colmerauer’s group
+in Marseille <a href="https://doi.org/10.1145/154766.155362">built Prolog</a> around that view.
+<a href="../appendix/language-reference.html">Bridger</a>’s relational sublanguage takes the same idea in a
+smaller, always-terminating form.</p>
+<p>Below we show how the graph reachability task is encoded as a declarative program. The program itself
+prescribes no search mechanism; the two clauses state what it <em>means</em> to be reachable from the <code>start</code> node,
+and finding the nodes that satisfy the clauses is the system’s job:</p>
+<pre><code class="language-prolog">reach(start).
+reach(Y) :- reach(X), edge(X, Y).
+</code></pre>
+<p>The first clause says the start node is reachable. The second says that if <code>X</code> is reachable and there
+is an edge from <code>X</code> to <code>Y</code>, then <code>Y</code> must also be reachable. Nothing names a node to visit first, and no set
+is maintained; the program stores no state and describes no procedure. When one asks which nodes are
+reachable, the system returns the smallest collection of facts that makes both clauses true.</p>
+<p><strong>A society of objects exchanging messages.</strong> A program is a collection of objects, each holding some
+private state and knowing how to respond to requests; computation happens as they send messages to
+one another. This is the <strong>object-oriented</strong> view of programming. It appeared in
+<a href="https://doi.org/10.1145/800025.1198392">Simula 67</a>, built by Ole-Johan Dahl and Kristen Nygaard to
+describe simulations in which each entity carries its own state, and was made central by Alan Kay and
+the <a href="https://doi.org/10.1145/154766.155364">Smalltalk group</a>, for whom the messages between objects
+mattered more than the objects themselves.</p>
+<p>Recall the graph reachability task. In the object-oriented program below, the graph becomes a
+collection of node objects, each holding its own list of neighbors, and the search happens as the
+nodes send one another a <code>reach</code> message:</p>
+<pre><code class="language-python">class Node:
+    neighbors                     # the nodes this one points to
+
+    method reach(visited):
+        if self ∈ visited: return
+        visited.add(self)
+        for each n in neighbors:
+            n.reach(visited)      # send the same message onward
+
+start.reach({ })
+</code></pre>
+<p>Each node, on receiving <code>reach</code>, records itself in the shared <code>visited</code> set and then sends the same
+message to each of its neighbors, which do the same. The <code>visited</code> set both collects the answer and
+keeps a node from responding twice, so a cycle does not loop forever. The traversal is the imperative
+one from before, redistributed: no central loop drives it, and the work is carried by objects passing
+a message along the edges.</p>
+<h2 id="what-differentiates-paradigms"><a class="header" href="#what-differentiates-paradigms">What differentiates paradigms</a></h2>
+<p>While many imperative programs share similar syntactic forms — and similarly for functional,
+object-oriented, and declarative programs — the form of a program does not dictate which paradigm it
+belongs to. The declarative reachability rules could be written in a C-like block syntax, or the
+imperative worklist algorithm above in Lisp-style s-expressions, without either changing paradigm.
+What decides the paradigm is what a language treats as <em>primitive</em> and <em>free</em>, and therefore what it
+lets you leave unsaid.</p>
+<p>The imperative program leans on a mutable store as something that is simply there: a variable is a box
+you can overwrite, and overwriting it costs nothing to express. The functional program has no such
+box — a name binds to a value and the binding does not change — so anything resembling a running
+change must be expressed some other way, by producing a new value rather than editing an old one. The
+declarative program treats <em>search</em> as free: it never says how the answer is found, because supplying
+the how is the system’s job, not the programmer’s. What one paradigm makes implicit, another
+makes you spell out.</p>
+<p>A consequence is that the paradigm is not a property of a language’s grammar, and one language can
+host more than one. A programmer can write in a functional style inside an imperative language by
+refusing to mutate and building with recursion and functions that take other functions as arguments;
+a programmer can write imperative code inside a functional language wherever it provides a way to. The
+paradigm a program belongs to is the set of defaults it works with — what it treats as primitive and
+what it leaves implicit — and a language belongs to a paradigm by making one set of those defaults
+cheap and the others deliberate.</p>
+<p>This is why paradigm fit is something a working programmer can feel. Reachability written imperatively
+carries a visited set and a worklist that are bookkeeping, present only to drive the search; the same
+problem written as rules has neither. On the other hand, for a task like a running total over a stream
+of inputs, or an in-place simulation that updates a grid each tick, the imperative version is succinct,
+while the declarative framing strains to express a process that is inherently about change over time.
+The awkwardness comes not from the program being wrong, but from the problem not fitting the strengths
+of the paradigm it is expressed in.</p>
+<h2 id="multi-paradigm-languages"><a class="header" href="#multi-paradigm-languages">Multi-paradigm languages</a></h2>
+<p>While this chapter names four paradigms, most programming languages let programmers express programs
+across two or more of the paradigms. Lisp, a typical example of a <em>functional</em> language, had an
+assignment operator early and has allowed programs with mutable state ever since. In Smalltalk, each method
+of an object has an imperative body. Most languages a reader is likely to know support multiple paradigms:
+Python has objects, first-class functions, and imperative loops all at once; Rust, the language this
+book asks you to write the Bridger interpreter in, has all three as well, and a type discipline over them.
+Peter Van Roy’s survey of the field catalogues on the order of thirty paradigms once combinations are counted.
+This is a sign that the paradigms are overlapping views of a program rather than distinct ones: a paradigm
+is really about the decisions a language makes about what it supports and makes freely available to the
+programmer.</p>
+<p>A paradigm, then, is a language’s center of gravity — the framing it makes cheapest and treats
+as primitive — and not a strict inability to write programs in a different paradigm. Floyd’s
+<a href="https://doi.org/10.1145/359138.359140">lecture</a> already pointed this way: he treated paradigms as techniques
+a programmer should collect and move between as the problem demands, rather than allegiances to hold. The
+taxonomy is worth having for exactly the reason it is worth distrusting: it names real differences in what a
+language makes easy, while most real languages support multiple paradigms with varying ease.</p>
+<h2 id="bridgers-philosophy"><a class="header" href="#bridgers-philosophy">Bridger’s philosophy</a></h2>
+<p>Bridger is built to be multi-paradigm, so every part of this book adds to one language rather than
+touring several. Keeping the comparison inside a single language is what makes it clean: with one
+syntax, one evaluator, and one notion of a value, a difference you see between two programs is a
+difference in the idea rather than an artifact of four separate syntaxes, toolchains, and libraries.
+One language also lets a single program cross paradigms — building a structure imperatively, querying
+it relationally, folding the results functionally — which is where the trade-offs stop being abstract.
+And with every framing within reach, you can feel which one a problem wants: you reach for the one
+that makes the problem short, and notice when a framing fights you.</p>
+<p>The core is imperative and functional together: an expression-oriented language, in which even a loop
+or an assignment produces a value, with first-class functions and closures on one side and mutable
+references on the other. Onto that core the book adds a static type discipline, a Datalog-style
+relational sublanguage for the declarative framing, algebraic data types for modeling structured data,
+and objects assembled from those data types with methods. Each is introduced where the book reaches
+it, motivated by the problem it answers and set against the alternatives other languages chose.</p>
+<h2 id="looking-ahead"><a class="header" href="#looking-ahead">Looking ahead</a></h2>
+<p>The branches named here are built in the order that lets each rest on the last.</p>
+<ul>
+<li><strong>The imperative core</strong> is the subject of Parts II through IV: evaluating expressions to values,
+binding names in an environment, and then the state and control flow — mutation, conditionals,
+loops — that make a program a sequence of steps over a store.</li>
+<li><strong>The functional branch</strong> arrives in Part V, with first-class functions, closures that capture the
+environment they were written in, and the recursion and higher-order functions that let a program
+be built by combining functions rather than by issuing commands.</li>
+<li><strong>The type discipline</strong> follows in Part VI, as a pass over the core that analyzes programs before
+they run and rejects any that would use a value in a way its type forbids.</li>
+<li><strong>The declarative branch</strong> is Part VII: relations defined by facts and rules, evaluated by finding
+the smallest set of facts closed under the rules, and queried from ordinary code.</li>
+<li><strong>Algebraic data types</strong> in Part VIII give a precise way to describe structured data and take it
+apart by pattern matching, and they are the material the last branch is built from.</li>
+<li><strong>The object-oriented branch</strong> closes the build in Part IX, as structs carrying state together with
+the methods that act on them.</li>
+</ul>
+<p>The final part sets the branches against one another on shared problems, where choosing the framing
+that fits is the whole exercise. <a href="../appendix/timeline.html">Appendix F</a> places the languages and ideas
+named above in date order, each linked to the chapter that takes it up in full.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>A paradigm as a unit of thought</strong>: Robert Floyd’s Turing Award lecture “<a href="https://doi.org/10.1145/359138.359140">The Paradigms of
+Programming</a>” (1979) is where the word, borrowed from Thomas
+Kuhn’s <em>The Structure of Scientific Revolutions</em>, entered the field. Floyd’s argument is that
+paradigms are techniques to be identified, taught, and expanded, and that a language should support
+more than one — the framing this chapter and this book take. Peter Van Roy’s “<a href="https://webperso.info.ucl.ac.be/~pvr/VanRoyChapter.pdf">Programming Paradigms
+for Dummies: What Every Programmer Should Know</a>”
+(2009) maps the paradigms against one another by the concepts they add, and reaches roughly thirty
+once combinations are counted — the concrete form of the claim that the pure cases are the exception.</p>
+<p><strong>The functional framing against the imperative default</strong>: John Backus’s Turing lecture “<a href="https://doi.org/10.1145/359576.359579">Can
+Programming Be Liberated from the von Neumann Style? A Functional Style and Its Algebra of
+Programs</a>” (1978) argues that the command-and-store model
+carried from the hardware is a limit on how programs can be built, names the “von Neumann bottleneck,”
+and proposes a functional alternative — a designer of Fortran arguing against the style Fortran helped
+establish. Part V takes up the functional lineage in full.</p>
+<p><strong>Logic as a programming language</strong>: Robert Kowalski’s “<a href="https://doi.org/10.1145/359131.359136">Algorithm = Logic +
+Control</a>” (1979) makes the case that a program has a logical
+content, saying what is true, separable from the control that says how to search — the idea under the
+declarative framing. Alain Colmerauer and Philippe Roussel’s “<a href="https://doi.org/10.1145/154766.155362">The birth of
+Prolog</a>” (HOPL II, 1993) is the account of how that idea became
+a language.</p>
+<p><strong>Objects and the messages between them</strong>: Alan Kay’s “<a href="https://doi.org/10.1145/154766.155364">The Early History of
+Smalltalk</a>” (HOPL II, 1993) traces the object-oriented framing
+from Simula through Smalltalk and argues that the messaging between objects, more than the objects
+themselves, is the idea that matters. Part IX builds objects from the book’s own data types.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>Two languages have nearly identical syntax, yet one is called functional and the other imperative. How is that possible?</summary>
+<p>Because a paradigm is fixed by what a language treats as primitive and leaves implicit. Give one
+language a mutable store as a free primitive — a variable is a box you overwrite
+— and its natural programs change state in place. Give the other only value bindings that do not
+change, and its natural programs produce new values instead. The two can share a grammar down to the
+punctuation and still make opposite things cheap to express. Syntax is the changeable surface; the
+paradigm is in the defaults underneath it.</p>
+</details>
+<details>
+<summary>Reachability was short as two rules and longer as a loop. What, specifically, does the declarative version leave out that the imperative one must include?</summary>
+<p>The search procedure. The imperative version carries a visited set and a worklist and specifies the
+order in which nodes are taken up and marked — all of it bookkeeping that exists only to drive the
+computation, none of it part of what reachability <em>means</em>. The two rules state only the meaning: the
+start is reachable, and following an edge from a reachable node reaches another. The paradigm treats
+the search as the system’s responsibility, so the program never mentions it. The imperative paradigm
+treats the store and the stepping as primitive, so the program is written in terms of them.</p>
+</details>
+<details>
+<summary>Bridger puts every branch into one language instead of teaching four separate languages. What would comparing four separate languages confound, and what is given up by not doing it?</summary>
+<p>With four languages, any difference you observe between two programs could be the paradigm or it could
+be one of four syntaxes, four sets of values, four toolchains and standard libraries. Holding all of
+that fixed and varying only the paradigm is what makes an observed difference attributable to the idea
+rather than the accident — which is why the whole language is one syntax and one evaluator. What is
+given up is contact with the real languages as they are actually used, with the mature libraries and
+idioms that a paradigm accretes in practice; the further-reading pointers and the design-space
+discussions in each part are where those enter.</p>
+</details>
+<details>
+<summary>Name a language usually placed under one paradigm and a place where it clearly leaves that paradigm. What does the existence of such examples say about the taxonomy?</summary>
+<p>Lisp is typically considered a functional language, but has had assignment since early in its life; Smalltalk is considered
+and object-oriented language, but its method bodies are ordinary imperative code; Python is taught with objects but
+has first-class functions and imperative loops in equal standing. The examples are easy to find
+because the pure cases are the exception. What they show is that the four headings mark a language’s
+center of gravity — the framing it makes cheapest — rather than a boundary it stays inside. The
+taxonomy is worth keeping because it names real differences in what a language makes easy, and worth
+distrusting because almost every real language combines more than one paradigm.</p>
+</details>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../foundations/history.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../foundations/syntax-semantics.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../foundations/history.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../foundations/syntax-semantics.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-1c64dc54.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

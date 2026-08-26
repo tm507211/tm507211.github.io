@@ -1,0 +1,949 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>From machine code to high-level languages - A Practical Introduction to Programming Language Design</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Learn how programming languages work by building one: an interpreter, in Rust, for a small multi-paradigm language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../css/book-271586e2.css">
+        <link rel="stylesheet" href="../css/timeline-b697568e.css">
+        <link rel="stylesheet" href="../css/highlight-fixes-88adc288.css">
+        <link rel="stylesheet" href="../css/under-construction-17603da8.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-223022c2.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-83408d21.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">A Practical Introduction to Programming Language Design</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="from-machine-code-to-high-level-languages"><a class="header" href="#from-machine-code-to-high-level-languages">From Machine Code to High-Level Languages</a></h1>
+<!-- AUTHORING NOTE (not rendered)
+     lecture: Intro, syllabus & History I (history portion).
+     SEAM: ch.1 established what an interpreter is; this chapter answers why
+     there is anything to interpret. It does NOT cover the paradigm split (next
+     chapter), BNF (ch.4), or scope (Part III) — Algol's contributions are
+     named here and cashed in later.
+     SPINE: every step hands the machine a piece of bookkeeping the programmer
+     used to carry. Do not let the sections become a list of languages.
+     FRAMING, twice corrected and settled:
+       - Machine code IS a language, a primitive one. The chapter argues about
+         LEVELS, never about language-vs-no-language. No "not really a
+         language" phrasing.
+       - What makes it low-level is NOT limited expressiveness — the language
+       is
+         Turing-complete and nothing is too large to express. It is that
+         machine code records the operations and nothing about what they are
+         FOR: that these words are a routine, that location 90 holds a running
+         total, that a jump closes a loop, that those words are data. That
+         intent lived in pencil annotations and in the programmer's head. Each
+         section gives the program a way to SAY something it previously could
+         only MEAN.
+       - The objections are taken seriously, never mocked. They were correct at
+         the time and were overturned by changing conditions — hardware,
+         program size, the cost of labour.
+
+     EDSAC, verified against the EDSAC Replica Project tutorial guide
+     (Warwick):
+       - order = 17 bits: 5-bit function, 1 spare, 10-bit address, 1 length.
+         Written "A 56 F" / "S 128 D"; F short, D long; address omitted when 0.
+         1949 order code: A add, S subtract, T store+clear, U store, E jump if
+         positive, G jump if negative, H/V/N multiplier.
+       - function code == teleprinter code of the letter. A = 28 = 11100,
+         S = 12 = 01100, T = 5, G = 27, E = 3. The guide: this "simplified the
+         translation of the symbolic program considerably."
+       - Initial Orders 1, spring 1949, ~3 months in service; Initial Orders 2
+       by
+         Wheeler, September 1949, fitting in 42 ORDERS (EDSAC's term, not
+         "instructions"), "the forerunner of the modern assembler."
+       - code letters occupy locations 41-55, so programs load at 56. F=41
+       holds
+         0; theta=42 holds the current routine's origin; D=43 holds 1;
+         H,N,M...V = 44-55 are the programmer's. The loader ADDS the code
+         letter's value to the order as it is placed. One rule reaches two
+         fields because an order is a NUMBER: length is its lowest bit, address
+         the ten bits above. The prose does not spell this out — the field
+         diagram upstream shows the bit ranges and the reader can join the two,
+         so keep that diagram intact.
+         An address tagged theta is written RELATIVE to its own routine's
+         start. theta is reset per routine during loading (T m K sets the load
+         point,
+         G K sets theta to it), which is how routines coexist without knowing
+         where they land.
+       - SCOPE OF THE FIX, do not overstate: code letters fix DATA addresses
+       and
+         whole-routine placement. They do NOT fix intra-routine BRANCH targets
+         — insert an order and E 5 theta still has to be hand-edited to E 6
+         theta.
+         Labels solve that; EDSAC had none.
+       - F AND D are explained once, in "Names for places", as instances of the
+         code-letter mechanism. The unexplained F in the earlier example is
+         deliberate: a small puzzle that section resolves.
+       - no index registers (not invented until 1950), so array loops modified
+         their own address fields.
+       - NO COMMENTS ON THE TAPE, verbatim: "On the program tape comments were
+         omitted, and no layout characters whatever were used." Commentary
+         lived on the program's MANUSCRIPT, a separate handwritten sheet, and a
+         tape was identified by writing its name on it in pencil. CAUTION: the
+         Warwick
+         SIMULATOR accepts bracketed comments and ignores whitespace, which the
+         guide calls "not quite authentic" — do not let simulator conveniences
+         become claims about the machine, and do not claim the initial orders
+         would have rejected a comment.
+       - SPEED: average order ~1.5 ms, multiplication ~6 ms, so ~650
+       orders/sec.
+         The 2 min 35 s table of squares is Renwick's log entry for 6 May 1949,
+         the machine's FIRST RUN — a different occasion from the June 1949
+         public demonstration whose Squares-and-first-differences program ships
+         with the simulator. Do not merge them. The log's "(0-99)" is the
+         ARGUMENT range, 100 entries; 155 s / 100 is ~1.5 s each, about a
+         thousand orders, right for a multiply plus decimal conversion plus
+         teleprinter output. Phrase it
+         "the squares of the numbers 0 to 99" — "squares from 0 to 99" reads as
+         the outputs.
+       - THE REWRITTEN DIVISION ROUTINE (A 0 M / S 1 M / E 1 θ / T 2 M) is
+         CONSTRUCTED, not quoted, though every ingredient is attested: the
+         order form, a programmer letter naming a data region (Reciprocals uses
+         θ and M exactly so, constants at M+0..M+7), and a parameter set by
+         diverting the load point and punching a constant word. Present it as
+         an example in a real notation, never as a historical artifact. M =
+         location 47: code-letter location is character code + 24, and M is
+         character 23.
+       - DELIBERATE OMISSIONS: the Wheeler jump (call/return by
+       self-modification)
+         is more than the section needs; EDSAC I's store size changed over its
+         life and is not needed; no UNIVAC instruction rate without a real
+         source, since figures in circulation are noisy and 1954 American
+         machines were not uniform (the IBM 701 was ~10x faster than UNIVAC I).
+       - Do NOT claim EDSAC programmers wrote raw binary: the initial orders
+       were
+         there from the first run, which is why the opening frames EDSAC as
+         where this "begins to change" rather than as a pure before-picture.
+       - CITATION: first mention links the Cambridge relics collection,
+       parallel
+         to the Baby's Computer 50 link; Cambridge has no general EDSAC
+         overview page. The "from May 1949" date rests on the operating log,
+         verified directly. Wilkes & Renwick, "The EDSAC", MTAC 4 (1950): 61-65
+         was considered and dropped — volume and issue could only be confirmed
+         through search summaries. Do not add it without checking the artifact.
+
+     MANCHESTER BABY: the first program's SEVENTEEN instructions and the input
+     device of "a set of 32 buttons and switches" trace to Lavington, A History
+     of
+     Manchester Computers, 2nd ed., pp. 16-17, and Napper in Rojas & Hashagen,
+     The
+     First Computers, pp. 366-367 — both reached by secondary citation, NOT
+     read directly, unlike the EDSAC/Backus/Hopper/Hoare material. Manchester's
+     own
+     Computer 50 page says only "a simple keyboard". Do not restore the
+     52-minute runtime: sources give 52 and 53, and the figure carries no
+     weight here.
+
+     VERIFIED QUOTATION WORDINGS. Each was checked against the artifact and
+     each differs from a form that circulates; do not "correct" them back.
+       - Backus, re-checked against two independently typeset printings (the
+         Annals 1979 reprint, archive.org "history-of-fortran", and the HOPL
+         1978 preprint at softwarepreservation.computerhistory.org):
+           "slowed THE MACHINE DOWN by a factor of five or TEN" (not "slowed
+           down the machine"; the word "ten", not the numeral)
+           "Before 1954 almost all programming" — NO comma after 1954
+           "hand coded counterpart" — unhyphenated, and the quote reads FORTRAN
+           in caps though the surrounding prose uses "Fortran"
+         The prose gloss says "a factor of five", the low end of the range, on
+         purpose. Backus's "the real challenge, not the simple task of
+         designing the language" is a DIRECT QUOTATION and so exempt from the
+         "A, not B" rule; do not paraphrase it away.
+       - Hoare, read off a 250dpi render of p.27 of the Stanford scan
+         (AIM-224 / STAN-CS-73-403, 1973) because that scan's OCR is poor. The
+         text sits in the report's own APPENDIX, "Annotated Reading List",
+         under the entry for Naur 1960 — it is not a separate source, and the
+         prose no longer says where in the report it sits.
+           "the techniques WHICH put them into practice" (not "that")
+           "my amazement AND admiration of ALGOL 60" — no "at". The circulating
+           form "amazement at and admiration of" repairs Hoare's grammar; it
+           may be what the 1989 Essays in Computing Science reprint prints, but
+           we cite the 1973 report and so quote the 1973 report.
+           "so far ahead of its time, THAT it was" — comma before "that"
+           "on its predecessors, BUT also" — comma before "but"
+         A second printing could not be reached: ACM DL 403s on the POPL '73
+         proceedings and the archive.org Essays scan is lending-restricted. The
+         page image is stronger evidence than a second OCR would have been.
+       - Hopper, verified from the Annals 9:3/4 (1988) reprint BODY TEXT, not
+       the
+         Gries introduction that precedes it — the intro quotes the same lines,
+         so a text search hits it first.
+
+     WHAT THE 5-10x MEASURES. Not the cost of unoptimized translation. Backus:
+     "The most common reason for the slowdown was that these systems were
+     spending most of their time in floating point subroutines. Simulated
+     indexing and other 'housekeeping' operations could be done with simple
+     inefficient techniques, since, slow as they were, they took far less time
+     than the floating point work." Slow software floating point MASKED clumsy
+     loop and address code. The 704 then removes the largest component
+     (floating point and indexing in hardware, floating point ~10x faster),
+     which is what leaves the bookkeeping as a visible share of running time
+     and forces an optimizing compiler. Keep those two claims in that order.
+
+     FORTRAN ORIGIN DATES, all from the Backus paper: he proposed the project
+     to
+     Cuthbert Hurd "in late 1953 (the exact date is not known but other facts
+     suggest December 1953 as a likely date)", naming the economics of
+     programming as "one of the prime motivations"; the project was "well under
+     way" by 21 May 1954. So 1954 is when the work ran and the proposal
+     predates it; the section says both and they should stay together. The name
+     gloss is quoted from the title page of the Preliminary Report
+     ("Specifications for the IBM
+     Mathematical FORmula TRANslating System, FORTRAN", Programming Research
+     Group, Applied Science Division, IBM, November 10, 1954), the artifact
+     linked inline. Keep its capitalization: it shows which letters make the
+     acronym.
+
+     WHICH FORTRAN, WHICH ALGOL. The Structure section says Algol 60's ideas
+     "had no counterpart in machine code, in assembly, or in Fortran I". Both
+     numerals matter; do not generalize either.
+       - "Fortran I" because modern readers hear "Fortran" as Fortran 90.
+         Structured control flow did reach the language, far later and under
+         Algol's influence: block IF/THEN/ELSE in FORTRAN 77, DO WHILE and
+         modules in Fortran 90. Algol-style block scope never arrived; F90
+         modules plus host association are the nearest analogue. Fortran II
+         (spring 1958) added
+         SUBROUTINE/FUNCTION and separate compilation, Fortran III (winter
+         1958-59, a handful of sites) added inline 704 symbolic instructions —
+         modularity and machine access rather than structure — so I-III would
+         be defensible too, just fussier.
+       - "Algol 60" because two of the section's three ideas are Algol 60's.
+       ALGOL
+         58 had begin/end only as a compound statement with no local
+         declarations; the block, recursion, and BNF-as-definition are all
+         1960. Backus's notation predates the report (1959, applied to ALGOL
+         58), but ALGOL 58's own report described syntax in prose. Definition
+         by committee before any compiler is genuinely 58's and inherited.
+       - The later bare "Fortran" ("scientific and industrial computing ran on
+         Fortran for decades") is correct: that sentence is about the whole
+         line.
+
+     BRITTEN & BOOTH is the one attribution resting on the artifact's title
+     page plus secondary sources rather than a full read — the IAS repository
+     copy did not download. Hence "among the earliest documented" in the body
+     rather than a
+     "first assembly language" superlative. In Further reading the hedge is
+     carried by attribution alone ("It is frequently called the first assembly
+     language"). Both must survive together: if the body ever asserts the
+     superlative outright, "frequently called" is no longer enough on its own.
+
+     THE C EXAMPLE. "Nothing about C changed" is false — C89/99/11/23 all
+     changed it; the claim is "not much about C itself has changed". A flat
+     "was a high-level language" is contradicted by its own authors: the 1978
+     first edition (verified from archive.org
+     "the-c-programming-language-kernighan- ritchie") has, in the Preface, "C
+     is not a ``very high level'' language, nor a ``big'' one", and in the
+     Introduction, "C is a relatively ``low level'' language. This
+     characterization is not pejorative; it simply means that C deals with the
+     same sort of objects that most computers do, namely characters, numbers,
+     and addresses." Counter-evidence checked before keeping the sentence:
+     neither remark denies membership in the class — "not a VERY high level
+     language" presupposes it, and the "low level" sentence is about
+     C's data model. Ritchie's HOPL II history frames the Unix motivation as
+     wanting "a higher-level language" than PDP-7 assembler, and the BSTJ Unix
+     paper records the system "was rewritten in C" in summer 1973; in 1970s
+     usage
+     "high-level" largely meant "not assembly". No source dated 1972 was found
+     calling C high-level in so many words. Hence "classed among the high-level
+     languages", and the point is the shift from a RELATIVE placement to an
+     ABSOLUTE one. K&R is cited by title and year with no link on purpose: the
+     only full text online is a user upload of a copyrighted book. The date
+     links to Ritchie's HOPL II paper instead (10.1145/154766.155580, the
+     proceedings record; 10.1145/155360.155580 is the same paper in SIGPLAN
+     Notices).
+
+     THE MACHINE END IS DESCRIBED, NOT NAMED. The paragraph on the lower end of
+     the measurement lists pipelining, reordering, register renaming, branch
+     prediction and speculation, and one core observing another's writes in an
+     order the program never wrote. That last is a weak memory model and the
+     prose deliberately does not say so — see the scope rule in CLAUDE.md.
+     Revisit only if the book grows real concurrency coverage.
+-->
+<p>A program today is written in a high-level language and reaches the processor through a stack of
+abstractions: libraries, a compiler or an interpreter, an instruction set, and a microarchitecture
+underneath that. Every one of those layers was put there by somebody, for a reason, and often over
+somebody else’s objection.</p>
+<p>These abstractions have not always existed. The earliest stored-program machines were programmed by
+putting bits into the store directly. On the
+<a href="https://curation.cs.manchester.ac.uk/computer50/www.computer50.org/mark1/new.baby.html">Manchester Baby</a>,
+in June 1948, that meant stepping through the store word by word and setting each bit to 0 or 1 on a
+device of 32 buttons and switches: the first program to run there was seventeen instructions long
+and written one bit at a time.</p>
+<p>Those bits formed a language. They were broken up into words, each corresponding to a single
+instruction, which the machine read and executed one by one. Every word had a fixed shape, each part
+of that shape meant something, and the machine combined those meanings by fixed rules — a vocabulary
+and a grammar.</p>
+<p>What makes this language of bits <em>low</em>-level is that its vocabulary is the machine’s own. The only thing a word
+can say is that the hardware should carry out one of its operations, and a program is a sequence of
+such words — so there is no shortage of computations you can express in it. What has nowhere to go is
+everything you understand about the program besides the operations themselves. That these twelve
+words are a routine for computing a square root; that location 90 holds a running total; that this
+jump is the one closing a loop; that the words further down are data rather than instructions — none
+of it is recorded in the store, because the notation has nothing to record it with. It lived in
+pencil annotations on the paper beside the machine, and in the programmer’s memory. The rest of this
+chapter explores how languages evolved to move more of that intent into the program itself.</p>
+<p>Consider one of the earliest machines to make such a move. The
+<a href="https://www.cl.cam.ac.uk/relics/">EDSAC</a> ran at Cambridge from May 1949. The EDSAC took about
+1.5 milliseconds to execute an order (approximately 650 orders a second). On the first morning the
+EDSAC was running, it took two minutes and thirty-five seconds to compute and print a table of the
+first 100 perfect squares (0 to 9801).</p>
+<figure>
+  <img src="../images/edsac-wilkes-renwick.jpg" alt="A black-and-white photograph of two men dwarfed by the EDSAC, which fills the room as
+            open racks of vacuum tubes standing floor to ceiling in five bays. One man wears a white
+            lab coat and faces the camera; the other, in a dark jacket, stands with his back to us
+            looking at a rack. Wiring runs overhead across the ceiling, industrial lamps hang above,
+            and a bench carrying three circular meters sits at the left edge.">
+  <figcaption>
+    Maurice Wilkes and Bill Renwick with the completed EDSAC. Renwick, the project's chief engineer,
+    kept the operating log quoted at the end of this chapter.
+    <span class="credit">
+      “EDSAC I, W. Renwick, M.V. Wilkes.” Copyright Computer Laboratory, University of
+      Cambridge;
+      <a href="https://commons.wikimedia.org/wiki/File:EDSAC_(12).jpg">via Wikimedia Commons</a>,
+      licensed under <a href="https://creativecommons.org/licenses/by/2.0/">CC BY 2.0</a>.
+    </span>
+  </figcaption>
+</figure>
+<p>The EDSAC’s store held words consisting of 17 bits. An instruction — an <strong>order</strong>, in the vocabulary of the
+time — occupied exactly one such word, divided into four fields:</p>
+<pre><code class="language-text">      5 bits      1        10 bits       1
+   ┌───────────┬───────┬──────────────┬────────┐
+   │  function │ spare │   address    │ length │
+   └───────────┴───────┴──────────────┴────────┘
+</code></pre>
+<p>Here is an example of one such order as a sequence of 17 bits:</p>
+<pre><code class="language-text">   1 1 1 0 0    0    0 0 0 1 0 1 1 0 1 0    0
+   ─────────    ─    ───────────────────    ─
+    function  spare         address       length
+</code></pre>
+<p>Function <code>11100</code>, address <code>0001011010</code> — 90 in decimal — and a length bit of <code>0</code>. The order instructs
+the machine to add the number held in location 90 to the accumulator. While this is how orders are
+represented and understood by the machine, it is not how one wrote programs for EDSAC. A programmer
+would write a sequence of characters representing the orders to be executed onto a paper tape that
+EDSAC read into its store and then ran. Below is an example program that represents a small routine
+that divides by repeated subtraction, leaving the remainder in location 92. The left-hand column
+depicts where the order is stored, the middle column is the sequence of characters that encode the
+order, and the right column describes what the order does.</p>
+<pre><code class="language-text"> store     order      description
+   56      A 90 F     add the number in location 90 into the accumulator
+   57      S 91 F     subtract the number in location 91 from the accumulator
+   58      E 57 F     if the accumulator is positive, continue at location 57
+   59      T 92 F     store the accumulator into location 92 and clear it
+</code></pre>
+<p>While the above structured representation is helpful to understanding the procedure, the actual
+program written to the paper tape didn’t contain the store location of instructions, the description
+or any white space. The tape would simply read <code>A90FS91FE57FT92F</code> and then relied on being loaded
+into the store from location 56 onward.</p>
+<p>The description in that third column, and everything else a reader would need, sat outside the tape
+entirely. What a routine was <em>for</em> lived on its <strong>manuscript</strong> — a separate sheet, written out by
+hand, setting out the same orders with commentary beside them. Even the program’s name was kept
+outside the program: the practice was to write it on the tape in pencil.</p>
+<p>The gap between the bits in the store and the characters on the tape is smaller than it appears. A
+paper tape records characters as five-bit teleprinter codes, and an order’s function field is five
+bits wide — so the order code was numbered to make the two coincide. <code>11100</code> is at once the function
+code for <em>add</em> and the teleprinter code for the letter <strong>A</strong>; <code>01100</code> is both <em>subtract</em> and the
+letter <strong>S</strong>. The letter punched on the tape <em>was</em> the function field, already in binary, with
+nothing to convert. As Martin Campbell-Kelly writes in his
+<a href="https://www.dcs.warwick.ac.uk/~edsac/Software/EdsacTG.pdf"><em>Tutorial Guide to the EDSAC Simulator</em></a>,
+this “simplified the translation of the symbolic program considerably.”
+It is an early instance of hardware being shaped around the
+convenience of programming: the order code was numbered to suit the notation a person would write on
+the tape.</p>
+<p>The addresses got no such help, and that is where the difficulty lived. <code>90</code>, <code>91</code>, <code>92</code>, and <code>57</code>
+are absolute store locations, fixed at the moment the routine was written. Suppose you now need one
+more order between the ones at 57 and 58. Everything below the insertion shifts down a word: the two
+remaining orders move to 59 and 60, and the three numbers this routine works on, held after the
+program, move to 91, 92, and 93. So <code>A 90 F</code>, <code>S 91 F</code>, and <code>T 92 F</code> must each have their address
+increased by one, by hand, in the listing. The jump <code>E 57 F</code> points backward, to a location before
+the insertion, and must be left exactly as it is.</p>
+<p>Note which orders those were. The branch is the one you would think to check, and it is the one that
+turns out to be fine; the <em>arithmetic</em> orders are what broke, because the data moved even though
+nothing about the arithmetic changed. That is the whole difficulty in one observation, and it is the
+documented reason the machine’s loading program was
+rewritten within months of its first run. In Campbell-Kelly’s account, addresses
+“had to be coded in absolute form: this meant,
+for example, that if an extra instruction had to be inserted in a program then the addresses in many
+of the branch instructions would need to be altered. This made program debugging very tedious.”</p>
+<p>And the store itself records none of the distinctions you are relying on. An order is a 17-bit word;
+so is a number. Which words in the store are instructions is settled by which of them the machine is
+told to execute, and nothing marks a word one way or the other — which was not merely a theoretical
+point, because the EDSAC had no index registers. To walk along an array in a loop, a program had to
+reach into its own orders and increment the address field, treating an instruction as arithmetic
+data because that was the only way to do it.</p>
+<p>From here on, each development moves some piece of bookkeeping off the programmer and into the
+machine, the program, or the notation itself: where an order sits in the store, which routine
+performs a standard task, which instructions compute an expression, which declaration a name refers
+to. Each was also resisted by the programmers who had been doing that bookkeeping by hand, for
+reasons that were generally sound at the time.</p>
+<h2 id="names-for-places"><a class="header" href="#names-for-places">Names for places</a></h2>
+<p>The EDSAC’s order code had already made the <em>operation</em> symbolic. The next step was to do the same
+for the <em>address</em>: let a program work out where things ended up, so that a person does not have to.</p>
+<p>The machine’s earliest loading program, the <strong>initial orders</strong> of spring 1949, read the tape and
+placed orders in the store, converting decimal addresses to binary. It lasted about three months
+before its limitations — the absolute addresses above, and the difficulty of keeping a library of
+subroutines when nothing could be moved — became intolerable. Wilkes handed the problem to David
+Wheeler, then a research student, with the constraint that the replacement fit in 42 orders.
+Wheeler’s Initial Orders 2, in service by September 1949, is what Campbell-Kelly calls “the
+forerunner of the modern assembler,” and was celebrated at the time as “the leading example of
+programming virtuosity.”</p>
+<p>Initial Orders 2 introduced <strong>named locations</strong>. Fifteen words of store, locations 41 to 55, are each
+named by a letter, and every order on the tape ends with one of those letters. As an order is loaded,
+the value held in the named location is added to it, and the sum is what goes into the store. This is
+why programs are loaded from location 56 onward: the fifteen names sit immediately below.</p>
+<p>Three of the names have a fixed convention. <code>F</code> names a location holding the constant value 0, so an
+order ending in <code>F</code> is stored exactly as written. <code>D</code> names a location holding the constant value 1,
+so an order ending in <code>D</code> is stored with its length bit set, which denotes its operand as long.
+<code>θ</code> names a location holding the origin of the routine currently being loaded, set by a directive at
+the head of each routine. When used, <code>θ</code> makes the address bits of an order relative to the routine’s
+start rather than absolute.</p>
+<pre><code class="language-text">  the tape says          loaded at 56          loaded at 200
+     A 5 θ          →       A 61          or       A 205
+</code></pre>
+<p>This allows one to write a program and have it be correct no matter which location the program is
+written to. This is <strong>relocation</strong>, and it is what makes writing a subroutine library possible: a
+routine can be written once, by someone with no idea which program will use it or what else will be
+in the store, and can be stored in any available region of the store.</p>
+<p>In addition to the three above names, there are twelve names that by convention can be set by the
+programmer before a subroutine is written to the store and used to denote a region of store
+locations. For example, a programmer might use the name <code>M</code> to hold the location 90 (where they want
+to store their program’s data) and then use <code>M</code> within their program to access data elements without
+worrying where exactly that region of data lives within the store. Using these named locations, we
+can rewrite the division routine from earlier as follows:</p>
+<pre><code class="language-text"> order       description
+ A 0 M       add the number at M+0 into the accumulator
+ S 1 M       subtract the number at M+1 from the accumulator
+ E 1 θ       if the accumulator is positive, continue at θ+1
+ T 2 M       store the accumulator at M+2 and clear it
+</code></pre>
+<p>No absolute location appears anywhere in it. The branch says <em>back to the second order of this
+routine</em> rather than <em>back to 57</em>; the operands say <em>the first three words of my data</em> rather than
+<em>90, 91, and 92</em>. The routine can now be loaded anywhere. Its data can be moved by changing the one
+value held for <code>M</code>, and the arithmetic orders that broke in the earlier version — the ones that broke
+because the data had moved rather than because the arithmetic had changed — need no editing at all.</p>
+<p>Branches within a routine are not covered. Insert an order ahead of the target and <code>E 1 θ</code> must still
+become <code>E 2 θ</code> by hand: the position is relative to the routine, but it is still a position. Code
+letters removed the surprising half of the problem and left the half a programmer would think to
+check. Removing the rest takes names for the positions themselves — labels, as every assembler since
+has had — which the EDSAC never acquired.</p>
+<p>The same idea was arriving elsewhere. Kathleen Britten and Andrew Booth’s 1947 report
+<a href="https://albert.ias.edu/handle/20.500.12111/7941"><em>Coding for A.R.C.</em></a>, written for the relay
+machine they had built at Birkbeck College, is among the earliest documented descriptions of a
+symbolic notation for a machine’s orders together with the program that translated it. Wilkes,
+Wheeler, and Gill’s 1951 account of the Cambridge system is both the first programming textbook and
+the first published description of a library of reusable subroutines.</p>
+<p>What this step leaves alone is as important as what it changes. One order on the tape is still one
+order in the store. The program says, in sequence, what the machine is to do, and a programmer
+reading it can still predict every instruction that will execute. That correspondence is why the
+objections to this step were mild, and why the objections to the next one were not.</p>
+<h2 id="automatic-programming-and-the-first-serious-objection"><a class="header" href="#automatic-programming-and-the-first-serious-objection">Automatic programming, and the first serious objection</a></h2>
+<p>The abstraction so far has been about <em>where</em>: a code letter stands for a location and the loader
+works out the number, though a programmer still writes every order that runs. The next step abstracts
+<em>what</em>. If a loading program can place a subroutine and fix up its addresses, it can also be asked
+for one by name — write <em>take a square root</em>, and the routine computing it is supplied and fitted in.
+From here a program is assembled out of routines, and which orders carry them out is settled by the
+program doing the loading. In 1952
+<a href="https://cs.yale.edu/homes/tap/Files/hopper-story.html">Grace Hopper</a> described a system doing
+exactly that — the A-0, running on the UNIVAC — in a paper called
+<a href="https://doi.org/10.1145/609784.609818">“The Education of a Computer”</a>. The argument she makes there
+is about where the labour goes:</p>
+<blockquote>
+<p>This situation remains static until the novelty of inventing programs wears off and degenerates
+into the dull labor of writing and checking programs. This duty now looms as an imposition on the
+human brain. Also, with the computer paid for, the cost of programming and the time consumed,
+comes to the notice of vice-presidents and project directors.</p>
+</blockquote>
+<p>Her conclusion is that the programmer, handed a catalogue of subroutines, “may return to being a
+mathematician” and “does not even need to know the particular instruction code used by the
+computer.” The machine assembles the program; the person states the problem.</p>
+<p>The objection to this was immediate, widespread, and for the time correct. Writing about the same
+period, <a href="https://doi.org/10.1145/960118.808380">John Backus</a> is blunt about how the systems actually
+performed: “All of the early ‘automatic programming’
+systems were costly to use, since they slowed the machine down by a factor of five or ten.” A factor
+of five is not a rounding error on a machine whose time is billed by the hour. And the people
+objecting were not being territorial. Backus’s own summary claims that these positions were
+justified:</p>
+<blockquote>
+<p>Before 1954 almost all programming was done in machine language or assembly language. Programmers
+rightly regarded their work as a complex, creative art that required human inventiveness to produce
+an efficient program.</p>
+</blockquote>
+<p>From that viewpoint, it was efficiency in particular that looked impossible to automate:</p>
+<blockquote>
+<p>Experience with slow “automatic programming” systems, plus their own experience with the problems
+of organizing loops and address modification, had convinced programmers that efficient programming
+was something that could not be automated.</p>
+</blockquote>
+<p>Both halves of the debate were grounded in daily experience. The “address modification” mentioned is
+the problem from earlier in this chapter — a loop over an array rewriting its own orders — and
+Backus lists the lack of index registers first among the difficulties the computers of that era
+created. The objection came from people who had been doing that work by hand for years.</p>
+<p>So there were two true statements in circulation. Automatic programming produced programs several
+times slower than a competent person would write. And, as Backus notes elsewhere in the same paper,
+the cost of the programmers at a computing centre was “usually at least as great as the cost of the
+computer itself,” with programming and debugging accounting for as much as three quarters of the
+cost of operating one. Both facts are correct. The disagreement was over which cost dominated, which
+is an empirical question about the state of the world. As machines got cheaper, programs got larger,
+and translators got better, the answer moved towards supporting the abstraction Hopper argued for.</p>
+<h2 id="expressions"><a class="header" href="#expressions">Expressions</a></h2>
+<p><a href="https://archive.computerhistory.org/resources/text/Fortran/102679231.05.01.acc.pdf">Fortran</a> began
+at IBM in 1954, and its name is a contraction of “FORmula TRANslating System.” Backus had proposed
+the project in a letter to his manager in late 1953, giving the cost of programmers as one of his
+prime motivations. What it let a program state was a formula:</p>
+<pre><code class="language-text">A + B * C
+</code></pre>
+<p>In the EDSAC orders earlier in this chapter, the sequence of orders <em>is</em> the order of operations:
+the programmer decides that the multiplication happens before the addition, finds a location to keep
+the product in until the addition needs it, and writes the orders that carry that out. The line
+above sequences nothing. It records which operations combine which values, and the translator
+derives a sequence from it. For an array element such as <code>A(I,J)</code> it also generates the
+arithmetic that turns two subscripts into the single address an instruction can name. Each of those
+had been done by hand, in a notebook, and redone after every edit.</p>
+<p>The Fortran team understood the objections they were up against, and organized the entire project
+around answering them rather than around the language. Backus,
+<a href="https://doi.org/10.1145/960118.808380">looking back in 1978</a>:</p>
+<blockquote>
+<p>It was our belief that if FORTRAN, during its first months, were to translate any reasonable
+“scientific” source program into an object program only half as fast as its hand coded counterpart,
+then acceptance of our system would be in serious danger. This belief caused us to regard the
+design of the translator as the real challenge, not the simple task of designing the language.</p>
+</blockquote>
+<p>While the above quote noted that half speed was the point of expected failure, the target for
+acceptance was much higher: Backus writes that a system of this kind would be widely used only if it
+could be shown to produce programs “almost as efficient as hand coded ones” and to do so “on
+virtually every job.” Fortran shipped in 1957 with an optimizing compiler because that target was
+far beyond anything an automatic system had reached; the earlier ones ran five to ten times slower
+than hand coding.</p>
+<p>The earlier systems’ slowdown had gone mostly into floating-point subroutines, which let those
+systems get away with crude housekeeping: simulated indexing and loop control cost far less time
+than the floating-point arithmetic they surrounded. The IBM 704 incorporated hardware instructions
+for floating-point operations and indexing, speeding the arithmetic up by a factor of ten and, in
+Backus’s phrase, “leaving inefficiencies nowhere to hide.” The largest component of the old slowdown
+was gone, and the bookkeeping left over — loops, tests, subscript arithmetic — was now a visible
+share of the program’s running time.</p>
+<p>Generating good code for the 704 was the hard problem, and designing the language looked like the
+simple part in 1954. The rest of this book is a record of how much was hiding in language design —
+scope, binding, types, evaluation order, and what a function even is.
+Backus, writing in 1978, still held that the priority had been the right one: had they failed to
+produce efficient programs, “the widespread use of languages like FORTRAN would have been seriously
+delayed.” Later languages could afford to sit further from the instruction set, and to give up more
+against hand-optimized code, because a translator had already been shown to close that gap.</p>
+<p>Fortran I did what it set out to do, and it did it for one machine: the compiler turned formulas
+into IBM 704 instructions. However, the formulas that programmers wrote (e.g., <code>A + B * C</code>) were
+just arithmetic expressions; which instructions computed them was left to the translator. This is
+what later made it possible to run the same program on a different machine, and it is what this
+book relies on when it asks what a construct <em>means</em> separately from how it runs.</p>
+<h2 id="structure"><a class="header" href="#structure">Structure</a></h2>
+<p>Algol 60 arrives at the start of the next decade. The abstractions so far had mechanized the
+bookkeeping that programmers were already doing. Algol 60 introduced ideas about programs that had
+no counterpart in machine code, in assembly, or in Fortran I. Hoare, in
+“<a href="http://i.stanford.edu/TR/CS-TR-73-403.html">Hints on Programming Language Design</a>” thirteen years
+after the <a href="https://doi.org/10.1145/367236.367262">ALGOL 60 report</a> and with no particular reason
+for flattery, wrote:</p>
+<blockquote>
+<p>The more I ponder the principles of language design, and the techniques which put them into
+practice, the more is my amazement and admiration of ALGOL 60. Here is a language so far ahead of
+its time, that it was not only an improvement on its predecessors, but also on nearly all its
+successors.</p>
+</blockquote>
+<p>Algol’s practical reach was narrower than Fortran’s — scientific and industrial computing ran on
+Fortran for decades — but the report’s influence on how languages are described and designed is
+hard to overstate.</p>
+<p>Algol 60 introduced <strong>block structure</strong>: a program has nested regions, and a name declared inside a
+region means something <em>there</em> and not outside it. On the EDSAC, location 90 was location 90 for the
+whole run; a code letter held one value at a time, for whoever was loading. There was no notion of a
+name having a region of validity, because there was nothing for such a region to be made of. Block
+structure made “where does this name refer to?” a question with a principled answer, determined by
+the program’s own shape. Part III of this book is spent on that answer and on what it takes to
+implement it.</p>
+<p>The Algol 60 report specified the language’s syntax in a formal notation — what is now called
+Backus–Naur Form (BNF) — rather than in prose and examples alone.
+<a href="syntax-semantics.html">Syntax and semantics</a> picks this up directly; for now the relevant point is
+that it became possible to ask whether a program belonged to the language, and the answer did not
+depend on any particular compiler. Algol 60 was defined by an international committee, in a report,
+before there was a compiler for it. That inverted the previous arrangement, under which a language
+was whatever the translator happened to accept and the manual described that translator’s
+behaviour. Once the definition is the document, several implementations can exist and be compared
+against it, and the question “is this a compiler bug or a program bug?” becomes answerable.</p>
+<h2 id="what-does-it-mean-to-be-high-level"><a class="header" href="#what-does-it-mean-to-be-high-level">What does it mean to be “high-level”?</a></h2>
+<p>The label “high-level” has moved at every step in the history this chapter describes and has not
+stopped since. Assembly was the automatic programming of 1950 and became the baseline against which
+Fortran was accused of inefficiency. C was classed among the high-level languages when it
+<a href="https://doi.org/10.1145/154766.155580">took shape in 1972</a>, though Kernighan and Ritchie hedged
+even then: <em>The C Programming Language</em> (1978) calls it “a relatively ‘low level’ language.” Today
+the hedge is gone; C is simply a low-level language, and not much about C itself has changed.</p>
+<p>The reason is that “high-level” measures a distance from the machine, and both ends of that
+measurement move: the languages rise, and the machine itself becomes an abstraction. A modern
+processor’s instruction set is an interface over a microarchitecture that pipelines and reorders
+instructions, renames registers, predicts branches and speculates past them, and — on a
+multiprocessor — allows one core to observe another’s writes in an order the program never wrote.
+Even hand-written assembly no longer says what will physically happen, let alone in what order
+another core will see it happen. The bottom of the stack is a moving target too.</p>
+<p>Which suggests that “how high-level is this language?” is a weaker question than the two it usually
+stands in for:</p>
+<ul>
+<li><strong>What does this notation let me stop saying?</strong> Every step above answers this concretely:
+addresses, instruction selection, temporaries and evaluation order, the region in which a name is
+valid.</li>
+<li><strong>What does the language now decide on my behalf, and can I predict what it will decide?</strong></li>
+</ul>
+<p>The second question is where every objection in this chapter lived. “It will be five times slower”
+and “efficient programming cannot be automated” are both versions of <em>I can no longer predict what
+the machine will do</em>, which in 1954 was the same worry: what the translator decided was exactly
+which instructions ran. That concern never went away, and it should not: it has only changed
+granularity. Whether a line allocates, whether a loop will vectorize, when the collector will stop
+the program, what an optimizing compiler is permitted to assume, which language to write a kernel
+in — each is the same question asked about a taller stack. What changes is the answer, and the
+answer depends on facts about hardware, program size, and what people’s time is worth.</p>
+<h2 id="how-language-features-come-to-be"><a class="header" href="#how-language-features-come-to-be">How language features come to be</a></h2>
+<p>Every abstraction built in the rest of this book arrived by the route just described. Scope, static
+types, first-class functions, pattern matching, automatic memory management: each was once a
+proposal that someone had to argue for, against people who could point at a real cost and were not
+wrong to. By the time an idea reaches a textbook it looks as if it were inevitable, and that
+appearance hides both how the idea came about and what the alternatives to it were.</p>
+<p>When this book introduces a concept, it starts where the concept started: with the problem it
+solves, the objections raised against it, and the different answers other languages settled on, many
+of them still in use. <a href="../appendix/timeline.html">Appendix F</a> lays the same material out in date
+order, for readers who want the arc in one place.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Before there were languages</strong>: Williams and Kilburn’s letter
+“<a href="https://www.nature.com/articles/162487a0">Electronic Digital Computers</a>” (<em>Nature</em>, 25 September
+1948) runs a few hundred words and announces that a machine in Manchester had been running stored
+programs for some weeks. That machine is the Manchester Baby, which opens this chapter, and the
+letter is the first public notice that a program held in a machine’s own memory had actually run.
+For the machine in detail, including the input device and the surviving text of the first program,
+see Simon Lavington, <em>A History of Manchester Computers</em>, 2nd ed. (British Computer Society, 1998),
+and the University of Manchester’s
+<a href="https://curation.cs.manchester.ac.uk/computer50/www.computer50.org/mark1/new.baby.html">Computer 50</a>
+archive. Kathleen Britten and Andrew Booth’s
+<em><a href="https://albert.ias.edu/handle/20.500.12111/7941">Coding for A.R.C.</a></em> (1947) is an early written
+account of a symbolic notation for a machine’s orders and the program that translated it; Britten —
+later Kathleen Booth — wrote it as a research assistant at Birkbeck College. It is frequently called
+the first assembly language.</p>
+<p><strong>Programming the EDSAC</strong>: Cambridge’s <a href="https://www.cl.cam.ac.uk/relics/">EDSAC collection</a> holds
+the machine’s <a href="https://www.cl.cam.ac.uk/relics/orders.html">order code</a> and its
+<a href="https://www.cl.cam.ac.uk/relics/elog.html">operating log</a>, kept by chief engineer W. S. Renwick and
+transcribed by David Wheeler; the entry for 6 May 1949 reads in full: “Machine in operation for
+first time. Printed table of squares (0-99), time for programme 2 mins. 35 secs. Four tanks of
+battery 1 in operation.” Wilkes, Wheeler, and Gill’s <em><a href="https://archive.org/details/programsforelect00wilk">The Preparation of Programs for an
+Electronic Digital Computer</a></em> (1951) is the
+first programming textbook and the first published description of a subroutine library: its second
+half catalogues the EDSAC library subroutines by category, Chapter 7 works through five complete
+programs, and Chapter 8, “Automatic Programming,” covers assembly, floating addresses, and formula
+recognition — in 1951. Martin Campbell-Kelly’s <em><a href="https://www.dcs.warwick.ac.uk/~edsac/Software/EdsacTG.pdf">Tutorial Guide to the EDSAC
+Simulator</a></em> (EDSAC Replica Project, The
+National Museum of Computing) is the source of the order code and instruction format described
+above, and comes with a simulator that runs the historical programs and any you write yourself.</p>
+<p><strong>Automatic programming and its critics</strong>: Grace Hopper’s
+“<a href="https://doi.org/10.1145/609784.609818">The Education of a Computer</a>” (1952) makes the case for
+automatic programming, argued from the economics of programmer time rather than from elegance.
+Backus’s “<a href="https://doi.org/10.1145/960118.808380">The History of Fortran I, II, and III</a>” (1978,
+delivered at the first of the HOPL conferences below) records what the objectors said and why they
+were not being foolish; its opening sections on attitudes toward “automatic programming” and on the
+economics of programming in the early 1950s are the best short account of why this was a real
+dispute. For the system as its authors presented it at the time, before it had a history, see
+“<a href="https://doi.org/10.1145/1455567.1455599">The FORTRAN Automatic Coding System</a>” (1957).</p>
+<p><strong>Defining a language</strong>: Naur’s
+“<a href="https://doi.org/10.1145/367236.367262">Report on the Algorithmic Language ALGOL 60</a>” (1960) is
+short and still readable — skim §1 to see a language’s syntax being specified formally for the first
+time. Hoare’s “<a href="http://i.stanford.edu/TR/CS-TR-73-403.html">Hints on Programming Language Design</a>”
+(1973) is design advice from the era when designing the language had stopped looking like the simple
+part, and the annotated reading list in its appendix is a short opinionated bibliography of the
+field as it stood then.</p>
+<p><strong>Designers on their own work, and surveys</strong>: Dennis Ritchie’s
+“<a href="https://doi.org/10.1145/154766.155580">The Development of the C Language</a>” (1993) traces C to its
+BCPL and B lineage and to the PDP-11, a designer describing decisions rather than defending them. It
+appeared at the second of the History of Programming Languages conferences, whose proceedings —
+<a href="https://doi.org/10.1145/800025">HOPL I</a> (1978), <a href="https://doi.org/10.1145/154766">HOPL II</a> (1993),
+<a href="https://doi.org/10.1145/1238844">HOPL III</a> (2007), and HOPL IV (2021) — are the standard place to
+find designers writing the history of their own languages, with the partiality that implies and the
+detail nobody else could supply. For a survey of the whole field rather than a single language, Jean
+Sammet’s <em><a href="https://archive.org/details/programminglangu0000unse_t2r1">Programming Languages: History and
+Fundamentals</a></em> (Prentice-Hall, 1969)
+covers more than a hundred languages while most of them were still in use, and records what the
+field thought it was doing before anyone knew which lines would matter. Donald Knuth and Luis Trabb
+Pardo’s “The Early Development of Programming Languages” — <em>Encyclopedia of Computer Science and
+Technology</em>, vol. 7 (1977): 419–493, reprinted in Knuth’s <em>Selected Papers on Computer Languages</em>
+(CSLI, 2003) — is a systematic survey of the pre-Fortran systems this chapter compresses into a
+paragraph, including several that were ahead of anything described here but left no descendants.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>The EDSAC's function codes were symbolic from the start; its addresses were not. Why did that asymmetry exist, and what did fixing it require?</summary>
+<p>The function code was free. Numbering the order code so that each function’s bit pattern is the
+teleprinter code of its letter costs nothing at all — it is a choice about which numbers to assign,
+made once, and after it the letter on the tape <em>is</em> the function field. An address cannot be handled
+that way, because its correct value is not known when the order is written: it depends on where the
+routine ends up in the store and on how many orders precede it, both of which change on every edit.</p>
+<p>Fixing it therefore required something the function code did not: a program that computes at load
+time. Initial Orders 2 added a value to each order as it was placed, so the address could be written
+relative to an origin fixed later. This is the general shape of the thing — an abstraction is usually
+a way of writing down information that was previously only in someone’s head, and the ones that are
+hard are the ones where the information is not available until later.</p>
+</details>
+<details>
+<summary>Programmers in 1954 objected that automatic programming produced code five to ten times slower than hand-coding. Was the objection correct?</summary>
+<p>Yes, as a description of the systems then available — Backus, who was on the other side of the
+argument, says so plainly. The objection stopped holding for reasons largely outside the argument:
+compilers improved, machines got cheaper while programmer salaries did not, and programs grew past
+the size at which hand-optimizing all of one is possible. There is also a wrinkle in the other
+direction: the IBM 704’s hardware floating point made translated code’s inefficiency <em>more</em> visible
+rather than less, by removing the slow subroutines it had been hiding behind. The lesson is that an
+engineering objection is usually a claim about current conditions, and stays true only as long as
+the conditions do.</p>
+</details>
+<details>
+<summary>Assembly and Fortran both transfer bookkeeping to the machine. What does Fortran give up that assembly keeps?</summary>
+<p>Assembly preserves a one-to-one correspondence: one line, one instruction, and a reader can predict
+exactly what executes. Fortran breaks it. The translator chooses which instructions to emit, where
+to put temporaries, and how to compute a subscripted address, so the same source can produce
+different instruction sequences on different compilers or machines — and the program no longer
+describes any particular machine’s behaviour. That break is what made the efficiency objection
+serious, and it is also the property that later made the same program runnable elsewhere. The two
+are the same fact seen from opposite sides.</p>
+</details>
+<details>
+<summary>ALGOL 60 was specified in a committee report before any compiler for it existed. What does that arrangement make possible, and how can it fail?</summary>
+<p>It makes the language independent of any one implementation: several compilers can exist and be
+judged against a common definition, disagreements become answerable by citing a document, and
+“compiler bug” becomes a meaningful accusation. It also makes a language possible to <em>study</em> — the
+report can be read, criticized, and used as a model, which is most of why ALGOL’s influence
+outran its use.</p>
+<p>The failure mode is specifying something nobody knows how to implement well, or that means less than
+it appears to. ALGOL 60’s call-by-name parameters are the standard example: cleanly defined in the
+report, surprising in behaviour, and awkward to compile (<a href="../functions/calls.html">Evaluating function calls</a>
+explores this in detail). A committee writing without an implementation has nothing forcing it to discover the
+cost of an idea.</p>
+</details>
+<details>
+<summary>"High-level" has been applied to assembly, to Fortran, and to C, and withdrawn from all three. What question is worth asking instead?</summary>
+<p>Two, both concrete. <em>What does this notation let me stop saying?</em> — addresses, instruction selection,
+evaluation order, the extent of a name’s meaning; the answer is a list, and lists can be compared
+across languages. And <em>what does the language now decide for me, and can I predict what it decides?</em>
+— which is where the real disagreements are, historically and currently. Every objection in this
+chapter is a version of the second question, and so are modern arguments about garbage collection
+pauses, undefined behaviour, and what an optimizer may assume. “How high-level is it?” only measures
+distance from a baseline that keeps moving, in both directions.</p>
+</details>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../foundations/why-interpreter.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../foundations/paradigms.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../foundations/why-interpreter.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../foundations/paradigms.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-1c64dc54.js"></script>
+        <script src="../book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

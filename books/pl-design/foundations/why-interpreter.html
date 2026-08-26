@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>About This Book - A Practical Introduction to Programming Language Design</title>
+        <title>Why build an interpreter? - A Practical Introduction to Programming Language Design</title>
 
 
         <!-- Custom HTML head -->
@@ -12,37 +12,37 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon-de23e50b.svg">
-        <link rel="shortcut icon" href="favicon-8114d1fc.png">
-        <link rel="stylesheet" href="css/variables-8adf115d.css">
-        <link rel="stylesheet" href="css/general-e96d0476.css">
-        <link rel="stylesheet" href="css/chrome-d279d366.css">
-        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+        <link rel="icon" href="../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
-        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
-        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="css/book-271586e2.css">
-        <link rel="stylesheet" href="css/timeline-b697568e.css">
-        <link rel="stylesheet" href="css/highlight-fixes-88adc288.css">
-        <link rel="stylesheet" href="css/under-construction-17603da8.css">
+        <link rel="stylesheet" href="../css/book-271586e2.css">
+        <link rel="stylesheet" href="../css/timeline-b697568e.css">
+        <link rel="stylesheet" href="../css/highlight-fixes-88adc288.css">
+        <link rel="stylesheet" href="../css/under-construction-17603da8.css">
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-223022c2.js";
+            window.path_to_searchindex_js = "../searchindex-223022c2.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-83408d21.js"></script>
+        <script src="../toc-83408d21.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -109,7 +109,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
             <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -144,7 +144,7 @@
                     <h1 class="menu-title">A Practical Introduction to Programming Language Design</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
                             <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
                         </a>
 
@@ -179,120 +179,236 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="about-this-book"><a class="header" href="#about-this-book">About This Book</a></h1>
-<p>This is an introduction to the <strong>concepts used to design programming languages</strong> — paradigms,
-scope, binding, types, evaluation — taught not by touring a handful of languages but by
-<strong>building one</strong>. Over the course of the book you implement an interpreter, in
-<a href="https://www.rust-lang.org/">Rust</a>, for a single language that grows from a calculator into a
-small multi-paradigm language named <strong>Bridger</strong>, with imperative, functional, and declarative
-features.</p>
-<p>It grew out of an undergraduate programming-languages course, but it is written to stand on its
-own. You do not need to be enrolled anywhere to use it: if you read the chapters and build the
-interpreter as you go, you will learn the same material and end up with the same working language.</p>
-<h2 id="why-an-interpreter"><a class="header" href="#why-an-interpreter">Why an interpreter?</a></h2>
-<p>There are two ways to give a programming language a precise meaning, and they lead to two
-different kinds of book.</p>
-<ul>
-<li>A <strong>compiler</strong> foregrounds <em>translation</em>: it turns your program into another language (machine
-code, bytecode, a lower-level IR) and cares deeply about code generation, optimization, and the
-constraints of the target machine.</li>
-<li>An <strong>interpreter</strong> foregrounds <em>meaning</em>: it says directly what a program <em>is</em> and <em>does</em>. You
-write down a rule like <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">e</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span> (“expression <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">e</span></span></span></span> evaluates to value <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span>”), and the
-evaluator you build <strong>is</strong> that rule, made executable.</li>
-</ul>
-<p>This book takes the <strong>semantics lens</strong>. That single choice explains most of what follows —
-including why we hand you a parser instead of making you write one: parsing is a translation
-problem that belongs to the compiler’s world, and a course on it already exists in most
-curricula. Here we start from the abstract syntax tree and spend our time on what programs <em>mean</em>.
-Code generation, optimization, and register allocation are real and important; they are simply a
-different book, and we point you to good ones where the boundary comes up.</p>
-<h2 id="who-this-book-is-for"><a class="header" href="#who-this-book-is-for">Who this book is for</a></h2>
-<p>Anyone who wants to learn how programming languages work, with a practical flair. Whether you are
-reading it as the companion to a course or working through it on your own, this text is designed
-to be <strong>self-contained</strong>: the concepts, the specifications, and the build are all here, and the
-scaffolding you build on top of is publicly available. It assumes you can program in <em>some</em>
-language and are curious about what is going on underneath — not that you already know Rust, type
-theory, or logic programming.</p>
-<h2 id="how-the-book-is-organized"><a class="header" href="#how-the-book-is-organized">How the book is organized</a></h2>
-<p>The chapters follow the arc of the language as it grows, and each part from Part II onward closes
-with a <strong>project milestone</strong> (M1–M8). Treat the milestones as a <em>learning structure</em>: a checkpoint
-that says “build this much next, and here is how to know it works.” By the end you will have built:</p>
-<ul>
-<li>a tree-walking evaluator with clear runtime errors,</li>
-<li>lexical scope, and the closures that make it observable,</li>
-<li>first-class functions and closures,</li>
-<li>a <strong>static type checker</strong> that rules out whole classes of runtime errors before a program
-runs,</li>
-<li>a <strong>relational (Datalog-style) sublanguage</strong> you can query from ordinary code,</li>
-<li>algebraic data types with pattern matching, and</li>
-<li>objects built as structs with methods and traits.</li>
-</ul>
-<p><strong>Every chapter follows a similar narrative.</strong> Each chapter will broadly introduce the relevant
-programming-language concepts: what they are meant to capture, and the history of how they
-emerged and changed over time and across communities. It will then discuss how those
-concepts shape the design decisions underlying Bridger. Then the lens widens to the design space:
-how ML, Rust, Prolog, or Python answer the same questions, and the pros and cons of each design.
-Some of those questions Bridger answers by declining — negation in logic rules, full type
-inference, classical inheritance — and those forks get the same treatment, with pointers for
-reading further.</p>
-<h3 id="the-starter-repository"><a class="header" href="#the-starter-repository">The starter repository</a></h3>
-<p>Because the book is meant to be self-contained, the <strong>scaffolding you build on top of ships
-publicly</strong>: the <code>Value</code> type, the environment structure, error and source-span types, the AST, and
-the parser. You implement <em>semantics</em> — the evaluator, the type checker, unification — not the
-memory plumbing that would otherwise have you fighting the borrow checker instead of learning what
-a closure is. The repository link and setup live alongside this book.</p>
-<h2 id="how-to-read-this-book"><a class="header" href="#how-to-read-this-book">How to read this book</a></h2>
-<ul>
-<li>
-<p><strong>Code you implement</strong> is shown in Rust. Where a snippet is self-contained you can press the
-play button to run it.</p>
-<pre class="playground"><code class="language-rust">fn main() {
-    println!("Hello from the metalanguage.");
-}</code></pre>
-<p>You do <strong>not</strong> need to know Rust first. Each construct is introduced where the interpreter first
-needs it (<code>enum</code>/<code>match</code> at the AST, <code>Rc&lt;RefCell&gt;</code> at closures, <code>Result</code>/<code>Option</code> at error
-handling), as a short aside you can skip if you’re already familiar with Rust. For those looking
-for a slightly more in-depth introduction, <strong><a href="appendix/rust-reference.html">Appendix A</a></strong> is a
-self-contained tutorial with an M0 warm-up milestone.</p>
-</li>
-<li>
-<p><strong>Programs in <em>Bridger</em></strong> are shown in monospace, highlighted approximately (the real
-highlighter comes once the language stabilizes):</p>
-<pre><code class="language-ocaml">let rec fib n =
-  if n &lt; 2 then n else fib (n - 1) + fib (n - 2)
-in fib 10
+<h1 id="why-build-an-interpreter"><a class="header" href="#why-build-an-interpreter">Why Build an Interpreter?</a></h1>
+<!-- AUTHORING NOTE (not rendered)
+     lecture: Intro, syllabus & History I (intro portion).
+     DIVISION OF LABOUR: introduction.md § "Why an interpreter?" is about THIS
+     BOOK — which lens it takes, and why the parser is handed over. This chapter
+     is about INTERPRETERS: what one is, where it sits on the implementation
+     spectrum, and why building one is how you learn semantics. Do not restate
+     the intro here.
+     Orientation chapter, so the six-beat template applies loosely: there is no
+     Bridger design decision yet, and the "design space" beat is the
+     interpreter/compiler spectrum.
+     "Interpretation" is given its GENERAL sense (map syntax to a mathematical
+     object; concrete evaluation vs. abstract interpretation), not just the
+     implementation sense, because it makes the Part VI type checker a payoff of
+     this chapter: evaluator and checker are two interpretations of the same
+     syntax over different domains. Keep that framing when the type chapters are
+     authored.
+     TWO INDEPENDENT AXES, do not collapse them: speed comes from proximity to
+     the MACHINE; loss of legibility comes from distance from the SOURCE. C
+     compiled to Python is far from the source and no closer to the machine, so
+     it is slow AND illegible. That counterexample is deliberately kept out of
+     the prose as a digression too large for an orientation chapter — keep the
+     axes distinct without it.
+     V8 TIERS are deliberately not named in the prose ("one or more optimizing
+     compilers"): the tiers change (Ignition, Sparkplug, Maglev, TurboFan, and
+     counting) and naming them dates the chapter. The Further reading entry
+     carries the specifics, where a stale name is visibly a citation.
+     VERIFIED CITATIONS: Crossref confirmed McCarthy 1960 (CACM 3:4, 184-195),
+     Cousot & Cousot (POPL '77, 238-252), and Aycock (CSUR 35:2, 97-113); the
+     HotSpot and History of Lisp PDFs were read.
+       - "intended for reading, not for computing" is NOT in History of Lisp.
+         It is widely repeated with no verified source. The documented line is
+         that the notation was devised "with no thought that it would be used to
+         express LISP programs in practice".
+       - History of Lisp is a 12 Feb 1979 Stanford AI Lab draft with no
+         SIGPLAN/HOPL attribution; it was not written for that conference.
+       - www-formal.stanford.edu/jmc/history/lisp.html is a LaTeX2HTML stub with
+         no body text. Link jmc.stanford.edu/articles/lisp/lisp.pdf instead.
+-->
+<p>A program, before anything runs it, is text. A file of characters that means nothing to the machine
+and — strictly speaking — nothing at all until something decides what it means. The field of
+programming languages focuses on that gap: between a string somebody typed and a behaviour they
+intended. Broadly speaking, there are two extremes for how that gap is closed: interpretation
+and compilation. Interpretation directly evaluates the program as written; compilation rewrites it
+into a different language (e.g., assembly or machine code) and runs that instead.</p>
+<h2 id="the-shape-of-a-language-implementation"><a class="header" href="#the-shape-of-a-language-implementation">The shape of a language implementation</a></h2>
+<p>Nearly every language implementation, of every kind, begins the same way. The text is broken into
+tokens, and the tokens are assembled into a tree that reflects the program’s structure — an
+<strong>abstract syntax tree</strong>, or AST:</p>
+<pre><code class="language-text">  source text
+      │
+      │   lexing — characters into tokens
+      ▼
+    tokens
+      │
+      │   parsing — tokens into structure
+      ▼
+     AST   ◄─── this book starts here
+      │
+      ├────────────►  evaluate it directly           (interpretation)
+      │
+      └────────────►  translate it into another      (compilation)
+                      language, then run that
 </code></pre>
-</li>
-<li>
-<p><strong>Specifications</strong> are written as inference rules. For example, addition evaluates its operands
-and adds the results:</p>
+<p>Everything above the AST is a <em>translation</em> problem: recovering structure from text. It is a
+well-understood and genuinely interesting body of work, and it is where a compilers course begins.
+This book starts at the <a href="ast.html">AST</a> and works down from there — on what the program <em>means</em>, and
+how to make a machine carry that meaning out.</p>
+<h2 id="interpretation-and-compilation"><a class="header" href="#interpretation-and-compilation">Interpretation and compilation</a></h2>
+<p>A <strong>compiler</strong> turns your program into another program. The output might be machine code for a
+particular processor, bytecode for an abstract machine, or another high-level language entirely.
+The defining move is <em>translation</em>, and the compiler’s work is finished before your program ever
+runs. Its central concerns follow from that: which instruction sequences are efficient, how to
+allocate registers, which optimizations are safe.</p>
+<p>An <strong>interpreter</strong> does not translate. It walks the program and carries out what the program says,
+directly. Ask it to evaluate <code>1 + 2</code> and it evaluates <code>1</code>, evaluates <code>2</code>, and adds them. Its central
+concern is not what instructions to emit but what each construct <em>means</em>.</p>
+<p>That difference is why this book builds an interpreter. When you write the case that handles
+addition, you are not describing addition to a machine that will handle it later — you are writing
+down what addition <em>is</em>, in a form that runs. Specification and implementation become the same
+artifact. We will make this explicit in <a href="../eval/big-step.html">Program semantics</a>, where the rule</p>
 <p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.2519em;vertical-align:-0.8804em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Add</span></span><span class="mclose">)</span></span></span></span></span></p>
-<p>The <a href="appendix/notation.html">notation reference</a> collects the symbols and rule shapes we use.</p>
-</li>
+<p>and the code implementing it turn out to be the same statement written twice.</p>
+<p>It is worth being precise about what interpretation means, because it is broader than simply running
+a program. To <strong>interpret</strong> a piece of syntax is to map it to a mathematical object — its meaning.
+Which object depends on what you are interpreting it <em>as</em>. The expression <code>1 + 2</code> might mean the
+number 3. A function definition might mean an actual mathematical function, from arguments to
+results. A whole program might mean a map from inputs to outputs, or a set of possible behaviours.
+The evaluator you build in this book is the <strong>concrete</strong> case: the object is the value the
+expression produces when it runs.</p>
+<p>But the domain is a choice, and coarser choices are useful. Interpret <code>1 + 2</code> as <em>positive</em> rather
+than as <code>3</code>, and you have a program that reasons about signs without computing anything. Interpret
+it as <code>Int</code>, and you have a type checker. This is <strong>abstract interpretation</strong> — the same
+syntax-to-meaning mapping, aimed at a domain that deliberately forgets some detail so that questions
+can be answered <em>without running the program</em>. It is how a great deal of static analysis works, and
+it is exactly what the type checker in Part VI does: interpret every expression as a type rather
+than as a value, and reject the program if the types do not fit. The evaluator and
+the type checker are two interpretations of the same syntax, over different domains.</p>
+<p>This is not a modern observation. When John McCarthy
+<a href="http://www-formal.stanford.edu/jmc/recursive.pdf">published the definition of Lisp</a> in 1960, it
+included a function called <code>eval</code> — a Lisp program describing how to evaluate Lisp programs. He
+intended it as a <em>theoretical</em> device, written to show that Lisp was tidier than a universal Turing
+machine; by his own account the notation behind it was devised “with no thought that it would be
+used to express LISP programs in practice.” Then
+<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">S. R. Russell noticed</a> that <code>eval</code> could serve as
+an interpreter, hand-coded it, and Lisp had an interpreter nobody had set out to write. The
+definition <em>was</em> the implementation. This book leans on that same fact throughout.</p>
+<h2 id="a-spectrum-of-implementations"><a class="header" href="#a-spectrum-of-implementations">A spectrum of implementations</a></h2>
+<p>The two branches above are a useful simplification, and like most useful simplifications it is false
+at the edges. Real implementations mix strategies freely:</p>
+<ul>
+<li>A <strong>tree-walking interpreter</strong> evaluates the AST directly, node by node. The simplest design, the
+easiest to read, the slowest to run, and the subject of this book.</li>
+<li>A <strong>bytecode interpreter</strong> first compiles the AST into a compact instruction set for an abstract
+machine, then interprets <em>those</em> instructions. CPython works this way: your source is compiled to
+bytecode, and a virtual machine executes it.</li>
+<li>A <strong>just-in-time compiler</strong> begins by interpreting, watches which code runs hot, and compiles
+those parts to native code while the program is still running. The
+<a href="https://www.usenix.org/legacy/events/jvm01/full_papers/paleczny/paleczny.pdf">JVM</a> and JavaScript
+engines such as <a href="https://v8.dev/blog/launching-ignition-and-turbofan">V8</a> both do this, with an
+interpreter and one or more optimizing compilers cooperating at run time.</li>
+<li>An <strong>ahead-of-time compiler</strong> translates the whole program to native code before it runs and ships
+the result. This is what <code>gcc</code>, <code>clang</code>, and <code>rustc</code> do.</li>
 </ul>
-<h2 id="a-note-on-tools-and-ai-assistants"><a class="header" href="#a-note-on-tools-and-ai-assistants">A note on tools and AI assistants</a></h2>
-<p>Syntax is the part that varies. Every language spells the same idea differently, and the spelling
-changes with every release — which is exactly the kind of detail a coding assistant handles well.
-It handles semantics well too: ask one to explain closures or type inference and you will usually
-get a fluent and largely correct answer. The limit is not that these tools only know syntax.</p>
-<p>The limit is accountability. An assistant can make a design decision; it cannot be answerable for
-one. Whether a problem wants a relation or a fold, what a representation choice will cost three
-modules later, which trade-off a language made and whether it was the right one for your system —
-those are judgments you own, and owning them means understanding the concepts well enough to
-<em>evaluate</em> an answer rather than accept it.</p>
-<p>The test arrives when someone asks why a system is built the way it is. “The assistant did that”
-reports only that nobody decided; the engineer who can explain the reasoning understood the choice,
-whether or not an assistant helped reach it.</p>
-<p>That is what this book is for: the concepts, where they came from, and the pros and cons that make
-one design fit where another fights. It is what you need in order to design and assess systems —
-including the ones you build with an assistant’s help.</p>
+<p>So “is Java compiled or interpreted?” has no clean answer. <code>javac</code> compiles source to bytecode, a
+virtual machine interprets that bytecode, and a JIT compiler translates the frequently executed
+parts to machine code during execution — all three in one system. The honest description is that
+implementations sit somewhere on a spectrum from <em>decide everything before running</em> to <em>decide
+everything while running</em>, and the interesting ones occupy several points at once.</p>
+<p>The tree-walking end of that spectrum is where meaning is most visible, because nothing has been
+translated away yet. Moving along the spectrum gains speed by moving <em>toward the machine</em>: bytecode
+and native code run fast because they are closer to what the hardware already knows how to do. That
+translation discards the program’s original structure and intent: a loop becomes a jump, a function
+becomes an address, a type vanishes once it has been checked. Those high-level structures —
+and what they were meant to express — are precisely this book’s subject. So we work at the end of
+the spectrum where they are still intact.</p>
+<h2 id="what-you-will-build"><a class="header" href="#what-you-will-build">What you will build</a></h2>
+<p>Over the following parts you will build a tree-walking interpreter for <strong>Bridger</strong>, a language that
+starts out able to add two numbers and ends up with closures, a static type checker, algebraic data
+types, objects, and a relational sublanguage.</p>
+<p>The interpreter will be slow — meaningfully slower than any production implementation, because
+walking a tree re-examines the program’s structure at every step. It will also be legible: small
+enough to read straight through and hold in your head, with every language feature and programming
+language concept corresponding to a piece of code you can point at.</p>
+<p>Performance returns in <a href="../challenge/cost-semantics.html">Cost semantics</a>, where we measure programs
+by counting evaluation steps rather than seconds — a measure that says something about your
+<em>algorithm</em> that a stopwatch obscures.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Lisp, and the interpreter nobody set out to write</strong>: John McCarthy’s “<a href="http://www-formal.stanford.edu/jmc/recursive.pdf">Recursive Functions of
+Symbolic Expressions and Their Computation by Machine, Part
+I</a>” (1960) defines Lisp, <code>eval</code> included. His
+“<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">History of Lisp</a>”, a 1979 Stanford Artificial
+Intelligence Laboratory draft, is his own account of the period, including the moment itself: “S.R.
+Russell noticed that eval could serve as an interpreter for LISP, promptly hand coded it, and we now
+had a programming language with an interpreter.”</p>
+<p><strong>Abstract interpretation</strong>: Patrick Cousot and Radhia Cousot’s “<a href="https://doi.org/10.1145/512950.512973">Abstract Interpretation: A Unified
+Lattice Model for Static Analysis of Programs by Construction or Approximation of
+Fixpoints</a>” (1977) is the paper that made abstract
+interpretation a theory rather than a collection of tricks. It sets up the lattices, the abstraction
+and concretization maps, and the fixpoint construction that the sign and type examples above only
+sketch. The argument is carried almost entirely in the algebra, and it assumes you are comfortable
+with partial orders and least fixpoints. Xavier Rival and Kwangkeun Yi’s <em>Introduction to Static
+Analysis: An Abstract Interpretation Perspective</em> (MIT Press, 2020) covers the same ground at book
+length, starting from example analyses.</p>
+<p><strong>The compiling end of the spectrum</strong>: Aho, Lam, Sethi, and Ullman’s <em>Compilers: Principles,
+Techniques, and Tools</em>, 2nd ed. (2006) — the “Dragon Book” — works through the pipeline this book
+starts in the middle of: lexing, parsing, semantic analysis, intermediate representations,
+optimization, and code generation. John Aycock’s “<a href="https://doi.org/10.1145/857076.857077">A Brief History of
+Just-In-Time</a>” (2003) traces how interpretation and
+compilation stopped being alternatives and began cooperating inside a single system, from
+Smalltalk-80 onward. For the current shape of a production pipeline, V8’s own accounts of
+<a href="https://v8.dev/blog/launching-ignition-and-turbofan">Ignition and TurboFan</a> and of the later
+<a href="https://v8.dev/blog/sparkplug">Sparkplug</a> baseline compiler describe a JIT with several tiers.</p>
+<p><strong>Building one yourself</strong>: Robert Nystrom’s
+<em><a href="https://craftinginterpreters.com">Crafting Interpreters</a></em> (2021) builds the same language twice,
+once as a tree-walker and once as a bytecode virtual machine — the same program at two points on the
+spectrum described above.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>Is Java compiled or interpreted?</summary>
+<p>Both, and the question presumes a dichotomy that does not survive contact with real systems. Source
+is compiled ahead of time to bytecode, the bytecode is interpreted by a virtual machine, and a JIT
+compiler translates frequently executed portions to native code while the program runs. A useful
+follow-up: which of those three stages could you remove and still have a working Java? (The JIT —
+you would simply be slower.)</p>
+</details>
+<details>
+<summary>Why does handing you a parser follow from studying semantics rather than translation?</summary>
+<p>Parsing recovers structure from text — a translation problem, sitting entirely above the AST in the
+pipeline. Nothing about it determines what a program <em>means</em>: you can change a language’s surface
+syntax completely and leave its semantics untouched. Since this book’s questions all live below the
+AST, building a parser would be time spent on a different subject.</p>
+</details>
+<details>
+<summary>You could study semantics by reading a compiler's code generator instead. What would be lost?</summary>
+<p>The meaning of a construct would be spread across the translation rather than stated in one place —
+partly in the emitted instructions, partly in assumptions about the target machine, partly in the
+optimizer’s notion of which transformations preserve behaviour. You would be reading a correct
+answer to “how do I make this run fast on <em>this</em> processor” and trying to reconstruct “what does
+this construct mean” from it. An interpreter states the second directly.</p>
+</details>
+<details>
+<summary>What would it mean to interpret <code>1 + 2</code> as something other than <code>3</code>?</summary>
+<p>It would mean choosing a different semantic domain. Interpreted over signs, <code>1 + 2</code> means
+<em>positive</em>; over types, it means <code>Int</code>; over intervals, it means something like <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">]</span></span></span></span> — and
+<code>x + 2</code>, where <code>x</code> is known only to lie in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">0</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">10</span><span class="mclose">]</span></span></span></span>, means <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">12</span><span class="mclose">]</span></span></span></span>. Each of these is a legitimate
+interpretation of the same syntax, and each answers a question the concrete one cannot: they can be
+computed without running the program, and they can describe <em>all</em> possible runs at once. What they
+give up is precision — <em>positive</em> does not tell you the answer is 3. Choosing how much precision to
+give up is a central concern of abstract interpretation and static analysis.</p>
+</details>
+<details>
+<summary>Tree-walking is the slowest point on the spectrum. When would it be the wrong choice for a real project?</summary>
+<p>Whenever execution speed matters more than implementation legibility, which covers most production
+systems: if the same program runs repeatedly, the up-front cost of compiling to bytecode or native
+code is amortized almost immediately. Tree-walking survives in practice where startup time dominates
+total run time, where the implementation must stay small and auditable, or where the language is a
+configuration or scripting layer that spends most of its time calling code written in something
+else.</p>
+</details>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
 
-                            <a rel="next prefetch" href="foundations/why-interpreter.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../foundations/history.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -302,8 +418,11 @@ including the ones you build with an assistant’s help.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
 
-                    <a rel="next prefetch" href="foundations/why-interpreter.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../foundations/history.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
@@ -323,13 +442,13 @@ including the ones you build with an assistant’s help.</p>
         </script>
 
 
-        <script src="elasticlunr-ef4e11c1.min.js"></script>
-        <script src="mark-09e88c2c.min.js"></script>
-        <script src="searcher-09f2665d.js"></script>
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
 
-        <script src="clipboard-1626706a.min.js"></script>
-        <script src="highlight-1c64dc54.js"></script>
-        <script src="book-609e4cb8.js"></script>
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-1c64dc54.js"></script>
+        <script src="../book-609e4cb8.js"></script>
 
         <!-- Custom JS scripts -->
 
