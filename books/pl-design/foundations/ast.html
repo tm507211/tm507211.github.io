@@ -39,10 +39,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-223022c2.js";
+            window.path_to_searchindex_js = "../searchindex-4ebc3a95.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-83408d21.js"></script>
+        <script src="../toc-7edc4796.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -180,68 +180,410 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="the-abstract-syntax-tree"><a class="header" href="#the-abstract-syntax-tree">The Abstract Syntax Tree</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
      lecture: Programming in Rust I: enums, match, ownership.
      The Rust lecture days own whole chapters here (AST, then Values in Part II);
      Appendix A is the one-pass ramp behind them.
      SEAM: closes Part I by turning the abstract idea of "structure underneath
      the syntax" into the concrete Rust type every later chapter matches on.
+     syntax-semantics.md already gave the concrete-vs-abstract distinction and the
+     x+y / (+ x y) / x y + example; lean on it in one sentence, do NOT re-derive it.
      Rust is introduced HERE at point of use (enum/match/Box) — the first of the
      point-of-use asides, so it sets the pattern for how heavy those should be.
-     Status: stub — spine authored just-in-time.
+     Forward refs to later Parts stay prose plus an xref marker (repo convention,
+     as in syntax-semantics.md) even though the target files exist as stubs; only
+     written chapters (syntax-semantics, the appendices) get a live link.
+     AST-vs-Appendix-D: the Rust Expr matches Appendix D's abstract syntax. Design
+     choices, recorded so a later editor does not "fix" them against the grammar:
+       - ref/deref/-/not are ONE prefix family -> UnOp { Neg, Not, Ref, Deref };
+       - := is its own Assign variant (LHS is ref-typed, a checker matter);
+       - `self` folds into Var (Appendix D's E-Var already treats it as a variable);
+       - a block is Expr::Block; an `if` branch is Box<Expr> whose block-ness is a
+         parser invariant, not encoded in the type;
+       - top level: Program holds decls: HashMap<Name, Decl> for the NAMED forms
+         (order-free + unique names per Appendix D -> a map, not a Vec), plus
+         Vec<Impl> and Vec<Rule> for the two unnamed forms; Decl bodies use Expr;
+       - generics: Fn/Type/Struct/Trait/Impl carry a Generics (Vec<TyParam>, each
+         TyParam an UpperIdent + Option<TraitRef> bound). Shown on the AST though
+         Appendix D's math folds them into a note: checker reads them (Part VI),
+         evaluator is type-erased. Global/Relation are not generic (per Appendix B);
+       - THREE headline types (per intro): Expr, Program, Ty. ALL companion types
+         are fully defined here (user asked no omissions): Stmt, Arm, Pattern, Rel,
+         Query, QArg (expr side); Param, Field, Variant, Sig, Method, Impl, TraitRef,
+         Rule, Atom, Conjunct, Term (decl side); Generics, TyParam. Each Expr variant
+         carries a describing comment; type-describing prose follows the user's style.
+     Rust fences are rust,ignore: illustrative definitions, not runnable programs
+     (they reference Stmt/Arm/Rel, would not compile, and print nothing), so no
+     play button and skipped by mdbook test. Runnable Rust (with main + output) is
+     for chapters like Part II's evaluator, not this reference of the tree's shape.
+     VERIFIED CITATION (Crossref, 2026-08-31): McCarthy, "Recursive functions of
+     symbolic expressions and their computation by machine, Part I," CACM 3:4
+     (1960), pp. 184-195, doi 10.1145/367177.367199. Inline anchor for LISP.
+     Further reading: Nystrom, Crafting Interpreters (free, craftinginterpreters.com)
+     and Appel, Modern Compiler Implementation in ML (Cambridge UP, 1998, print) —
+     no quotations made from either.
+     Status: authored 2026-08-31.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-**The problem.** Every remaining chapter of this book begins the same way: with a value of one Rust
-type, handed to you by the parser. If that type is unclear, nothing after it can be clear.
+<p><a href="syntax-semantics.html">Syntax and semantics</a> separated the abstract structure of a program from
+the concrete syntax that disambiguates it: three spellings of an addition collapse to one tree.
+In this chapter, we detail the concrete implementation of the AST structure of Bridger programs
+that the parser provided with this book will have you use in the implementation Milestones.
+Specifically, this chapter details three Rust types: <code>Expr</code> for the expressions at the core of
+Bridger, <code>Program</code> for whole top-level declarations, and <code>Ty</code> for expressing types. For
+complete details on the concrete syntax of Bridger see
+<a href="../appendix/grammar.html">Appendix B: concrete syntax</a>.</p>
+<h2 id="the-shape-of-expressions"><a class="header" href="#the-shape-of-expressions">The shape of expressions</a></h2>
+<p>Run down the grammar and an expression is always one of a fixed set of shapes: a literal, a
+variable, an operator applied to smaller expressions, a conditional, a call, and so on. A type whose
+values are “one of the following” is a <strong>sum type</strong>, and in Rust it is written as an <code>enum</code>: one
+variant per shape, each carrying exactly the pieces that shape is built from. The productions of a
+grammar and the variants of a sum type line up one for one, which is what makes the <code>enum</code> the
+natural representation of an AST.</p>
+<p>That correspondence is old enough to have shaped which languages interpreters get written in.
+McCarthy’s <a href="https://doi.org/10.1145/367177.367199">LISP</a> (1960) represented programs as the very
+lists the language processed — code as data — so a function that transformed a program was an
+ordinary list-processing function. The ML family later made the shapes explicit as <strong>algebraic data
+types</strong> and took them apart with <strong>pattern matching</strong>, a fit close enough that interpreters and
+compilers have been written in ML-family languages ever since. Rust inherits both halves: the <code>enum</code>
+names the shapes, and <code>match</code> (below) takes them apart.</p>
+<p>A tree records structure and drops the surface detail the parser has already used up — the
+parentheses, the whitespace, the fact that <code>*</code> binds tighter than <code>+</code>. What survives is how the
+pieces fit together, and that is what the type below captures.</p>
+<h2 id="bridgers-expressions-in-rust"><a class="header" href="#bridgers-expressions-in-rust">Bridger’s Expressions in Rust</a></h2>
+<p>The core of Bridger’s syntax is made up of recursively constructable expressions. This section
+details the components that make up such expressions and how the Book’s companion parser
+represents the expressions it parses. For convenience in error reporting, every parsed
+expression includes a <strong>span</strong> which records where in the source text the expression is located.</p>
+<pre><code class="language-rust ignore">struct Span { start: usize, end: usize }</code></pre>
+<p>A Literal is represented by the following <code>Lit</code> enum. A numeric literal is represented as a
+64-bit signed integer in Rust (i.e., all numeric values in Bridger are between <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8974em;vertical-align:-0.0833em;"></span><span class="mord">−</span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">63</span></span></span></span></span></span></span></span></span></span></span></span> and
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8974em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">63</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span>); a Boolean literal is simply a Rust <code>bool</code> type; a string literal is simply a
+Rust <code>String</code>, and a unit literal is the singleton value <code>()</code> left implicit in the <code>Lit</code> enum.</p>
+<pre><code class="language-rust ignore">enum Lit { Int(i64), Bool(bool), Str(String), Unit }</code></pre>
+<p>Before detailing how we represent expressions, we detail several auxiliary types. The enum
+<code>UnOp</code> represents all unary operators in Bridger. Similarly, <code>BinOp</code> all binary operators.
+Finally, all names (identifiers and variables) are represented as a <code>String</code>.</p>
+<pre><code class="language-rust ignore">enum UnOp { Neg, Not, Ref, Deref }
 
-This chapter will cover:
+enum BinOp {
+    Add, Sub, Mul, Div, Mod,      // arithmetic
+    Eq, Ne, Lt, Le, Gt, Ge,       // comparison
+    And, Or,                      // boolean
+    Concat,                       // ++
+}
 
-- **A tour of the provided AST** from the starter repository: the expression forms Bridger begins
-  with, and the forms that appear later so the shape is not a surprise when the language grows.
-- **Why it is shaped the way it is.** The AST records *structure* while discarding surface detail:
-  it keeps what determines meaning and drops what does not (parentheses, whitespace, the particular
-  spelling of an operator). Comparing the concrete syntax of an expression with its tree is the
-  clearest demonstration of the previous chapter's distinction.
-- **Rust at point of use: `enum` and `match`.** A sum type is exactly the right tool for "an
-  expression is one of the following," and matching over it is exactly the right tool for "handle
-  each case." This correspondence is why interpreters are so often written in the ML family, and
-  it is the single most important piece of Rust for this book.
-- **Why the tree needs `Box`.** A recursive type cannot be sized at compile time, so the children
-  are behind pointers — the first place Rust's ownership model shows up in the design of a data
-  structure rather than as a rule to obey.
-- **Source spans**, carried on every node so errors can point at the offending text. Cheap to
-  include now, painful to retrofit — and the reason error messages later can be specific.
+type Name = String;</code></pre>
+<p>With each of the auxiliary data types defined, we represent Bridger expressions
+with the recursive enum <code>Expr</code>.</p>
+<pre><code class="language-rust ignore">enum Expr {
+    // a literal value: 5, true, "hi", ()
+    Lit(Lit, Span),
+    // a variable reference, or the receiver `self`
+    Var(Name, Span),
+    // a prefix operator: -e, not e, ref e, deref e
+    Unary(UnOp, Box&lt;Expr&gt;, Span),
+    // a binary operator: e + e, e == e, e and e, e ++ e
+    Binary(BinOp, Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span),
+    // a conditional: if e { … } else { … }, the else optional
+    If(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Option&lt;Box&lt;Expr&gt;&gt;, Span),
+    // a block: statements and an optional trailing value
+    Block(Vec&lt;Stmt&gt;, Option&lt;Box&lt;Expr&gt;&gt;, Span),
+    // assignment through a reference: e := e
+    Assign(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span),
+    // a function call: e(e, …)
+    Call(Box&lt;Expr&gt;, Vec&lt;Expr&gt;, Span),
+    // a method call: e.m(e, …)
+    Method(Box&lt;Expr&gt;, Name, Vec&lt;Expr&gt;, Span),
+    // a lambda: |x, …| e
+    Lambda(Vec&lt;Name&gt;, Box&lt;Expr&gt;, Span),
+    // a pattern match: match e { arm, … }
+    Match(Box&lt;Expr&gt;, Vec&lt;Arm&gt;, Span),
+    // a while loop: while e { … }
+    While(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span),
+    // a for loop over a list: for x in e { … }
+    For(Name, Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span),
+    // an early return from a function: return e
+    Return(Box&lt;Expr&gt;, Span),
+    // a tuple: (e, e, …), two or more elements
+    Tuple(Vec&lt;Expr&gt;, Span),
+    // a list: [e, …]
+    List(Vec&lt;Expr&gt;, Span),
+    // struct field access: e.f
+    Field(Box&lt;Expr&gt;, Name, Span),
+    // tuple projection by index: e.0
+    Proj(Box&lt;Expr&gt;, u32, Span),
+    // constructor application: C(e, …)
+    Ctor(Name, Vec&lt;Expr&gt;, Span),
+    // struct literal: S { f: e, … }
+    Struct(Name, Vec&lt;(Name, Expr)&gt;, Span),
+    // a relations operation: add q / clear R / solutions(q) / query
+    Relation(Rel, Span),
+}</code></pre>
+<p>The comment on each variant names the Bridger form it holds, and every variant matches the abstract
+syntax fixed in the <a href="../appendix/language-reference.html">language reference</a>. This chapter settles the
+shape of each; the chapters that follow give each its meaning. Four of the variants hold companion
+types — <code>Stmt</code>, <code>Arm</code>, <code>Pattern</code>, and <code>Rel</code> — which we define after two structural choices in <code>Expr</code>
+itself.</p>
+<p><strong>Children sit behind <code>Box</code>.</strong> An <code>Expr</code> can contain an <code>Expr</code> (e.g., the two operands of a <code>Binary</code>
+operator or the condition and branches of an <code>If</code>) so its size would depend on itself, and no fixed
+size would satisfy the Rust compiler. We use <code>Box&lt;Expr&gt;</code> (a pointer to an <code>Expr</code>). Since a pointer
+has a known size, a <code>Box&lt;Expr&gt;</code> can be used to hold sub-expressions recursively. A node <strong>owns</strong> its
+children through the <code>Box</code>, and dropping a tree drops everything under it. Where a node has any
+number of children — a <code>Call</code>’s arguments, a <code>List</code>’s elements — a <code>Vec&lt;Expr&gt;</code> owns all of them.</p>
+<p>Four variants hold companion types, which we define now. A block (<code>Block</code>) is a sequence of
+statements followed by an optional result expression, and each statement (<code>Stmt</code>) is either a local
+<code>let</code> binding or an expression evaluated for its effect. A <code>ref x = e</code> binding is stored as an
+ordinary <code>let</code> of a <code>ref</code> expression, so it needs no case of its own.</p>
+<pre><code class="language-rust ignore">enum Stmt {
+    Let(Name, Option&lt;Ty&gt;, Expr),   // let x = e   (or   let x: T = e)
+    Expr(Expr),                    // an expression evaluated for effect
+}</code></pre>
+<p>A <code>match</code> expression holds a list of arms. An arm (<code>Arm</code>) pairs a pattern with an optional guard and
+the expression to evaluate when the arm is chosen.</p>
+<pre><code class="language-rust ignore">struct Arm {
+    pat: Pattern,          // the pattern this arm matches
+    guard: Option&lt;Expr&gt;,   // an optional `if` guard
+    body: Expr,            // evaluated when the arm is taken
+}</code></pre>
+<p>A pattern (<code>Pattern</code>) describes the shape a <code>match</code> tests a value against, and mirrors the
+expression forms it takes apart.</p>
+<pre><code class="language-rust ignore">enum Pattern {
+    Wild,                                 // _
+    Lit(Lit),                             // a literal: 5, true, "hi"
+    Var(Name),                            // binds the matched value to a name
+    Ctor(Name, Vec&lt;Pattern&gt;),             // a constructor: C(p, …)
+    Tuple(Vec&lt;Pattern&gt;),                  // (p, p, …), two or more
+    List(Vec&lt;Pattern&gt;, Option&lt;Name&gt;),     // [p, …], with an optional ..rest
+    Cons(Box&lt;Pattern&gt;, Box&lt;Pattern&gt;),     // head :: tail
+    Struct(Name, Vec&lt;(Name, Pattern)&gt;),   // S { f: p, … }
+    Or(Box&lt;Pattern&gt;, Box&lt;Pattern&gt;),       // p | p
+}</code></pre>
+<p>The relations sublanguage folds its four expression forms into <code>Rel</code>. A query (<code>Query</code>) names a
+relation and supplies arguments; each argument (<code>QArg</code>) is either an ordinary expression or a hole
+to solve for, named <code>?x</code> or anonymous <code>?</code>.</p>
+<pre><code class="language-rust ignore">enum Rel {
+    Add(Query),        // add R(a, …)
+    Clear(Name),       // clear R
+    Solutions(Query),  // solutions(R(a, …))
+    Query(Query),      // a bare query R(a, …)
+}
 
-*Design-space (woven):* how much a real compiler's IR differs from a teaching AST — separate typed
-and untyped trees, interning, arena allocation and node IDs instead of `Box` — and what each one
-makes possible.
-Type-annotated trees return in Part VI when the type checker produces one.
+struct Query { name: Name, args: Vec&lt;QArg&gt; }   // R(a, …)
 
-*Rust ramp:* [Appendix A](../appendix/rust-reference.md) covers `enum`, `match`, and ownership in one
-pass for readers who would rather not meet them piecemeal.
--->
+enum QArg {
+    Expr(Expr),          // a ground argument
+    Hole(Option&lt;Name&gt;),  // a hole: ?x (named) or ? (anonymous)
+}</code></pre>
+<h2 id="the-program-that-holds-them"><a class="header" href="#the-program-that-holds-them">The program that holds them</a></h2>
+<p>An <code>Expr</code> builds the core of Bridger’s structure; however, at the top-level, a Bridger program
+is a sequence of <strong>declarations</strong>: functions, globals, types, structs, traits, relations. The
+order of declarations does not matter, instead every declaration is visible to every other
+top-level declaration (with a requirement that all global names must be unique). As such,
+we represent the top level Declarations simply as a map from names to declarations, and
+separate trait implementations and rules which are unnamed.</p>
+<pre><code class="language-rust ignore">struct Program {
+    decls: HashMap&lt;Name, Decl&gt;,   // fn, global, type, struct, trait, relation
+    impls: Vec&lt;Impl&gt;,             // anonymous: keyed by the type they extend
+    rules: Vec&lt;Rule&gt;,             // any number define one relation
+}
+
+enum Decl {
+    Fn(Generics, Vec&lt;Param&gt;, Ty, Box&lt;Expr&gt;),   // fn f&lt;T: C&gt;(x: T, …) -&gt; T = e
+    Global(Ty, Box&lt;Expr&gt;),                     // let x = e
+    Type(Generics, Vec&lt;Variant&gt;),              // type T&lt;U&gt; = C(U, …) | …
+    Struct(Generics, Vec&lt;Field&gt;),              // struct S&lt;T&gt; { f: T, … }
+    Trait(Generics, Vec&lt;Sig&gt;),                 // trait Tr&lt;T&gt; { fn m(…); … }
+    Relation(Vec&lt;Ty&gt;),                         // relation R : (T, …)
+}</code></pre>
+<p>The generic-bearing forms — <code>Fn</code>, <code>Type</code>, <code>Struct</code>, <code>Trait</code>, and the <code>impl</code> blocks — each carry a
+<code>Generics</code>: a declaration can be parameterized by types, and a type parameter may carry a <strong>trait
+bound</strong> its argument must satisfy:</p>
+<pre><code class="language-rust ignore">struct Generics { params: Vec&lt;TyParam&gt; }   // &lt;T, U: Show, …&gt;; empty if absent
+
+struct TyParam {
+    name: Name,               // T
+    bound: Option&lt;TraitRef&gt;,  // : Show — the trait bound, if any
+}</code></pre>
+<p>The type checker in Part VI<!-- xref:../types/type-checker.md --> reads them — it quantifies a
+declaration over its parameters, then at each use instantiates them and checks the bound — while the
+evaluator ignores them, since running the program is type-erased. The reference’s abstract syntax
+folds them into a note for the same reason; the AST the parser builds keeps them for the checker.</p>
+<p>Every <code>Decl</code> bottoms out in <code>Expr</code> — a function’s body, a global’s initializer — so the tree the
+last section built is what these hold. Two forms carry no single name and stay out of the map: an
+<code>impl</code> is found by the type it extends rather than a name, and a relation is defined by any number
+of <code>rule</code>s at once, so each keeps its own list. We define the companion types these declarations
+use — <code>Param</code>, <code>Field</code>, <code>Variant</code>, <code>Sig</code>, <code>Method</code>, <code>Impl</code>, <code>TraitRef</code>, and the rule forms — below.</p>
+<p>Looking a name up is then a map lookup, and that lookup is the order-free, mutually visible scope
+the reference specifies made concrete: where a declaration sits in the file cannot matter, because
+the file order is gone once the map is built, and a name declared twice collides when the map is.</p>
+<p>A parameter (<code>Param</code>) and a struct field (<code>Field</code>) are each a name with a type, and a constructor of
+a <code>type</code> declaration is a variant (<code>Variant</code>) with a name and the types of its fields.</p>
+<pre><code class="language-rust ignore">struct Param   { name: Name, ty: Ty }            // x: T
+struct Field   { name: Name, ty: Ty }            // f: T
+struct Variant { name: Name, fields: Vec&lt;Ty&gt; }   // C(T, …), or C with no fields</code></pre>
+<p>A trait lists method signatures (<code>Sig</code>); an <code>impl</code> supplies methods (<code>Method</code>), which are
+signatures with a body. Each records whether the method takes <code>self</code>, its remaining parameters, and
+its return type.</p>
+<pre><code class="language-rust ignore">struct Sig {
+    name: Name,
+    has_self: bool,       // whether the method takes `self`
+    params: Vec&lt;Param&gt;,
+    ret: Ty,              // (), when the return type is omitted
+}
+
+struct Method {           // a Sig with a body
+    name: Name,
+    has_self: bool,
+    params: Vec&lt;Param&gt;,
+    ret: Ty,
+    body: Expr,
+}</code></pre>
+<p>An <code>impl</code> block (<code>Impl</code>) records its own generics, the trait it implements if any, the type it
+extends, and its methods. A trait named there is a <code>TraitRef</code> — a trait name with any type
+arguments.</p>
+<pre><code class="language-rust ignore">struct Impl {
+    generics: Generics,        // impl&lt;T&gt; …
+    trait_: Option&lt;TraitRef&gt;,  // the trait implemented, if any
+    ty: Ty,                    // the type being extended
+    methods: Vec&lt;Method&gt;,
+}
+
+struct TraitRef { name: Name, args: Vec&lt;Ty&gt; }   // Tr, or Tr&lt;T, …&gt;</code></pre>
+<p>A <code>rule</code> (<code>Rule</code>) has a head atom and a body of conjuncts. An atom (<code>Atom</code>) names a relation and
+lists its terms (<code>Term</code>), each a logic variable or a literal. A conjunct (<code>Conjunct</code>) is either
+another atom, which binds logic variables, or a pure filter expression.</p>
+<pre><code class="language-rust ignore">struct Rule { head: Atom, body: Vec&lt;Conjunct&gt; }   // rule H :- B1 and …
+
+struct Atom { name: Name, terms: Vec&lt;Term&gt; }      // R(t, …)
+
+enum Conjunct {
+    Atom(Atom),     // a generator atom
+    Filter(Expr),   // a pure filter expression
+}
+
+enum Term {
+    Var(Name),   // a logic variable (a lowercase name)
+    Lit(Lit),    // a literal
+}</code></pre>
+<h2 id="the-type-language"><a class="header" href="#the-type-language">The type language</a></h2>
+<p>A type annotation on a <code>let</code>, the signature of a function, the fields of a struct, the columns of a
+relation, and the bound on a type parameter are all written in one small language of <strong>types</strong>, and
+it is a tree of its own:</p>
+<pre><code class="language-rust ignore">enum Ty {
+    Int, Bool, Str, Unit,   // Int, Bool, String, ()
+    Tuple(Vec&lt;Ty&gt;),         // (T, U, …) — two or more
+    List(Box&lt;Ty&gt;),          // [T]
+    Fn(Vec&lt;Ty&gt;, Box&lt;Ty&gt;),   // fn(T, …) -&gt; T
+    Ref(Box&lt;Ty&gt;),           // ref&lt;T&gt;
+    SelfTy,                 // Self, in a trait or impl
+    Named(Name, Vec&lt;Ty&gt;),   // N, or N&lt;T, …&gt; when applied
+}</code></pre>
+<p><code>Ty</code> is recursive for the same reason <code>Expr</code> is — a list of a list, a function returning a
+function — so its children sit behind <code>Box</code> and <code>Vec</code> exactly as an expression’s do. <code>Named</code> covers
+both a plain type name and a generic one applied to arguments, with an empty <code>Vec</code> for the plain
+case. This is the language the type checker in Part VI<!-- xref:../types/type-checker.md --> works
+over; here it is only the shape the parser records from a written type.</p>
+<h2 id="matching-over-the-tree"><a class="header" href="#matching-over-the-tree">Matching over the tree</a></h2>
+<p>A function over an AST is a case analysis: one arm per variant, handling the pieces that variant
+carries. <code>match</code> is Rust’s tool for it, and pulling a node apart binds its fields in the same
+motion:</p>
+<pre><code class="language-rust ignore">fn depth(e: &amp;Expr) -&gt; usize {
+    match e {
+        Expr::Lit(..) | Expr::Var(..) =&gt; 1,
+        Expr::Unary(_, inner, _) =&gt; 1 + depth(inner),
+        Expr::Binary(_, l, r, _) =&gt; {
+            1 + depth(l).max(depth(r))
+        }
+        Expr::If(c, t, e, _) =&gt; {
+            let branches = match e {
+                Some(els) =&gt; depth(t).max(depth(els)),
+                None =&gt; depth(t),
+            };
+            1 + depth(c).max(branches)
+        }
+        _ =&gt; 1, // remaining forms: Part II onward
+    }
+}</code></pre>
+<p>The recursion in the type becomes recursion in the function, and the shape of each arm is dictated
+by the shape of its variant. <code>match</code> is also exhaustive: drop the <code>_</code> arm and the compiler names
+every variant still unhandled, so a new form added to <code>Expr</code> cannot silently fall through a pass
+that predates it. That guarantee — the type system enforcing that every case is considered — is why
+tree-walking interpreters read so cleanly in this style, and it is the single most useful piece of
+Rust for the chapters ahead.</p>
+<h2 id="the-trees-a-compiler-keeps"><a class="header" href="#the-trees-a-compiler-keeps">The trees a compiler keeps</a></h2>
+<p>The AST here is shaped for a book that walks it directly. A production compiler keeps different
+trees, and the differences are worth knowing so the choices above read as choices.</p>
+<p>A compiler usually holds <strong>more than one</strong> tree. This one is untyped: it is the parser’s output, and
+nothing in it records what a variable’s type is. Part VI’s type
+checker<!-- xref:../types/type-checker.md --> produces a second, <strong>type-annotated</strong> tree, each node
+tagged with the type it was found to have, so a later stage can consult a type without recomputing
+it. Names, kept here as <code>String</code>, are often <strong>interned</strong> to small integers so that comparing two of
+them is one machine instruction rather than a character-by-character scan. And a tree stored with
+<code>Box</code> scatters its nodes across the heap; a compiler that cares about locality keeps them in an
+<strong>arena</strong> — one contiguous block — and replaces every <code>Box&lt;Expr&gt;</code> with an integer <code>NodeId</code> index
+into it, which also lets separate tables (types, spans, uses) key off the same id without touching
+the node. Each of these buys speed or a place to hang more information, at the cost of a tree that
+is heavier to build and read. A first interpreter wants neither cost, so it takes the <code>Box</code>, the
+<code>String</code>, and the one untyped tree.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Building an interpreter around an AST</strong>: Robert Nystrom’s <em><a href="https://craftinginterpreters.com/">Crafting
+Interpreters</a></em> (free online) builds two interpreters for the same
+language, the first a tree-walker over an AST much like this one, and it is unusually concrete about
+the shape of the tree and the walk over it. Its “Representing Code” and “Evaluating Expressions”
+chapters cover the same ground as this one and the next, in Java rather than Rust.</p>
+<p><strong>The trees a compiler keeps instead</strong>: Andrew Appel’s <em>Modern Compiler Implementation in ML</em>
+(Cambridge University Press, 1998) develops the typed and lowered intermediate representations named
+in the last section — separate trees for parsing, type checking, and code generation — and shows
+what each stage reads off the tree the stage before it produced.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>In <code>x + y * z</code>, which variant is at the root of the tree, and why isn't it the <code>+</code> that appears first in the text?</summary>
+<p>The root is the <code>Binary(Add, …)</code>, with <code>x</code> as its left child and the <code>Binary(Mul, …)</code> for <code>y * z</code> as
+its right. It is <em>not</em> rooted at the first operator read, because the root is the operator applied
+<em>last</em> when the expression is evaluated, and <code>*</code> binds tighter than <code>+</code>. Precedence is a
+concrete-syntax rule; the parser has already used it to decide the grouping, and the tree records
+only the result. The same tree would come back from <code>(x) + (y * z)</code> or a prefix <code>(+ x (* y z))</code> —
+the surface that distinguished them is gone by the time there is an <code>Expr</code>.</p>
+</details>
+<details>
+<summary>Why does <code>Binary</code> hold <code>Box&lt;Expr&gt;</code> for its operands rather than <code>Expr</code>?</summary>
+<p>Because <code>Expr</code> is recursive: a <code>Binary</code> contains two <code>Expr</code>s, each of which might itself be a
+<code>Binary</code>, with no bound on the nesting. If the operands were stored inline as <code>Expr</code>, the size of an
+<code>Expr</code> would include the size of an <code>Expr</code>, and no finite size satisfies that. A <code>Box&lt;Expr&gt;</code> is a
+pointer to an <code>Expr</code> allocated elsewhere; a pointer has a fixed size regardless of how large the
+subtree behind it is, so the type is well-sized and the recursion lives in the heap rather than in
+the type’s layout.</p>
+</details>
+<details>
+<summary>Every variant carries a <code>Span</code>. What breaks if only the root of the tree kept one?</summary>
+<p>Any node can be the one a later pass needs to complain about — a type error is usually at some
+operator deep in the tree, an unbound variable at a single leaf — and a diagnostic can only
+underline what it has a span for. With a span only at the root, every error would point at the whole
+program. The information is available for free while the parser still knows the offsets, and
+unrecoverable once the text is gone, so it is recorded on every node even though most nodes never
+end up in a message.</p>
+</details>
+<details>
+<summary>An arena representation replaces every <code>Box&lt;Expr&gt;</code> with a <code>NodeId</code> index into one array of nodes. What does that buy, and what does it cost?</summary>
+<p>It buys locality and shared bookkeeping. The nodes sit in one contiguous block instead of scattered
+across the heap, which a walk traverses faster, and a <code>NodeId</code> is a plain integer, so side tables —
+the type of each node, its uses, its span — can be separate arrays keyed by the same id, letting a
+pass attach information to a node without changing the node’s type. It costs directness: reaching a
+child is now an array lookup through the arena rather than following a pointer the node owns, the
+arena has to be threaded through every function that touches the tree, and Rust’s ownership no
+longer frees a subtree for you when its parent goes away. A tree-walking interpreter gains nothing
+from the trade, which is why this one keeps the <code>Box</code>.</p>
+</details>
+<details>
+<summary>The top-level declarations are held in a <code>HashMap&lt;Name, Decl&gt;</code> rather than a <code>Vec&lt;Decl&gt;</code> in source order. What decision in the language forces that, and what would a <code>Vec</code> fail to capture?</summary>
+<p>The language reference fixes the top level as a set: declarations may appear in any order, each is
+visible to every other, and a name is declared at most once. A <code>Vec&lt;Decl&gt;</code> would keep the source
+order — information the language treats as meaningless — and would let the same name appear twice
+without complaint, which the language forbids. A map keyed by name discards the order the language
+does not use and turns a duplicate name into a collision when the map is built, so it admits
+exactly the programs the reference allows. The <code>impl</code>s and <code>rule</code>s, which are not singly
+named, are the exception the two side lists handle.</p>
+</details>
 
                     </main>
 
@@ -294,6 +636,7 @@ pass for readers who would rather not meet them piecemeal.
         <script src="../book-609e4cb8.js"></script>
 
         <!-- Custom JS scripts -->
+        <script src="../js/appendix-numbering-b52058a4.js"></script>
 
 
 

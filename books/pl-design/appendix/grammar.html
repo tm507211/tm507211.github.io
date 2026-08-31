@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>B. Grammar - A Practical Introduction to Programming Language Design</title>
+        <title>B. Bridger Concrete Grammar - A Practical Introduction to Programming Language Design</title>
 
 
         <!-- Custom HTML head -->
@@ -39,10 +39,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-223022c2.js";
+            window.path_to_searchindex_js = "../searchindex-4ebc3a95.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-83408d21.js"></script>
+        <script src="../toc-7edc4796.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -179,37 +179,444 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="appendix-b--grammar"><a class="header" href="#appendix-b--grammar">Appendix B — Grammar</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
+<h1 id="appendix-b-bridger-concrete-grammar"><a class="header" href="#appendix-b-bridger-concrete-grammar">Appendix B: Bridger Concrete Grammar</a></h1>
 <!-- AUTHORING NOTE (not rendered)
-     The full EBNF, kept in sync with the language spec §17.
-     Status: placeholder — spine authored just-in-time.
+     Reference appendix; no lecture maps to it. Bridger's concrete grammar, faithful to spec §17
+     (syntactic productions) and §3 (lexical structure). §17 leaves the terminals ident / literal /
+     int_lit undefined; this appendix formalizes §3's prose into lexical productions so the grammar
+     is complete on its own — the spec is not shipped to readers.
+     ORGANIZATION: one grammar, presented one sublanguage at a time with prose and small examples,
+     then a single consolidated listing ("The complete grammar") of every production in §17 order.
+     EXPRESSION MODEL: purely expression-oriented (spec §1 decision #2). Rust-style operands: the
+     block-bearing forms (`if`, `match`, `while`, `for`, block) are `primary`s, so `x + if c { a }
+     else { b }` and `x + while …` PARSE; a `()`-valued form where another type is wanted
+     (`x + while …` = `x_val + ()`) is caught at M5 as stuck `Int + ()`, the arc of `x + true`.
+     Braces make them self-delimiting — no parens needed, no dangling `else`. `if` is braced
+     (`if expr block [ 'else' ( block | if_expr ) ]`), no `then`; an else-less `if` is admitted
+     and typed `()` (checker enforces its branch is `()`). `lambda` and `return` have open
+     right-tails, so they stay atop `expr`, not `primary`, and need parens to be operands.
+     `let`/`ref` are `block_item`s, never `expr` (`let x = let y = 0;` does not parse). This is the
+     Rust model, a deliberate departure from §17's parens-required control flow.
+     TOP LEVEL: a program is a sequence of definitions (`def`) — the seven declaration forms plus
+     top-level `let`/`ref` globals — with no loose statements and no trailing expression. Execution
+     starts at a required `fn main() -> ()` (no params); name resolution enforces this, not the
+     grammar. Blocks hold bindings and expressions (`block_item`), never definitions; a local
+     function is a lambda. Departs from §17's script `program ::= { item } [ expr ]` — deliberate.
+     FAITHFULNESS: productions follow §17 in content; ordering is reorganized. Three deliberate
+     refinements of §17's shorthand, noted where they occur: `Int` (tuple-projection index) is
+     written `int_lit` to disambiguate it from the type keyword `Int`; §17's informal struct-pattern
+     `…` is de-abbreviated into a `field_pat` production; a struct literal at the head of a
+     `while`/`for`/`match` resolves to the block reading (parenthesize the literal), a case §17 left
+     to the parser. Every UpperCamelCase name — type, struct, trait, constructor, and type
+     parameter — is `UpperIdent`, so the grammar enforces the case; §17 wrote `ident` and
+     deferred case to name resolution.
+     SCOPE: concrete syntax only. No judgments, no evaluation/typing rules. Semantics is developed
+     in the chapters and collected in the language reference (appendix/language-reference.md); the
+     judgment forms live in appendix/notation.md.
+     Fences: `text` (the book does not use an `ebnf` highlighter; `text` renders predictably).
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This appendix mirrors **spec §17** (the normative grammar) rather than restating it, so the book
-and spec cannot drift.
--->
+<p>This appendix gives Bridger’s <strong>concrete grammar</strong>: the rules that decide which strings of
+characters are Bridger programs and how each one groups into its parts. The grammar is presented one
+sublanguage at a time; <a href="#the-complete-grammar">the final section</a> collects every production into one
+listing.</p>
+<p>The distinction between the text as written and the structure underneath it (concrete versus
+abstract syntax) is the subject of <a href="../foundations/syntax-semantics.html">Syntax and semantics</a>; the
+grammar here describes the concrete side, which strings the provided parser accepts as a program.
+The abstract syntax that parser produces, the values a program computes, and the rules that give
+them meaning (evaluation, typing, and purity) are fixed formally in the
+<a href="language-reference.html">language reference</a>. In <a href="../foundations/ast.html">the AST chapter</a>, we further
+detail the abstract syntax of Bridger including the Rust <code>enum</code> output by the provided Bridger
+parser.</p>
+<h2 id="reading-the-notation"><a class="header" href="#reading-the-notation">Reading the notation</a></h2>
+<p>The productions are written in a variant of Extended Backus–Naur Form. A production names a syntactic
+category on the left of <code>::=</code> and gives its forms on the right, built from the terminals,
+other categories, and the metasyntax below:</p>
+<pre><code class="language-text">{ x }     zero or more repetitions of x
+[ x ]     an optional x
+( x )     grouping
+x | y     either x or y
+'…'       a terminal, written verbatim
+&lt;desc&gt;    an informally described set of characters
+(* … *)   a comment
+</code></pre>
+<h2 id="identifiers-literals-comments"><a class="header" href="#identifiers-literals-comments">Identifiers, Literals, Comments</a></h2>
+<p>Bridger uses two identifier conventions: <strong>snake_case</strong> for variables, functions, relations, struct
+fields, and methods, <strong>UpperCamelCase</strong> for type names, constructors, and traits. We denote the two
+classes of identifiers <code>ident</code> and <code>UpperIdent</code>, respectively.</p>
+<pre><code class="language-text">(* snake_case *)
+ident       ::= letter_lc { letter_lc | digit | '_' ( letter_lc | digit ) } ;
+(* UpperCamelCase *)
+UpperIdent  ::= letter_uc { letter | digit } ;
+
+letter      ::= letter_lc | letter_uc ;
+letter_lc   ::= 'a' | 'b' | … | 'z' ;
+letter_uc   ::= 'A' | 'B' | … | 'Z' ;
+digit       ::= '0' | digit_nz ;
+digit_nz    ::= '1' | '2' | … | '9' ;
+</code></pre>
+<p>An <code>ident</code> may separate words with single underscores, but may not start with, end with, or
+double underscores. For example, <code>_foo</code>, <code>bar_</code>, and <code>foo__bar</code> are not identifiers.</p>
+<p>A Bridger program operates over integer, Boolean, string, and unit values. A literal is a string
+representing a concrete value. In Bridger, an integer literal is a decimal number (optionally
+with ‘_’ to group by thousands). Boolean literals are either “true” or “false” and unit has a
+single value denoted “()”. A string literal is a sequence of characters on a single line between
+quotation marks <code>"</code>. Any Unicode character may be written directly (in UTF-8 encoding); a
+quotation mark, backslash, or control character (such as a newline) is written with an escape:
+<code>\n</code>, <code>\t</code>, <code>\r</code>, <code>\0</code>, <code>\"</code>, <code>\\</code>, or <code>\u{…}</code> for an arbitrary code point (<code>\u{1F600}</code> is 😀).</p>
+<pre><code class="language-text">literal     ::= int_lit | bool_lit | string_lit | unit_lit ;
+int_lit     ::= '0' | pos_int | '-' pos_int ;
+pos_int     ::= digit_nz { digit }
+              | digit_nz [ digit [ digit ] ] { '_' digit digit digit } ;
+bool_lit    ::= 'true' | 'false' ;
+unit_lit    ::= '(' ')' ;
+string_lit  ::= '"' { string_char } '"' ;
+string_char ::= &lt;any Unicode scalar value except '"', '\', or a control character&gt;
+              | escape ;
+escape      ::= '\n' | '\t' | '\r' | '\0' | '\"' | '\\'
+              | '\u{' hex_digit { hex_digit } '}' ;
+hex_digit   ::= digit | 'a' | 'b' | … | 'f' | 'A' | 'B' | … | 'F' ;
+</code></pre>
+<p>Lists (<code>[1, 2, 3]</code>) and tuples (<code>(a, b)</code>) are built from subexpressions, so they appear under <a href="#the-expression-language">The
+expression language</a> rather than here as literals.</p>
+<p><strong>Comments</strong> are line comments, which run to the end of the line, and block comments, which nest.
+Inside a block comment every <code>/*</code> opens a nested comment and every <code>*/</code> closes one, so the
+delimiters must balance: <code>/* /* */ */</code> is one comment, while <code>/* /* */</code> is unterminated and
+<code>/* */ */</code> closes after the first <code>*/</code>, leaving a stray <code>*/</code>.</p>
+<pre><code class="language-text">line_comment  ::= '//' { &lt;any character except a line break&gt; } ;
+block_comment ::= '/*' { block_comment
+                       | &lt;any character not beginning '/*' or '*/'&gt; } '*/' ;
+</code></pre>
+<p>The <strong>keywords</strong> are reserved and may not be used as identifiers:</p>
+<pre><code class="language-text">fn  let  if  else  while  match  type  struct  trait  impl  for  in
+relation  rule  add  clear  solutions  not  and  or  true  false
+ref  deref  self  Self  return
+</code></pre>
+<h2 id="programs-definitions-and-blocks"><a class="header" href="#programs-definitions-and-blocks">Programs, definitions, and blocks</a></h2>
+<p>A program is a sequence of <strong>definitions</strong>: functions, types, structs, traits, <code>impl</code> blocks,
+relations, rules, and top-level <code>let</code> and <code>ref</code> bindings. Their order is free, since definitions
+are mutually visible, and each top-level name is declared once — a repeated name is rejected.
+Execution starts at <code>main</code>, an ordinary <code>fn main() -&gt; ()</code> taking no arguments; every program must
+define exactly one.</p>
+<pre><code class="language-text">program     ::= { def } ;
+
+def         ::= fn_def | type_def | struct_def | trait_def | impl_def
+              | relation_def | rule_def
+              | let_binding | ref_binding ;
+
+block       ::= '{' { block_item } [ expr ] '}' ;
+
+block_item  ::= let_binding | ref_binding
+              | if_expr | match_expr | while_expr | for_expr
+              | block | expr_stmt ;
+
+let_binding ::= 'let' ident [ ':' type ] '=' expr ';' ;
+ref_binding ::= 'ref' ident [ ':' type ] '=' expr ';' ;
+expr_stmt   ::= expr ';' ;
+</code></pre>
+<p>A block is a sequence of <code>let</code>/<code>ref</code> bindings, expressions, and nested blocks. The definition forms
+(<code>fn</code>, <code>type</code>, <code>struct</code>, <code>trait</code>, <code>impl</code>, <code>relation</code>, <code>rule</code>) are top-level only, so a local
+function is written as a lambda. A <code>ref_binding</code> is surface sugar: <code>ref x = e;</code> reads as
+<code>let x = ref(e);</code>.</p>
+<h2 id="the-expression-language"><a class="header" href="#the-expression-language">The expression language</a></h2>
+<p>An expression (<code>expr</code>) is a lambda function (<code>lambda</code>), a returned value (<code>return</code>), or an
+operation (<code>assign</code>).</p>
+<pre><code class="language-text">expr        ::= lambda | return_expr | assign ;
+</code></pre>
+<p>The operation grammar is a precedence cascade from the loosest-binding operator (assignment <code>:=</code>)
+down to the tightest (the <code>postfix</code> cluster), each level taking its operands from the one below.
+The cascade bottoms out at <code>primary</code> (atomic operands).</p>
+<pre><code class="language-text">assign      ::= or_expr [ ':=' or_expr ] ;
+or_expr     ::= and_expr { 'or' and_expr } ;
+and_expr    ::= cmp_expr { 'and' cmp_expr } ;
+cmp_expr    ::= cat_expr [ cmp_op cat_expr ] ;
+cmp_op      ::= '==' | '!=' | '&lt;' | '&lt;=' | '&gt;' | '&gt;=' ;
+cat_expr    ::= add_expr [ '++' cat_expr ] ;
+add_expr    ::= mul_expr { ('+' | '-') mul_expr } ;
+mul_expr    ::= unary   { ('*' | '/' | '%') unary } ;
+unary       ::= ('deref' | 'ref' | '-' | 'not') unary | postfix ;
+postfix     ::= primary { '(' [ args ] ')' | '.' ident | '.' int_lit | '?' } ;
+args        ::= expr { ',' expr } ;
+</code></pre>
+<p>Two associativity choices are visible in the shapes: comparisons recur on neither side, since they
+are non-associative and cannot be chained; <code>++</code> recurs on its right operand, so it associates to the
+right. The postfix cluster is function call <code>f(...)</code>, field access <code>e.field</code>, tuple
+projection <code>e.0</code>, and the <code>?</code> operator; the projection index is an integer literal. A <code>primary</code> is
+an atom or a bracketed form:</p>
+<pre><code class="language-text">primary     ::= literal | ident | '(' expr ')' | tuple | list | block | struct_lit
+              | if_expr | match_expr | while_expr | for_expr
+              | 'add' query | 'clear' ident | 'solutions' '(' query ')' | query
+              | 'self' ;
+
+tuple       ::= '(' expr ',' expr { ',' expr } ')' ;
+list        ::= '[' [ expr { ',' expr } ] ']' ;
+struct_lit  ::= UpperIdent '{' [ ident ':' expr { ',' ident ':' expr } [','] ] '}' ;
+</code></pre>
+<p>A one-element parenthesization <code>(e)</code> is just grouping; any <code>expr</code> may sit inside, a <code>while</code> or <code>:=</code>
+included. The unit literal is <code>()</code>; a tuple needs arity two or more. A block <code>{ … }</code> is a primary
+as well, so a braced sequence may stand anywhere an operand is expected. The <code>add</code>, <code>clear</code>,
+<code>solutions</code>, and bare-<code>query</code> primaries belong to the relations sublanguage and are described
+<a href="#the-relations-sublanguage">below</a>.</p>
+<pre><code class="language-text">Point { x: 1, y: 2 }
+</code></pre>
+<h2 id="precedence-and-associativity"><a class="header" href="#precedence-and-associativity">Precedence and associativity</a></h2>
+<p>The operator cascade fixes precedence and associativity by its shape. A <code>primary</code> is the operand
+the operators combine; here they are, tightest-binding first:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operators</th><th>Associativity</th></tr>
+</thead>
+<tbody>
+<tr><td><code>f(...)</code>  <code>e.field</code>  <code>e.0</code>  <code>e?</code> (postfix)</td><td>left</td></tr>
+<tr><td><code>deref</code>  <code>ref</code>  <code>-</code>  <code>not</code> (prefix)</td><td>prefix (stacks)</td></tr>
+<tr><td><code>*</code>  <code>/</code>  <code>%</code></td><td>left</td></tr>
+<tr><td><code>+</code>  <code>-</code></td><td>left</td></tr>
+<tr><td><code>++</code></td><td>right</td></tr>
+<tr><td><code>==</code>  <code>!=</code>  <code>&lt;</code>  <code>&lt;=</code>  <code>&gt;</code>  <code>&gt;=</code></td><td>non-associative</td></tr>
+<tr><td><code>and</code></td><td>left</td></tr>
+<tr><td><code>or</code></td><td>left</td></tr>
+<tr><td><code>:=</code></td><td>non-associative</td></tr>
+</tbody>
+</table>
+</div>
+<p>Assignment <code>:=</code> binds loosest of all, which is why <code>r := deref r + 1</code> reads as
+<code>r := (deref r + 1)</code>. The prefix operators bind tighter than any infix one and stack
+(<code>deref ref e</code>, <code>not not b</code>), so <code>-a * b</code> is <code>(-a) * b</code> and <code>not a == b</code> is <code>(not a) == b</code>.</p>
+<h2 id="control-flow"><a class="header" href="#control-flow">Control flow</a></h2>
+<p>Next we consider conditional expressions, matching expressions,
+looping expressions, lambda functions, and <code>return</code> expressions.</p>
+<pre><code class="language-text">if_expr     ::= 'if' expr block [ 'else' ( block | if_expr ) ] ;
+match_expr  ::= 'match' expr '{' arm { ',' arm } [','] '}' ;
+arm         ::= pattern [ 'if' expr ] '=&gt;' expr ;
+while_expr  ::= 'while' expr block ;
+for_expr    ::= 'for' ident 'in' expr block      (* list iteration *)
+              | 'for' query block ;              (* relational iteration *)
+return_expr ::= 'return' expr ;
+lambda      ::= '|' [ lparam { ',' lparam } ] '|' expr ;
+lparam      ::= ident [ ':' type ] ;
+</code></pre>
+<p>A <code>match</code> arm may carry a guard — the <code>if</code> after its pattern — and a lambda’s parameters sit
+between single bars, so a nullary lambda is <code>||</code>.</p>
+<pre><code class="language-text">match xs {
+    []      =&gt; 0,
+    [h, ...t] if h &gt; 0 =&gt; h,
+    _       =&gt; 1,
+}
+
+|x: Int, y: Int| x + y
+|| 0
+</code></pre>
+<h2 id="functions-types-and-data"><a class="header" href="#functions-types-and-data">Functions, types, and data</a></h2>
+<p>Function definitions, the type language, and the type/struct/trait/impl declarations.</p>
+<pre><code class="language-text">fn_def      ::= 'fn' ident [ generics ] '(' [ params ] ')'
+                [ '-&gt;' type ] fn_body ;
+fn_body     ::= '=' expr ';' | block ;
+params      ::= param { ',' param } ;
+param       ::= ident ':' type ;
+generics    ::= '&lt;' tparam { ',' tparam } '&gt;' ;
+tparam      ::= UpperIdent [ ':' trait_ref ] ;
+</code></pre>
+<p>The <strong>type</strong> language:</p>
+<pre><code class="language-text">type        ::= 'Int' | 'Bool' | 'String' | '(' ')' | 'Self'
+              | '(' type ',' type { ',' type } ')'
+              | '[' type ']'
+              | 'fn' '(' [ type { ',' type } ] ')' '-&gt;' type
+              | 'ref' '&lt;' type '&gt;'
+              | UpperIdent [ '&lt;' type { ',' type } '&gt;' ] ;
+</code></pre>
+<p>Declarations introduce named types, structs, traits, and implementations.</p>
+<pre><code class="language-text">type_def    ::= 'type' UpperIdent [ generics ] '='
+                [ '|' ] variant { '|' variant } ';' ;
+variant     ::= UpperIdent [ '(' type { ',' type } ')' ] ;
+
+struct_def  ::= 'struct' UpperIdent [ generics ]
+                '{' [ field { ',' field } [','] ] '}' ;
+field       ::= ident ':' type ;
+
+trait_def   ::= 'trait' UpperIdent [ generics ] '{' { fn_sig ';' } '}' ;
+fn_sig      ::= 'fn' ident '(' [ 'self' [ ',' params ] ] ')' [ '-&gt;' type ] ;
+
+impl_def    ::= 'impl' [ generics ] [ trait_ref 'for' ] type
+                '{' { method } '}' ;
+trait_ref   ::= UpperIdent [ '&lt;' type { ',' type } '&gt;' ] ;
+method      ::= 'fn' ident '(' [ 'self' [ ',' params ] ] ')'
+                [ '-&gt;' type ] fn_body ;
+</code></pre>
+<p>An <code>impl</code> block either stands alone or names a trait with <code>for</code>; a method’s first parameter may
+be <code>self</code>.</p>
+<pre><code class="language-text">type Option&lt;T&gt; = None | Some(T);
+
+struct Point { x: Int, y: Int }
+
+trait Show { fn show(self) -&gt; String; }
+
+impl Show for Point {
+    fn show(self) -&gt; String = "point";
+}
+</code></pre>
+<h2 id="patterns"><a class="header" href="#patterns">Patterns</a></h2>
+<p>Patterns appear in match arms. A pattern is the wildcard <code>_</code>, a literal, a variable, a constructor,
+a tuple, a list — with a <code>::</code> cons form and an optional <code>...</code> tail — a struct, or several patterns
+joined by <code>|</code>.</p>
+<pre><code class="language-text">pattern     ::= '_' | literal | ident
+              | UpperIdent [ '(' pattern { ',' pattern } ')' ]
+              | '(' pattern ')'
+              | '(' pattern ',' pattern { ',' pattern } ')'
+              | '[' [ pattern { ',' pattern } [ ',' '...' ident ] ] ']'
+              | pattern '::' pattern
+              | UpperIdent '{' [ field_pat { ',' field_pat } ] '}'
+              | pattern '|' pattern ;
+field_pat   ::= ident [ ':' pattern ] ;
+</code></pre>
+<h2 id="the-relations-sublanguage"><a class="header" href="#the-relations-sublanguage">The relations sublanguage</a></h2>
+<p>Bridger’s also includes a Datalog fragment that adds relation declarations,
+rules, and queries.</p>
+<pre><code class="language-text">relation_def::= 'relation' ident ':' '(' type { ',' type } ')' ';' ;
+rule_def    ::= 'rule' rule_atom [ ':-' body ] ';' ;
+body        ::= conjunct { 'and' conjunct } ;
+conjunct    ::= rule_atom      (* generator: binds logic variables *)
+              | expr ;         (* filter: pure, binds nothing *)
+rule_atom   ::= ident '(' term { ',' term } ')' ;
+term        ::= ident | literal ;   (* a lowercase ident is a logic variable *)
+
+query       ::= ident '(' qarg { ',' qarg } ')' ;
+qarg        ::= expr | hole ;
+hole        ::= '?' [ ident ] ;     (* named ?x or anonymous ? *)
+</code></pre>
+<p>Syntactically, there is no difference between a query and a function call. Instead, the
+difference comes from its use and via name resolution.</p>
+<pre><code class="language-text">rule ancestor(X, Y) :- parent(X, Y);
+</code></pre>
+<h2 id="the-complete-grammar"><a class="header" href="#the-complete-grammar">The complete grammar</a></h2>
+<p>Every production above, collected. This listing is the grammar as a whole; the sections above are the
+same rules broken out with commentary.</p>
+<pre><code class="language-text">(* --- lexical --- *)
+ident       ::= letter_lc { letter_lc | digit | '_' ( letter_lc | digit ) } ;
+UpperIdent  ::= letter_uc { letter | digit } ;
+letter      ::= letter_lc | letter_uc ;
+letter_lc   ::= 'a' | 'b' | … | 'z' ;
+letter_uc   ::= 'A' | 'B' | … | 'Z' ;
+digit       ::= '0' | digit_nz ;
+digit_nz    ::= '1' | '2' | … | '9' ;
+
+literal     ::= int_lit | bool_lit | string_lit | unit_lit ;
+int_lit     ::= '0' | pos_int | '-' pos_int ;
+pos_int     ::= digit_nz { digit }
+              | digit_nz [ digit [ digit ] ] { '_' digit digit digit } ;
+bool_lit    ::= 'true' | 'false' ;
+unit_lit    ::= '(' ')' ;
+string_lit  ::= '"' { string_char } '"' ;
+string_char ::= &lt;any Unicode scalar value except '"', '\', or a control character&gt;
+              | escape ;
+escape      ::= '\n' | '\t' | '\r' | '\0' | '\"' | '\\'
+              | '\u{' hex_digit { hex_digit } '}' ;
+hex_digit   ::= digit | 'a' | 'b' | … | 'f' | 'A' | 'B' | … | 'F' ;
+
+line_comment  ::= '//' { &lt;any character except a line break&gt; } ;
+block_comment ::= '/*' { block_comment
+                       | &lt;any character not beginning '/*' or '*/'&gt; } '*/' ;
+
+(* --- programs, items, blocks --- *)
+program     ::= { def } ;
+block       ::= '{' { block_item } [ expr ] '}' ;
+def         ::= fn_def | type_def | struct_def | trait_def | impl_def
+              | relation_def | rule_def
+              | let_binding | ref_binding ;
+block_item  ::= let_binding | ref_binding
+              | if_expr | match_expr | while_expr | for_expr
+              | block | expr_stmt ;
+let_binding ::= 'let' ident [ ':' type ] '=' expr ';' ;
+ref_binding ::= 'ref' ident [ ':' type ] '=' expr ';' ;
+expr_stmt   ::= expr ';' ;
+
+(* --- expressions --- *)
+expr        ::= lambda | return_expr | assign ;
+assign      ::= or_expr [ ':=' or_expr ] ;
+or_expr     ::= and_expr { 'or' and_expr } ;
+and_expr    ::= cmp_expr { 'and' cmp_expr } ;
+cmp_expr    ::= cat_expr [ cmp_op cat_expr ] ;
+cmp_op      ::= '==' | '!=' | '&lt;' | '&lt;=' | '&gt;' | '&gt;=' ;
+cat_expr    ::= add_expr [ '++' cat_expr ] ;
+add_expr    ::= mul_expr { ('+' | '-') mul_expr } ;
+mul_expr    ::= unary   { ('*' | '/' | '%') unary } ;
+unary       ::= ('deref' | 'ref' | '-' | 'not') unary | postfix ;
+postfix     ::= primary { '(' [ args ] ')' | '.' ident | '.' int_lit | '?' } ;
+args        ::= expr { ',' expr } ;
+primary     ::= literal | ident | '(' expr ')' | tuple | list | block | struct_lit
+              | if_expr | match_expr | while_expr | for_expr
+              | 'add' query | 'clear' ident | 'solutions' '(' query ')' | query
+              | 'self' ;
+tuple       ::= '(' expr ',' expr { ',' expr } ')' ;
+list        ::= '[' [ expr { ',' expr } ] ']' ;
+struct_lit  ::= UpperIdent '{' [ ident ':' expr { ',' ident ':' expr } [','] ] '}' ;
+
+(* --- control flow --- *)
+if_expr     ::= 'if' expr block [ 'else' ( block | if_expr ) ] ;
+match_expr  ::= 'match' expr '{' arm { ',' arm } [','] '}' ;
+arm         ::= pattern [ 'if' expr ] '=&gt;' expr ;
+while_expr  ::= 'while' expr block ;
+for_expr    ::= 'for' ident 'in' expr block | 'for' query block ;
+return_expr ::= 'return' expr ;
+lambda      ::= '|' [ lparam { ',' lparam } ] '|' expr ;
+lparam      ::= ident [ ':' type ] ;
+
+(* --- functions, types, data --- *)
+fn_def      ::= 'fn' ident [ generics ] '(' [ params ] ')'
+                [ '-&gt;' type ] fn_body ;
+fn_body     ::= '=' expr ';' | block ;
+params      ::= param { ',' param } ;
+param       ::= ident ':' type ;
+generics    ::= '&lt;' tparam { ',' tparam } '&gt;' ;
+tparam      ::= UpperIdent [ ':' trait_ref ] ;
+type        ::= 'Int' | 'Bool' | 'String' | '(' ')' | 'Self'
+              | '(' type ',' type { ',' type } ')' | '[' type ']'
+              | 'fn' '(' [ type { ',' type } ] ')' '-&gt;' type
+              | 'ref' '&lt;' type '&gt;'
+              | UpperIdent [ '&lt;' type { ',' type } '&gt;' ] ;
+type_def    ::= 'type' UpperIdent [ generics ] '='
+                [ '|' ] variant { '|' variant } ';' ;
+variant     ::= UpperIdent [ '(' type { ',' type } ')' ] ;
+struct_def  ::= 'struct' UpperIdent [ generics ]
+                '{' [ field { ',' field } [','] ] '}' ;
+field       ::= ident ':' type ;
+trait_def   ::= 'trait' UpperIdent [ generics ] '{' { fn_sig ';' } '}' ;
+fn_sig      ::= 'fn' ident '(' [ 'self' [ ',' params ] ] ')' [ '-&gt;' type ] ;
+impl_def    ::= 'impl' [ generics ] [ trait_ref 'for' ] type
+                '{' { method } '}' ;
+trait_ref   ::= UpperIdent [ '&lt;' type { ',' type } '&gt;' ] ;
+method      ::= 'fn' ident '(' [ 'self' [ ',' params ] ] ')'
+                [ '-&gt;' type ] fn_body ;
+
+(* --- patterns --- *)
+pattern     ::= '_' | literal | ident
+              | UpperIdent [ '(' pattern { ',' pattern } ')' ]
+              | '(' pattern ')'
+              | '(' pattern ',' pattern { ',' pattern } ')'
+              | '[' [ pattern { ',' pattern } [ ',' '...' ident ] ] ']'
+              | pattern '::' pattern
+              | UpperIdent '{' [ field_pat { ',' field_pat } ] '}'
+              | pattern '|' pattern ;
+field_pat   ::= ident [ ':' pattern ] ;
+
+(* --- relations --- *)
+relation_def::= 'relation' ident ':' '(' type { ',' type } ')' ';' ;
+rule_def    ::= 'rule' rule_atom [ ':-' body ] ';' ;
+body        ::= conjunct { 'and' conjunct } ;
+conjunct    ::= rule_atom | expr ;
+rule_atom   ::= ident '(' term { ',' term } ')' ;
+term        ::= ident | literal ;
+query       ::= ident '(' qarg { ',' qarg } ')' ;
+qarg        ::= expr | hole ;
+hole        ::= '?' [ ident ] ;
+</code></pre>
+<p>The grammar is illustrative rather than massaged for a particular parsing algorithm; the provided
+parser resolves the usual details — a match arm’s <code>=&gt;</code> against an or-pattern’s <code>|</code>, and a struct
+literal at the head of an <code>if</code>, <code>while</code>, <code>for</code>, or <code>match</code>, where a leading <code>{</code> is read as the
+trailing block rather than the literal, so a struct literal in that one position is parenthesized
+(<code>if (Point { … }) { … }</code>). One keyword does double duty, resolved by lookahead: <code>ref</code>
+is both a prefix operator (<code>ref e</code>) and the binding keyword (<code>ref x = e</code>), and at the start of a
+block element <code>ref ident =</code> selects the binding sugar while any other continuation parses <code>ref</code> as
+the allocator.</p>
 
                     </main>
 
@@ -262,6 +669,7 @@ and spec cannot drift.
         <script src="../book-609e4cb8.js"></script>
 
         <!-- Custom JS scripts -->
+        <script src="../js/appendix-numbering-b52058a4.js"></script>
 
 
 
