@@ -1,0 +1,348 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>About This Book - A Practical Introduction to Programming Language Design</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Learn how programming languages work by building one: an interpreter, in Rust, for a small multi-paradigm language.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="css/book.css">
+        <link rel="stylesheet" href="css/timeline.css">
+        <link rel="stylesheet" href="css/highlight-fixes.css">
+        <link rel="stylesheet" href="css/under-construction.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+<<<<<<< Updated upstream
+            window.path_to_searchindex_js = "searchindex-4ebc3a95.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-7edc4796.js"></script>
+=======
+            window.path_to_searchindex_js = "searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+>>>>>>> Stashed changes
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">A Practical Introduction to Programming Language Design</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<h1 id="about-this-book"><a class="header" href="#about-this-book">About This Book</a></h1>
+<p>This is an introduction to the <strong>concepts used to design programming languages</strong> — paradigms,
+scope, binding, types, evaluation — taught not by touring a handful of languages but by
+<strong>building one</strong>. Over the course of the book you implement an interpreter, in
+<a href="https://www.rust-lang.org/">Rust</a>, for a single language that grows from a calculator into a
+small multi-paradigm language named <strong>Bridger</strong>, with imperative, functional, and declarative
+features.</p>
+<p>It grew out of an undergraduate programming-languages course, but it is written to stand on its
+own. You do not need to be enrolled anywhere to use it: if you read the chapters and build the
+interpreter as you go, you will learn the same material and end up with the same working language.</p>
+<h2 id="why-an-interpreter"><a class="header" href="#why-an-interpreter">Why an interpreter?</a></h2>
+<p>There are two ways to give a programming language a precise meaning, and they lead to two
+different kinds of book.</p>
+<ul>
+<li>A <strong>compiler</strong> foregrounds <em>translation</em>: it turns your program into another language (machine
+code, bytecode, a lower-level IR) and cares deeply about code generation, optimization, and the
+constraints of the target machine.</li>
+<li>An <strong>interpreter</strong> foregrounds <em>meaning</em>: it says directly what a program <em>is</em> and <em>does</em>. You
+write down a rule like <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">e</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span> ("expression <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">e</span></span></span></span> evaluates to value <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span>"), and the
+evaluator you build <strong>is</strong> that rule, made executable.</li>
+</ul>
+<p>This book takes the <strong>semantics lens</strong>. That single choice explains most of what follows —
+including why we hand you a parser instead of making you write one: parsing is a translation
+problem that belongs to the compiler's world, and a course on it already exists in most
+curricula. Here we start from the abstract syntax tree and spend our time on what programs <em>mean</em>.
+Code generation, optimization, and register allocation are real and important; they are simply a
+different book, and we point you to good ones where the boundary comes up.</p>
+<h2 id="who-this-book-is-for"><a class="header" href="#who-this-book-is-for">Who this book is for</a></h2>
+<p>Anyone who wants to learn how programming languages work, with a practical flair. Whether you are
+reading it as the companion to a course or working through it on your own, this text is designed
+to be <strong>self-contained</strong>: the concepts, the specifications, and the build are all here, and the
+scaffolding you build on top of is publicly available. It assumes you can program in <em>some</em>
+language and are curious about what is going on underneath — not that you already know Rust, type
+theory, or logic programming.</p>
+<h2 id="how-the-book-is-organized"><a class="header" href="#how-the-book-is-organized">How the book is organized</a></h2>
+<p>The chapters follow the arc of the language as it grows, and each part from Part II onward closes
+with a <strong>project milestone</strong> (M1–M8). Treat the milestones as a <em>learning structure</em>: a checkpoint
+that says "build this much next, and here is how to know it works." By the end you will have built:</p>
+<ul>
+<li>a tree-walking evaluator with clear runtime errors,</li>
+<li>lexical scope, and the closures that make it observable,</li>
+<li>first-class functions and closures,</li>
+<li>a <strong>static type checker</strong> that rules out whole classes of runtime errors before a program
+runs,</li>
+<li>a <strong>relational (Datalog-style) sublanguage</strong> you can query from ordinary code,</li>
+<li>algebraic data types with pattern matching, and</li>
+<li>objects built as structs with methods and traits.</li>
+</ul>
+<p><strong>Every chapter follows a similar narrative.</strong> Each chapter will broadly introduce the relevant
+programming-language concepts: what they are meant to capture, and the history of how they
+emerged and changed over time and across communities. It will then discuss how those
+concepts shape the design decisions underlying Bridger. Then the lens widens to the design space:
+how ML, Rust, Prolog, or Python answer the same questions, and the pros and cons of each design.
+Some of those questions Bridger answers by declining — negation in logic rules, full type
+inference, classical inheritance — and those forks get the same treatment, with pointers for
+reading further.</p>
+<h3 id="the-starter-repository"><a class="header" href="#the-starter-repository">The starter repository</a></h3>
+<p>Because the book is meant to be self-contained, the <strong>scaffolding you build on top of ships
+publicly</strong>: the <code>Value</code> type, the environment structure, error and source-span types, the AST, and
+the parser. You implement <em>semantics</em> — the evaluator, the type checker, unification — not the
+memory plumbing that would otherwise have you fighting the borrow checker instead of learning what
+a closure is. The repository link and setup live alongside this book.</p>
+<h2 id="how-to-read-this-book"><a class="header" href="#how-to-read-this-book">How to read this book</a></h2>
+<ul>
+<li>
+<p><strong>Code you implement</strong> is shown in Rust. Where a snippet is self-contained you can press the
+play button to run it.</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    println!("Hello from the metalanguage.");
+}</code></pre></pre>
+<p>You do <strong>not</strong> need to know Rust first. Each construct is introduced where the interpreter first
+needs it (<code>enum</code>/<code>match</code> at the AST, <code>Rc&lt;RefCell&gt;</code> at closures, <code>Result</code>/<code>Option</code> at error
+handling), as a short aside you can skip if you're already familiar with Rust. For those looking
+for a slightly more in-depth introduction, <strong><a href="appendix/rust-reference.html">Appendix A</a></strong> is a
+self-contained tutorial with an M0 warm-up milestone.</p>
+</li>
+<li>
+<p><strong>Programs in <em>Bridger</em></strong> are shown in monospace, highlighted approximately (the real
+highlighter comes once the language stabilizes):</p>
+<pre><code class="language-ocaml">let rec fib n =
+  if n &lt; 2 then n else fib (n - 1) + fib (n - 2)
+in fib 10
+</code></pre>
+</li>
+<li>
+<p><strong>Specifications</strong> are written as inference rules. For example, addition evaluates its operands
+and adds the results:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.2519em;vertical-align:-0.8804em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Add</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The <a href="appendix/notation.html">notation reference</a> collects the symbols and rule shapes we use.</p>
+</li>
+</ul>
+<h2 id="a-note-on-tools-and-ai-assistants"><a class="header" href="#a-note-on-tools-and-ai-assistants">A note on tools and AI assistants</a></h2>
+<p>Syntax is the part that varies. Every language spells the same idea differently, and the spelling
+changes with every release — which is exactly the kind of detail a coding assistant handles well.
+It handles semantics well too: ask one to explain closures or type inference and you will usually
+get a fluent and largely correct answer. The limit is not that these tools only know syntax.</p>
+<p>The limit is accountability. An assistant can make a design decision; it cannot be answerable for
+one. Whether a problem wants a relation or a fold, what a representation choice will cost three
+modules later, which trade-off a language made and whether it was the right one for your system —
+those are judgments you own, and owning them means understanding the concepts well enough to
+<em>evaluate</em> an answer rather than accept it.</p>
+<p>The test arrives when someone asks why a system is built the way it is. "The assistant did that"
+reports only that nobody decided; the engineer who can explain the reasoning understood the choice,
+whether or not an assistant helped reach it.</p>
+<p>That is what this book is for: the concepts, where they came from, and the pros and cons that make
+one design fit where another fights. It is what you need in order to design and assess systems —
+including the ones you build with an assistant's help.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+                            <a rel="next prefetch" href="foundations/why-interpreter.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+                    <a rel="next prefetch" href="foundations/why-interpreter.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+<<<<<<< Updated upstream
+        <script src="js/appendix-numbering-b52058a4.js"></script>
+=======
+        <script src="js/appendix-numbering.js"></script>
+>>>>>>> Stashed changes
+
+
+
+    </div>
+    </body>
+</html>

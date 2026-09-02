@@ -1,0 +1,98 @@
+/* General book styles shared across chapters.
+   (Appendix F's timeline rail lives separately in timeline.css.)
+   Colours come from mdBook theme variables so these work in light, rust, coal,
+   navy, and ayu without per-theme overrides. */
+
+/* ---------------------------------------------------------------------------
+   Chapter subtitle — the descriptive half of a title dropped onto its own line
+   below the H1, so a long heading (e.g. "Milestone M1 — The Expression
+   Evaluator") no longer has to fit one line. The short identifier stays in the
+   H1; the phrase sits under it, quieter and smaller. The full title still shows
+   in the sidebar via SUMMARY.md.
+   --------------------------------------------------------------------------- */
+
+.chapter-subtitle {
+    margin: -0.5rem 0 1.6rem;         /* tuck it up close under the H1 */
+    font-size: 2.1rem;
+    font-weight: 400;
+    line-height: 1.2;
+    opacity: 0.75;                    /* secondary to the title, theme-aware via inherited colour */
+}
+
+/* ---------------------------------------------------------------------------
+   Concept checks — the collapsible question/answer blocks closing each chapter
+   (plan §9.5). Without spacing they read as one undifferentiated block, so each
+   gets breathing room and a visible panel when opened.
+   --------------------------------------------------------------------------- */
+
+details {
+    margin: 1.4rem 0;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--quote-border);
+    border-left-width: 3px;
+    border-radius: 4px;
+    background: var(--quote-bg);
+}
+
+/* the question itself: clearly clickable, readable closed or open */
+details > summary {
+    cursor: pointer;
+    font-weight: 600;
+    /* leave room for the disclosure triangle without it crowding the text */
+    padding-left: 0.2rem;
+}
+
+details > summary:hover {
+    color: var(--links);
+}
+
+/* when open, separate the question from its answer */
+details[open] > summary {
+    margin-bottom: 0.7rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--quote-border);
+}
+
+/* no trailing gap inside the panel */
+details > :last-child {
+    margin-bottom: 0;
+}
+
+/* consecutive checks need a clear gap, not just their own margins collapsing */
+details + details {
+    margin-top: 1.6rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Figures — historical photographs and diagrams. Captions carry the credit and
+   licence line, which for third-party images is a condition of use rather than
+   decoration: keep it legible, and never hide it at small widths.
+   --------------------------------------------------------------------------- */
+
+figure {
+    margin: 1.8rem 0;
+}
+
+figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+    border-radius: 3px;
+}
+
+figure figcaption {
+    margin-top: 0.7rem;
+    font-size: 0.9em;
+    line-height: 1.45;
+    color: var(--sidebar-fg);
+    text-align: center;
+}
+
+/* the attribution half of a caption sits below the descriptive half */
+figure figcaption .credit {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.92em;
+    opacity: 0.85;
+}
