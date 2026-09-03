@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 1 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 100rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 1 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lectures 1&ndash;4 and their textbook
+      chapters. Answers are short: a sentence or two, in your own words, earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 10 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions, plus one question that asks you
+            to read a small Rust snippet and say what it evaluates to.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Why an interpreter, and how languages got off the machine
+      <small class="text-muted">Lecture 1</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/foundations/why-interpreter.html">Why build an interpreter?</a> &middot;
+      <a href="../../../../books/pl-design/foundations/history.html">From machine code to high-level languages</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-01/index.html">Lecture 1</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Say what an interpreter does &mdash; map a program's structure to its meaning &mdash; and
+        how that differs from what a compiler does.</li>
+      <li>Explain why a language is both a <em>specification</em> and an <em>implementation</em>, and
+        why this course works where a program's meaning is visible rather than on translation.</li>
+      <li>Describe what makes a language <em>low-level</em> versus <em>high-level</em>, and what each
+        step up (symbolic names for addresses, expressions, block structure) hands off from the
+        programmer to the language.</li>
+      <li>Explain, in your own words, the problem that naming a storage location solves &mdash; why
+        writing to a name is better than writing to a fixed absolute address.</li>
+    </ul>
+
+    <h2>Paradigms, and syntax versus semantics
+      <small class="text-muted">Lecture 2</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/foundations/paradigms.html">The paradigm branches</a> &middot;
+      <a href="../../../../books/pl-design/foundations/syntax-semantics.html">Syntax and semantics</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-02/index.html">Lecture 2</a>
+    </p>
+    <p><strong>Paradigms.</strong> Be able to:</p>
+    <ul class="objectives">
+      <li>Name the four paradigms (imperative, functional, declarative/logic, object-oriented) and
+        give the one-line idea of what each takes a program to <em>be</em>.</li>
+      <li>Explain what actually decides a program's paradigm &mdash; what a language treats as
+        <em>primitive</em> and lets you leave implicit &mdash; and why two languages with nearly
+        identical syntax can belong to different paradigms.</li>
+      <li>Say what it means for a language to be <em>multi-paradigm</em>, with an example.</li>
+    </ul>
+    <p><strong>Syntax and semantics.</strong> Be able to:</p>
+    <ul class="objectives">
+      <li>Distinguish a <em>syntax</em> error from a <em>semantics</em> error, and a <em>static</em>
+        check (before the program runs) from a <em>dynamic</em> one (while it runs) &mdash; and
+        classify a given mistake.</li>
+      <li>Distinguish <em>concrete</em> syntax from <em>abstract</em> syntax, and explain why the same
+        meaning can wear more than one concrete spelling.</li>
+      <li>Explain why a semantics is given as precise rules rather than English prose.</li>
+    </ul>
+
+    <h2>Rust I &mdash; the abstract syntax tree
+      <small class="text-muted">Lecture 3</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/foundations/ast.html">The abstract syntax tree</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-03/index.html">Lecture 3</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain what an AST records and what it drops relative to the source text.</li>
+      <li>Say how operator precedence shows up in the <em>shape</em> of the tree &mdash; which
+        operator ends up at the root, and why.</li>
+      <li>Explain why an AST is naturally a <em>sum type</em> (a Rust <code>enum</code>, one variant
+        per shape), and why recursive children are held behind a <code>Box</code>.</li>
+      <li>Say what a <em>span</em> is for and why every node carries one.</li>
+      <li>Read basic Rust: <code>fn</code>, <code>let</code>, <code>enum</code>, and a
+        <code>match</code> over an <code>enum</code> &mdash; and state what a small example
+        computes.</li>
+    </ul>
+
+    <h2>Rust II &mdash; values and runtime errors
+      <small class="text-muted">Lecture 4</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/eval/values.html">Values and runtime errors</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-04/index.html">Lecture 4</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Describe the space of <em>values</em> a program can evaluate to, and why it is a fixed,
+        closed set (a tagged <code>enum</code>, one variant per kind of value).</li>
+      <li>Explain what a <em>stuck</em> evaluation is (e.g. adding a boolean to an integer, dividing
+        by zero) and why such an expression has no value.</li>
+      <li>Explain why the evaluator returns a <code>Result</code> rather than a plain value, and what
+        <code>Result</code> and <code>Option</code> each represent.</li>
+      <li>Say what the <code>?</code> operator does when a sub-expression fails.</li>
+      <li>Distinguish the two kinds of failure kept apart in the interpreter: the host getting stuck
+        (uncatchable) versus an ordinary in-language value that models a failure.</li>
+      <li>Read basic Rust: <code>Option</code>/<code>Result</code> and a <code>match</code> that
+        handles each case.</li>
+    </ul>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Re-reading the Lecture
+        1&ndash;4 slides and re-typing the small Rust snippets is the next most useful thing.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>interpreter vs. compiler</li>
+        <li>specification vs. implementation</li>
+        <li>low-level vs. high-level</li>
+        <li>symbolic address / named location</li>
+        <li>paradigm</li>
+        <li>multi-paradigm</li>
+        <li>imperative / functional / declarative / OO</li>
+        <li>syntax vs. semantics</li>
+        <li>syntax error vs. logic error</li>
+        <li>static vs. dynamic semantics</li>
+        <li>concrete vs. abstract syntax</li>
+        <li>grammar</li>
+        <li>abstract syntax tree (AST)</li>
+        <li>sum type / <code>enum</code></li>
+        <li><code>Box</code> (and why it&rsquo;s needed)</li>
+        <li>span</li>
+        <li><code>match</code> / exhaustiveness</li>
+        <li>value (tagged union)</li>
+        <li>stuck evaluation / runtime error</li>
+        <li><code>Result</code> / <code>Option</code> / <code>?</code></li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>
