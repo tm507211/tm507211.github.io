@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e4d2caa2.js";
+            window.path_to_searchindex_js = "../searchindex-88d0138c.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -180,41 +180,305 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="error-handling"><a class="header" href="#error-handling">Error Handling</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     lecture: Error Handling · see spec §13.
-     Status: placeholder — spine authored just-in-time.
+     lecture: Error Handling (Sep 9) · see spec §13.
+     SEAM: values.md drew the boundary this chapter builds on — a run can get STUCK
+     (host halts, Err(Control::Raise), uncatchable by the program) vs. failures a
+     program models as VALUES. This chapter is the second side: the failures a
+     program expects and responds to, and the design space of mechanisms for them.
+     Nothing is handed forward except return (built Part IV / control-flow.md) and
+     ? (sugar, Part VIII / adts.md) — shown here as forward references only.
+     THROUGHLINE: three families — unwinding/exceptions, error VALUES, abort/panic.
+     The concrete mechanism is shown in RUST (the reader's metalanguage, already
+     fluent from values.md), landing on Result/Option + ?; Bridger's own handling
+     is the aside (same pattern one level up). Exceptions are the UNIMPLEMENTED
+     contrast. The abort family IS values.md's host stuck-errors, seen from a guest
+     program. User calls (2026-09-07): (1) Rust-forward, Bridger as an aside, not a
+     Bridger-focused chapter; (2) include the return->? "rightward drift" argument
+     in full (spec §13) even though return/? build later — forward refs, no live xref.
+     VERIFIED FACTS (do not "fix" back):
+       - Goodenough, "Exception Handling: Issues and a Proposed Notation," CACM
+         18(12), 1975. DOI 10.1145/361227.361230 (verified via the ACM DL page title).
+         NOT 10.1145/360933.360975 — that DOI is Dijkstra's "Guarded Commands,
+         Nondeterminacy and Formal Derivation of Programs," CACM 18(8); do not "fix" to it.
+       - Liskov & Snyder, "Exception Handling in CLU," IEEE TSE SE-5(6):546-558,
+         Nov 1979. Readable PDF on Norman Ramsey's Tufts course archive (linked).
+       - PL/I ON-conditions/ON-units: hedged as "among the first," mid-1960s.
+       - termination vs. resumption: resumption's decline hedged, not asserted flat.
+       - Bridger's ? requires the EXACT same error type E (no From::from coercion),
+         because traits are M8, after ? at M7 (spec §13 note). State it — Rust users
+         expect the coercion.
+     Bridger code fences are ```text (house style); Rust is rust,ignore (illustrative,
+     references undefined lookup/Config, will not compile).
+     Do NOT re-cite Hoare's "billion-dollar mistake" (lecture-04 opener for Option).
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p>The <a href="values.html">chapter on values and runtime errors</a> split failure in two. A run can get
+<strong>stuck</strong> — no rule applies, so there is no value, and the interpreter halts with a <code>RuntimeError</code>
+the program cannot observe or recover from. Separately, a program can compute a value that <em>stands
+for</em> a failure and
+carry on from it. This chapter is about that second kind: the failures a program <strong>expects</strong>, how
+a language lets an operation signal one, and how a caller responds. The mechanism a language picks
+shapes how easy it is to read and understand code. This chapter looks at the history and design
+choices for how programs handle and recover from errors.</p>
+<h2 id="failures-a-program-expects"><a class="header" href="#failures-a-program-expects">Failures a program expects</a></h2>
+<p>Some operations can fail as a normal part of doing their job. Looking up a configuration key that
+might be absent, parsing an integer from text a user typed, opening a file that might not exist,
+dividing by a number that might be zero — none of these is a bug in the program. Each is a case the
+program should anticipate and respond to: try another key, ask the user again, fall back to a
+default. The failure is part of the operation’s ordinary result, and the caller has a sensible next
+move.</p>
+<p>That makes these failures different from the stuck states the values chapter described. Adding a
+boolean to an integer has no meaning and no recovery; the interpreter halts. A missing configuration
+key has a
+perfectly good meaning — “it is not there” — and a caller who wants to know. The question is how an
+operation reports such an outcome so that a caller can see it and act on it.</p>
+<h2 id="mechanisms-for-handling-errors"><a class="header" href="#mechanisms-for-handling-errors">Mechanisms for handling errors</a></h2>
+<p>The earliest high-level languages signalled failure the way the hardware did: an operation set a
+status value, or returned a sentinel — a negative length, a null pointer, a distinguished integer —
+and the caller was expected to check it before using the result. This costs the language nothing to
+provide, and it is still how C’s standard library and most operating-system calls report failure.
+Its weakness is that nothing forces the check: a failed call has the same type as a successful one,
+so a caller can use its result as though it had succeeded and the compiler will not object, which
+makes the unchecked return value a classic source of bugs.</p>
+<p>The mechanisms modern languages reach for fall into three broad categories. Two of them — exceptions
+and error values — repair that unchecked return by forcing the failure into the open, in different
+ways; the third stops the program rather than recovering. The differences show up in where the
+failure goes, whether the caller is forced to deal with it, and whether the possibility of failure
+is visible in the operation’s type.</p>
+<h3 id="raising-and-catching-exceptions"><a class="header" href="#raising-and-catching-exceptions">Raising and catching exceptions</a></h3>
+<p>An <strong>exception</strong> moves the failure out of the return value entirely. An operation <em>raises</em>, and
+control leaves the raising code at once and travels up the call stack until it reaches a <em>handler</em>
+installed by some enclosing caller. Code between the raise and the handler is skipped. A function
+that does not care about a particular failure writes nothing about it; the exception passes through
+on its way to whoever does.</p>
+<p><a href="https://doi.org/10.1145/960118.808389">PL/I</a>, in the mid-1960s, is among the first languages to
+build this into the language itself, with <code>ON</code>-conditions and the <code>ON</code>-units that handle them. The
+systematic treatment came a decade later: Goodenough’s 1975 paper
+<em><a href="https://doi.org/10.1145/361227.361230">Exception Handling: Issues and a Proposed Notation</a></em> named
+the design questions still argued today. Chief among them is what happens after a handler runs.
+Under <strong>resumption</strong>, the handler can repair the situation and hand control back to the point that
+raised, which continues as if nothing had happened. Under <strong>termination</strong>, the raising construct is
+abandoned and control resumes in the handler’s context. CLU (Liskov and colleagues, later in the
+1970s) made exceptions part of each procedure’s signature and committed to termination; termination
+became the model the mainstream languages adopted, and later designs — C++, Java, Python — followed
+it, while resumption largely fell out of use.</p>
+<p>What every exception mechanism shares is that the failure is <em>out of band</em>. A function’s declared
+return type describes only the success case; whether it can also raise, and what, is either
+unstated or kept in a separate part of the signature. Java’s <strong>checked exceptions</strong> are the notable
+attempt to pull that information back into the type and force callers to account for it — an
+experiment whose ergonomics have been argued over ever since.</p>
+<h3 id="error-values"><a class="header" href="#error-values">Error values</a></h3>
+<p>The functional tradition keeps the failure <em>in</em> the return value, but replaces the unchecked
+sentinel with a value whose type says failure is possible. ML’s <code>option</code> and Haskell’s <code>Maybe</code>
+carry “a value or nothing”; Haskell’s <code>Either</code> and Rust’s <code>Result</code> carry “a value or an error.” A
+function that might fail returns one of these, and a caller cannot reach the success value without
+first taking apart the wrapper and confronting the failure case.</p>
+<p>This is the family the interpreter already uses in Rust: <code>eval</code> returns <code>Result&lt;Value, Control&gt;</code>,
+and every caller has to decide what an <code>Err</code> means before it can touch a <code>Value</code>. The possibility
+of failure is written in the type, the compiler checks that the caller handled it, and no separate
+channel or stack unwinding is involved — the failure is an ordinary value that flows through the
+program like any other.</p>
+<h3 id="abort-panics"><a class="header" href="#abort-panics">Abort: panics</a></h3>
+<p>The third answer is to not recover at all. When a failure means the program has hit a state it was
+built to assume could never happen — a broken invariant, an index the code proved was in range — a
+language can stop the program outright: Rust’s <code>panic!</code>, C’s <code>abort</code>, a failed assertion. There is
+no handler and no value; the program immediately ends.</p>
+<p>This is exactly the interpreter’s stuck errors from the values chapter, seen from a Bridger
+program’s side. When <code>eval</code> returns <code>Err(Control::Raise(..))</code>, the run halts and the program cannot
+intervene — an abort, reported at the top level. The abort family is reserved for failures where
+continuing would be worse than stopping, which is why it sits apart from the two recoverable
+mechanisms above.</p>
+<h2 id="error-values-in-rust"><a class="header" href="#error-values-in-rust">Error values in Rust</a></h2>
+<p>Rust gives a program both <code>Result</code> and <code>Option</code>, defined in the values chapter, and one way to take
+them apart: <code>match</code>. An operation that can fail returns the wrapper, and the caller matches on it.</p>
+<pre><code class="language-rust ignore">fn safe_div(a: i64, b: i64) -&gt; Result&lt;i64, String&gt; {
+    if b == 0 {
+        Err("divide by zero".to_string())
+    } else {
+        Ok(a / b)
+    }
+}
 
-- The design space: exceptions / non-local jumps vs. `Result` / `Option` **error values** vs. panics.
-- Where Bridger lands: `Result` / `Option` via `match` (fits the typed, ML/Rust-flavored design;
-  rides on ADTs at M7). `return` is in-core at M3; `?` is sugar at M7.
+match safe_div(10, 0) {
+    Ok(q)  =&gt; println!("{q}"),
+    Err(m) =&gt; println!("error: {m}"),
+}</code></pre>
+<p>The <code>Result&lt;i64, String&gt;</code> in the signature is the whole point: a caller reads it and knows the call
+can fail, and the <code>match</code> will not compile unless it covers <code>Err</code>. The failure is in the open, and
+handling it is not optional.</p>
+<h3 id="when-failures-come-in-sequence"><a class="header" href="#when-failures-come-in-sequence">When failures come in sequence</a></h3>
+<p>Handling one failure reads well. The difficulty this family is known for appears when several
+fallible operations run in sequence, each depending on the one before. Consider building a
+configuration from three lookups, each of which can fail:</p>
+<pre><code class="language-rust ignore">fn read_config() -&gt; Result&lt;Config, String&gt; {
+    match lookup("host") {
+        Err(e) =&gt; Err(e),
+        Ok(host) =&gt; match lookup("port") {
+            Err(e) =&gt; Err(e),
+            Ok(port) =&gt; match lookup("user") {
+                Err(e) =&gt; Err(e),
+                Ok(user) =&gt; Ok(Config { host, port, user }),
+            },
+        },
+    }
+}</code></pre>
+<p>Each step continues inside the <code>Ok</code> arm of the step before, so the real work moves one level to the
+right for every operation, and the actual result — building the <code>Config</code> — ends up buried at the
+bottom of the staircase. This <strong>rightward drift</strong> is the shape critics of error values point to: the
+same three lookups written with exceptions would sit flat, one after another, because a failure
+would simply leave on its own. Handled naively, error values put their least flattering foot
+forward.</p>
+<p>The repair is to let a failure leave early instead of nesting. An early <strong>return</strong> exits the
+function the moment a step fails, so the success value can continue at the outer level rather than
+inside an arm:</p>
+<pre><code class="language-rust ignore">fn read_config() -&gt; Result&lt;Config, String&gt; {
+    let host = match lookup("host") {
+        Ok(v) =&gt; v,
+        Err(e) =&gt; return Err(e),
+    };
+    let port = match lookup("port") {
+        Ok(v) =&gt; v,
+        Err(e) =&gt; return Err(e),
+    };
+    let user = match lookup("user") {
+        Ok(v) =&gt; v,
+        Err(e) =&gt; return Err(e),
+    };
+    Ok(Config { host, port, user })
+}</code></pre>
+<p>The staircase is gone — the steps are back in a line — but each one is still four lines of the same
+match-and-return. That repeated shape is exactly what Rust’s <strong><code>?</code> operator</strong> abbreviates. Writing
+<code>e?</code> on a <code>Result</code> unwraps an <code>Ok</code> to its value and, on an <code>Err</code>, returns it from the enclosing
+function at once:</p>
+<pre><code class="language-rust ignore">fn read_config() -&gt; Result&lt;Config, String&gt; {
+    let host = lookup("host")?;
+    let port = lookup("port")?;
+    let user = lookup("user")?;
+    Ok(Config { host, port, user })
+}</code></pre>
+<p>Each <code>?</code> stands for the four-line match above it. The code now reads as the three steps it is, the
+failure path is a single character, and the type still says the function can fail. This is the same
+<code>?</code> the <code>eval</code> walk used to thread a <code>Control</code> outward: one operator, propagating the
+error channel so that ordinary code does not have to. With <code>return</code> and <code>?</code> in hand, error values
+read as directly as the exception version, and keep the failure in the type.</p>
+<h2 id="how-bridger-handles-errors"><a class="header" href="#how-bridger-handles-errors">How Bridger handles errors</a></h2>
+<p>Bridger makes the same choice, one level up: recoverable failure is a <strong>value</strong>. Its prelude defines
+<code>Option</code> and <code>Result</code> as ordinary <a href="../adt/adts.html">algebraic data types</a><!-- xref:../adt/adts.md -->,
+taken apart with <code>match</code>, and a Bridger program handles a failing operation the way the Rust above
+does:</p>
+<pre><code class="language-text">fn safe_div(a: Int, b: Int) -&gt; Result&lt;Int, String&gt; =
+    if b == 0 then Err("divide by zero") else Ok(a / b);
 
-*Design-space (woven):* **exceptions** are the unimplemented contrast — presented with pros/cons.
--->
+match safe_div(10, 0) {
+    Ok(q)  =&gt; print(q),
+    Err(m) =&gt; print(m),
+}
+</code></pre>
+<p>The two flattening tools carry over as well. <code>return</code> is part of Bridger’s core from the start,
+introduced with <a href="../imperative/control-flow.html">control flow</a><!-- xref:../imperative/control-flow.md -->;
+<code>?</code> arrives later as surface sugar over <code>match</code> and <code>return</code>, once ADTs give the language the
+constructors it works on. Bridger’s <code>Option</code> and <code>Result</code> are its own, defined in the
+<a href="../appendix/prelude.html">prelude</a>, and separate from the Rust <code>Option</code> and <code>Result</code> the interpreter
+is written in — the <a href="values.html">values chapter</a> drew that boundary, and it holds here: a Bridger
+<code>Err("...")</code> is a value the program computes with, while the interpreter getting stuck is an abort
+the program never sees.</p>
+<p>One detail differs from Rust, and readers who know Rust will trip on it. Rust’s <code>?</code> quietly inserts
+a <code>From::from</code> conversion on the error, so an <code>Err</code> of one error type can propagate out of a
+function whose error type is another. Bridger’s <code>?</code> does not convert: in a function returning
+<code>Result&lt;T, E&gt;</code>, every <code>e?</code> requires <code>e</code> to be a <code>Result&lt;_, E&gt;</code> with that same <code>E</code>. The conversion
+would need trait-directed dispatch, which the language gains later than <code>?</code>, so for now the error
+types must match exactly, and a mismatch is reported as a type error naming two error types that a
+Rust programmer would expect to be compatible.</p>
+<p>Bridger has no exceptions. They are the contrast in this chapter rather than a feature: the one
+piece of non-local control in the core is <code>return</code>, and the abort family is the interpreter’s stuck
+errors. A program signals a recoverable failure by returning a value, and every place that might
+fail says so in its type.</p>
+<h2 id="choosing-a-mechanism"><a class="header" href="#choosing-a-mechanism">Choosing a mechanism</a></h2>
+<p>No one of the three families is the plain best, and current languages divide over them. Exceptions
+keep the common path uncluttered — code that does not handle a failure says nothing about it — at
+the cost of a failure edge that is invisible at the call site and a control flow that leaves normal
+order. Error values make every failure visible in the type and checked by the compiler, at the cost
+of the drift that <code>return</code> and <code>?</code> exist to answer. Aborting trades all recovery for the guarantee
+that a broken assumption stops the program instead of corrupting it.</p>
+<p>Where languages land often reflects what they are protecting. Java, Python, and C++ center on
+exceptions, with Java’s checked exceptions an attempt to make the failure edge visible that programs
+frequently route around. Go returns an <code>error</code> value alongside the result and leans on convention to
+check it. Rust draws the line by <em>kind</em> of failure: <code>Result</code> and <code>Option</code> for the failures a caller
+should handle, <code>panic!</code> for the bugs it should not — recoverable failures as values, unrecoverable
+ones as aborts. Bridger follows that division, with the recoverable side modeled as values and the
+unrecoverable side its stuck errors, and leaves exceptions to the languages that build on them.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>The design questions, first stated</strong>: John Goodenough’s <em><a href="https://doi.org/10.1145/361227.361230">Exception Handling: Issues and a
+Proposed Notation</a></em> (CACM, 1975) set out the vocabulary —
+including the termination-versus-resumption choice — that later designs argued within. Barbara
+Liskov and Alan Snyder’s <em><a href="https://www.cs.tufts.edu/~nr/cs257/archive/barbara-liskov/exceptions.pdf">Exception Handling in
+CLU</a></em> (IEEE Transactions
+on Software Engineering, 1979) reports the reasoning behind putting exceptions in a procedure’s
+signature and choosing termination over resumption, from the experience of building the mechanism
+into CLU.</p>
+<p><strong>Error values in practice</strong>: the Rust Book’s <em><a href="https://doc.rust-lang.org/book/ch09-00-error-handling.html">Error
+Handling</a></em> chapter works through
+<code>panic!</code>, <code>Result</code>, and the <code>?</code> operator, and draws the recoverable-versus-unrecoverable line this
+chapter’s closing section describes. Rob Pike’s <em><a href="https://go.dev/blog/errors-are-values">Errors are
+values</a></em> (2015) makes the case for Go’s convention of
+returning an error alongside the result, and shows patterns that keep the repeated checks from
+piling up.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>A configuration lookup can fail because the key is absent. Why model that with <code>Result</code> or <code>Option</code> rather than the stuck runtime errors of the values chapter?</summary>
+<p>Because a missing key is a failure the program expects and can act on, and a stuck error is one it
+cannot. A stuck error — adding a boolean to an integer — has no meaning and no recovery; the
+interpreter halts and the program never runs again from that point. A missing key has a clear
+meaning (“not present”) and a caller with a next move (try a default, ask again), so it should be
+an ordinary value the program inspects and continues from. Reaching for a stuck error here would
+halt the whole
+run over a case that was never a bug, and give the caller no way to respond.</p>
+</details>
+<details>
+<summary>An exception and an error value both report a failure. What can a caller tell from a function's <em>type</em> under each?</summary>
+<p>Under error values, the type states the failure: a function returning <code>Result&lt;Config, String&gt;</code>
+announces at the call site that it can fail and with what, and the compiler will not let the caller
+use the result without handling the <code>Err</code> case. Under exceptions, the return type usually describes
+only success; whether the function can raise, and what, is either unstated or kept in a separate
+part of the signature, so the caller can compile without accounting for it. The trade is visibility
+and forced handling against uncluttered code on the path that does not care about the failure — the
+axis languages divide on. (Java’s checked exceptions are the attempt to move exceptions toward the
+error-value end of this axis.)</p>
+</details>
+<details>
+<summary>Rewrite this staircase so the failures leave early, then say what <code>?</code> abbreviates.<br><code>match f() { Err(e) =&gt; Err(e), Ok(a) =&gt; match g(a) { Err(e) =&gt; Err(e), Ok(b) =&gt; Ok(h(b)) } }</code></summary>
+<p>With early returns the two steps come back into a line:</p>
+<pre><code class="language-rust ignore">let a = match f()  { Ok(v) =&gt; v, Err(e) =&gt; return Err(e) };
+let b = match g(a) { Ok(v) =&gt; v, Err(e) =&gt; return Err(e) };
+Ok(h(b))</code></pre>
+<p>Each <code>?</code> abbreviates exactly one of those <code>match</code> expressions: <code>f()?</code> evaluates <code>f()</code>, yields the
+inner value on <code>Ok</code>, and on <code>Err</code> returns it from the enclosing function. So the whole thing becomes
+<code>let a = f()?; let b = g(a)?; Ok(h(b))</code>. The drift came from continuing inside each <code>Ok</code> arm;
+<code>return</code> removes the nesting, and <code>?</code> removes the repetition, leaving the failure path a single
+character while it stays present in the type.</p>
+</details>
+<details>
+<summary>A Rust programmer writes <code>e?</code> in a Bridger function returning <code>Result&lt;Config, ConfigError&gt;</code>, where <code>e</code> has type <code>Result&lt;String, IoError&gt;</code>. It type-errors. Why, when the same code would compile in Rust?</summary>
+<p>Rust’s <code>?</code> inserts a <code>From::from</code> conversion on the error, so an <code>IoError</code> can be turned into a
+<code>ConfigError</code> on its way out, provided that conversion exists. Bridger’s <code>?</code> performs no conversion:
+in a function returning <code>Result&lt;T, E&gt;</code>, every <code>e?</code> requires <code>e</code> to be a <code>Result&lt;_, E&gt;</code> with that
+same <code>E</code>, so a <code>Result&lt;String, IoError&gt;</code> propagated out of a <code>Result&lt;Config, ConfigError&gt;</code> function
+is a type error naming the two error types. The conversion would need trait-directed dispatch, which
+the language gains after <code>?</code>, so until then the error types must match exactly.</p>
+</details>
+<details>
+<summary>Rust offers both <code>Result</code> and <code>panic!</code>. Why would a language keep an abort mechanism at all, when error values can report any failure?</summary>
+<p>Because some failures mean an assumption the program was built on has broken, and there is no honest
+value to return. If code has already established that an index is in range or that an invariant
+holds, a failure of that assumption is a bug in the program, not a case a caller should be asked to
+handle; threading a <code>Result</code> through it would force every caller to write handling for a situation
+that should never arise, and would invite them to paper over it. An abort stops the run at the point
+the assumption failed, which is both the most informative place to report it and safer than
+continuing from a state the code cannot describe. The division is by kind of failure: values for
+what a caller
+should recover from, aborts for what it should not — the line Rust draws with <code>Result</code> against
+<code>panic!</code>, and Bridger with values against its stuck errors.</p>
+</details>
 
                     </main>
 
