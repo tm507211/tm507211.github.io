@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 2 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 2 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lectures 5&ndash;6 and their textbook
+      chapters, plus one design question about the coin purse you built for Milestone M0. Answers
+      are short: a sentence or two, in your own words, earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 15 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions, one question that asks you to
+            read a small Rust snippet and say what it prints, and one question about a design
+            decision you made in Milestone M0.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia,
+            and no need to reproduce exact Rust syntax.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Tree-walking evaluation
+      <small class="text-muted">Lecture 5</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/eval/tree-walking.html">Tree-walking evaluation</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-05/index.html">Lecture 5</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain why evaluation is a <em>recursive function over the tree</em>: the rules are
+        compositional, so a node's value is computed from its children's values, and a literal is
+        the base case.</li>
+      <li>Read an inference rule and say what each part becomes in the evaluator: a
+        <em>premise</em> becomes a recursive call on a child, the <em>conclusion</em> becomes the
+        value the <code>match</code> arm returns, and one rule is one arm.</li>
+      <li>Say why the evaluator's <em>call tree</em> has the same shape as the rule's
+        <em>derivation tree</em>, and why children must be evaluated before their parent.</li>
+      <li>Explain how the rule for division differs from the rule for addition (the extra
+        premise that the divisor is nonzero), and what the evaluator does when that premise
+        fails.</li>
+      <li>Explain how <code>and</code> and <code>or</code> <em>short-circuit</em>: why each needs
+        two rules, when the right operand is evaluated, and what an expression like
+        <code>false and (1 / 0)</code> evaluates to and why.</li>
+      <li>Name an alternative to walking the tree (a bytecode VM, closure generation, a JIT) and
+        say in a sentence what it trades for what.</li>
+    </ul>
+
+    <h2>Error handling
+      <small class="text-muted">Lecture 6</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/eval/error-handling.html">Error handling</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-06/index.html">Lecture 6</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Distinguish a failure a program <em>expects</em> and can act on (a missing key, a bad
+        parse, a zero divisor) from a <em>stuck</em> state the interpreter halts on, and say why
+        each is handled differently.</li>
+      <li>Say what is wrong with reporting failure through a <em>sentinel</em> value such as
+        <code>-1</code> or a null pointer.</li>
+      <li>Describe the three categories of mechanism &mdash; <em>exceptions</em>, <em>error
+        values</em>, and <em>abort</em> &mdash; and for each say <em>where the failure goes</em>,
+        whether the caller is <em>forced</em> to handle it, and whether it is <em>visible in the
+        type</em>.</li>
+      <li>Explain what an exception handler does, and the difference between
+        <em>termination</em> and <em>resumption</em> once a handler runs.</li>
+      <li>Explain <em>rightward drift</em>: why a sequence of fallible operations handled with
+        nested <code>match</code> steps to the right, and how an early <code>return</code> flattens
+        it.</li>
+      <li>Say what the <code>?</code> operator abbreviates, and trace a small Rust function that
+        uses it to say what it returns for a given input.</li>
+      <li>Say which mechanism Bridger uses for recoverable failure, which it uses for
+        unrecoverable failure, and which it leaves out.</li>
+      <li>Name how Java, Go, and Rust each divide the space, in a sentence apiece.</li>
+    </ul>
+
+    <h2>Milestone M0: your representation choice
+      <small class="text-muted">The coin purse</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/milestones/m0.html">Milestone M0: the Rust warm-up</a>
+    </p>
+    <p>
+      One question asks about a decision you made, not about Rust. You chose how a
+      <code>Purse</code> is represented: a list of every coin, a map from each kind to a count, or
+      one count per kind. Be able to:
+    </p>
+    <ul class="objectives">
+      <li>Say which representation you chose.</li>
+      <li>Name one purse operation your choice made <em>easy</em> and one it made <em>harder</em>
+        than another representation would have, and explain why in terms of what the operation has
+        to do (push one item, scan every coin, merge counts, handle a kind that is absent).</li>
+      <li>Connect this to the same decision the interpreter makes for its own values: a
+        representation makes some operations one step and others a loop.</li>
+    </ul>
+    <p>You will not be asked to recall the exact fields, types, or method signatures you wrote.</p>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Re-reading the Lecture
+        5&ndash;6 slides and re-typing the small Rust snippets (the miniature evaluator, and the
+        three versions of <code>read_config</code>) is the next most useful thing. For the M0
+        question, look back at your <code>Purse</code> and ask which methods were one line and
+        which needed a loop.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>compositional (rule / evaluator)</li>
+        <li>tree-walking evaluator</li>
+        <li>premise / conclusion / axiom</li>
+        <li>derivation tree vs. call tree</li>
+        <li>stuck evaluation</li>
+        <li>short-circuit evaluation</li>
+        <li>bytecode VM / JIT (one line each)</li>
+        <li>expected failure vs. stuck state</li>
+        <li>sentinel value / status code</li>
+        <li>exception / raise / handler</li>
+        <li>termination vs. resumption</li>
+        <li>checked exception</li>
+        <li>error value (<code>Result</code>, <code>Option</code>)</li>
+        <li>abort / <code>panic!</code></li>
+        <li>in band vs. out of band</li>
+        <li>rightward drift</li>
+        <li>early <code>return</code></li>
+        <li>the <code>?</code> operator</li>
+        <li>host (interpreter) vs. guest (Bridger program)</li>
+        <li>representation choice / trade-off</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>
