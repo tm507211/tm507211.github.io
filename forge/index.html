@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>FORGE Lab</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="description" content="FORGE: Foundations of Reasoning and Generative Engineering — a research lab building tools that help people write software that executes as intended." />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700|Roboto+Condensed:300,400|Chakra+Petch:500,600,700" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+  <!-- Self-contained FORGE styles (see comment at top of forge.css). -->
+  <link rel="stylesheet" type="text/css" href="forge.css" />
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+</head>
+
+<body>
+
+<!-- FORGE-branded nav. Keep this block in sync across all forge/ pages;
+     set class="active" on the <li> for the current page. -->
+<nav class="navbar navbar-default navbar-fixed-top forge-nav">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#forgeNav">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html"><i class="fas fa-hammer"></i>FORGE</a>
+    </div>
+    <div id="forgeNav" class="collapse navbar-collapse">
+      <ul class="nav navbar-nav navbar-right">
+        <li class="active"><a href="index.html#research">Research</a></li>
+        <li><a href="publications.html">Publications</a></li>
+        <li><a href="people.html">People</a></li>
+        <li><a href="seminar.html">Seminar</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================ HERO ============================ -->
+<header class="forge-hero">
+  <div class="container">
+    <div class="forge-wordmark">
+      <svg class="fw-lockup" viewBox="0 0 1000 420" preserveAspectRatio="xMidYMid meet"
+           role="img" aria-label="FORGE — Foundations of Reasoning and Generative Engineering">
+        <text class="fw-name-t" x="0" y="196" font-size="240" textLength="1000" lengthAdjust="spacing">FORGE</text>
+        <line class="fw-rule-line" x1="0" y1="250" x2="468" y2="250" />
+        <line class="fw-rule-line" x1="532" y1="250" x2="1000" y2="250" />
+        <rect class="fw-diamond" x="489" y="239" width="22" height="22" transform="rotate(45 500 250)" />
+        <text class="fw-tag-t" x="0" y="336" font-size="66" textLength="1000" lengthAdjust="spacing">FOUNDATIONS OF REASONING</text>
+        <text class="fw-tag-t" x="0" y="410" font-size="66" textLength="1000" lengthAdjust="spacing">AND GENERATIVE ENGINEERING</text>
+      </svg>
+    </div>
+    <p class="forge-mission">
+      Our research helps people write software that executes as intended.
+    </p>
+    <p class="forge-affil">
+      Directed by <a href="../index.html">Charlie Murphy</a> &middot;
+      <a href="https://www.cs.montana.edu">Gianforte School of Computing</a> &middot;
+      <a href="https://www.montana.edu">Montana State University</a>
+    </p>
+  </div>
+</header>
+
+<!-- ============================ RESEARCH ============================ -->
+<section class="forge-section">
+  <span id="research" class="forge-anchor"></span>
+  <div class="container">
+    <p class="forge-h2">Research</p>
+    <p class="forge-lead">Helping you write secure, trustworthy software.</p>
+    <p style="font-size:16px; line-height:1.65; max-width:760px; margin-bottom:34px;">
+      FORGE combines the complementary strengths of generative AI and symbolic, automated
+      reasoning. Generative models scale and produce plausible, often-correct results&mdash;but
+      we don't take them on trust. We pair them with automated reasoning that checks their
+      output and returns sound, interpretable feedback. That is why our work centers on
+      solvers and reasoning systems that produce concrete examples and proof certificates:
+      evidence a developer or another tool can inspect and build on. Together they yield
+      strong guarantees about what software actually does&mdash;across programming languages,
+      provable security, and program synthesis.
+    </p>
+
+    <div class="row">
+      <div class="col-md-4">
+        <div class="theme">
+          <div class="theme-icon"><i class="fas fa-diagram-project"></i></div>
+          <h3>Foundations of Reasoning</h3>
+          <p>
+            Programming languages, logic solving, and automated reasoning: the core
+            engines&mdash;program synthesis, verification, and decision procedures&mdash;that
+            everything else in the lab is built on.
+          </p>
+          <span class="theme-tag">PL &middot; Logic &middot; Automated Reasoning</span>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="theme">
+          <div class="theme-icon"><i class="fas fa-shield-halved"></i></div>
+          <h3>Provable Security</h3>
+          <p>
+            Turning security properties into obligations a machine can check&mdash;so
+            that guarantees about access, isolation, and policy hold by construction
+            rather than by testing alone.
+          </p>
+          <span class="theme-tag">Verification &middot; Policy &middot; Guarantees</span>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="theme">
+          <div class="theme-icon"><i class="fas fa-robot"></i></div>
+          <h3>Trustworthy Generative AI</h3>
+          <p>
+            Generative models can propose programs; formal reasoning can decide whether
+            to trust them. We pair synthesis from LLMs with solvers and proofs so the
+            code they produce is provably correct.
+          </p>
+          <span class="theme-tag">Synthesis &middot; LLMs &middot; Certificates</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="research-more">
+      <h3 class="forge-sub">The neuro-symbolic loop</h3>
+      <div class="loop-steps">
+        <span class="step">Propose</span>
+        <i class="fas fa-arrow-right"></i>
+        <span class="step">Check</span>
+        <i class="fas fa-arrow-right"></i>
+        <span class="step">Certify &mdash; or explain the failure</span>
+        <i class="fas fa-arrow-rotate-left" title="feed back and repeat"></i>
+      </div>
+      <p>
+        Our systems run generative proposal and symbolic checking in a loop. A model
+        proposes a candidate; a solver or verifier checks it against the specification.
+        When it holds, we return the result with a certificate of its correctness. When it
+        fails, the same machinery yields a proof witness that says <em>why</em>&mdash;that this
+        input diverges, or that these inputs violate a particular conjunct of the spec&mdash;not
+        merely that some input&ndash;output pair is wrong. That witness becomes rich, structured
+        feedback for the next proposal, so each iteration is guided by an interpretable reason
+        rather than a blind retry.
+      </p>
+
+      <h3 class="forge-sub">Synthesizing software with its proof</h3>
+      <p>
+        Some of our projects generate a program together with a machine-checked proof of its
+        correctness&mdash;in <a href="https://github.com/verus-lang/verus">Verus</a> for Rust,
+        or in proof assistants like <a href="https://lean-lang.org/">Lean&nbsp;4</a> and
+        <a href="https://rocq-prover.org/">Rocq</a>. A verification harness guarantees soundness,
+        while tooling and practice from software engineering push toward verified software that
+        is high-quality and maintainable&mdash;rather than proving isolated properties one at a time.
+        The same idea carries into agentic coding tools: we bring decades of programming-languages
+        and software-engineering research to the coding loop, so the code these agents produce is
+        correct and maintainable&mdash;not just plausible.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ NEWS ============================ -->
+<section class="forge-section alt">
+  <span id="news" class="forge-anchor"></span>
+  <div class="container">
+    <p class="forge-h2">News</p>
+    <p class="forge-lead">What's new.</p>
+
+    <!-- Add newest items at the top. Keep entries factual. -->
+    <div class="news-item">
+      <div class="news-date">Jun 2025</div>
+      <div class="news-body">
+        <a href="../docs/semgus_verifier.pdf">Verifying Solutions to Semantics-Guided Synthesis Problems</a>
+        appears at PLDI 2025.
+      </div>
+    </div>
+    <div class="news-item">
+      <div class="news-date">Oct 2024</div>
+      <div class="news-body">
+        <a href="../docs/semantics_synth.pdf">Synthesizing Formal Semantics from Executable Interpreters</a>
+        appears at OOPSLA 2024.
+      </div>
+    </div>
+    <div class="news-item">
+      <div class="news-date">Jul 2024</div>
+      <div class="news-body">
+        <a href="../docs/fine_grained_strategy_synthesis.pdf">QLA Satisfaction via Fine-Grained Strategy Improvement</a>
+        appears at CAV 2024.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ FOOTER ============================ -->
+<footer class="forge-footer">
+  <div class="container">
+    <span class="footer-mark">FORGE</span> &middot; Foundations of Reasoning and Generative Engineering<br />
+    <a href="https://www.cs.montana.edu">Gianforte School of Computing</a>, <a href="https://www.montana.edu">Montana State University</a> &middot;
+    <a href="../index.html">Charlie Murphy</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,394 @@
+/*
+  FORGE lab styles — self-contained on purpose.
+  This subsite reuses only external CDNs (Bootstrap/Roboto/Font Awesome) and
+  the shared student photos under ../images/students/. Everything visual lives
+  here so the /forge/ directory can be lifted to its own domain later by
+  copying this folder + the image assets and dropping the ../ prefixes.
+*/
+
+:root {
+  --forge-ink: #182a4a;      /* navy — headings, matches logo   */
+  --forge-navy: #182a4a;
+  --forge-navy-dk: #11203a;
+  --forge-body: #3a3f47;     /* body text                       */
+  --forge-muted: #7b7669;    /* captions, notes (warm gray)     */
+  --forge-accent: #c2a04e;   /* gold — decorative (bars, icons on dark) */
+  --forge-accent-dk: #8a6a1f;/* text-safe gold for links        */
+  --forge-line: #e6e0d0;     /* warm hairlines                  */
+  --forge-panel: #f4eede;    /* warm cream panel                */
+  --forge-cream: #f8f3e8;    /* hero cream, matches logo bg     */
+}
+
+body {
+  font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  color: var(--forge-body);
+  background: #fff;
+}
+
+/* ---- Nav ---------------------------------------------------------------- */
+.forge-nav.navbar-default {
+  background: var(--forge-ink);
+  border: 0;
+  margin-bottom: 0;
+  border-radius: 0;
+}
+.forge-nav .navbar-brand {
+  color: #fff;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+.forge-nav .navbar-brand .fa-hammer { color: var(--forge-accent); margin-right: 8px; }
+.forge-nav .navbar-nav > li > a { color: #d7ddea; }
+.forge-nav .navbar-nav > li > a:hover,
+.forge-nav .navbar-nav > li > a:focus { color: #fff; background: transparent; }
+.forge-nav .navbar-nav > .active > a,
+.forge-nav .navbar-nav > .active > a:hover,
+.forge-nav .navbar-nav > .active > a:focus { color: var(--forge-accent); background: transparent; }
+.forge-nav .navbar-toggle { border-color: #35426a; }
+.forge-nav .navbar-toggle .icon-bar { background: #d7ddea; }
+.forge-nav .navbar-collapse { border-color: #2a3860; }
+.forge-nav .home-link { color: #9aa6bd; }
+
+/* ---- Hero --------------------------------------------------------------- */
+.forge-hero {
+  background:
+    radial-gradient(900px 340px at 50% -30%, rgba(194,160,78,0.18), transparent 65%),
+    var(--forge-cream);
+  color: var(--forge-navy);
+  padding: 84px 0 56px;   /* top clears the fixed navbar */
+  text-align: center;
+  border-bottom: 1px solid var(--forge-line);
+}
+/* Full wordmark as ONE SVG: FORGE + gold rule + two-line tagline all scale
+   together and fill the width up to the cap. */
+.forge-wordmark { text-align: center; margin: 4px auto 20px; }
+.forge-wordmark .fw-lockup {
+  display: block;
+  width: 100%;
+  max-width: 600px;   /* the cap; below this it fills 100% of the container */
+  height: auto;
+  margin: 0 auto;
+}
+.forge-wordmark .fw-lockup .fw-name-t {
+  font-family: "Chakra Petch", "Roboto Condensed", sans-serif;
+  font-weight: 700;
+  fill: var(--forge-navy);
+}
+.forge-wordmark .fw-lockup .fw-tag-t {
+  font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+  fill: var(--forge-navy);
+}
+.forge-wordmark .fw-lockup .fw-rule-line { stroke: var(--forge-accent); stroke-width: 6; }
+.forge-wordmark .fw-lockup .fw-diamond   { fill: var(--forge-accent); }
+/* Inner-page hero: just a large uppercase page title (no lab lockup). */
+.forge-hero .forge-page-title {
+  font-family: "Chakra Petch", "Roboto Condensed", sans-serif;
+  font-weight: 700;
+  font-size: 72px;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--forge-navy);
+  margin: 0;
+}
+.forge-hero .forge-mission {
+  font-size: 19px;
+  line-height: 1.5;
+  max-width: 720px;
+  margin: 0 auto 18px;
+  color: var(--forge-navy);
+}
+.forge-hero .forge-affil {
+  font-size: 14px;
+  color: var(--forge-muted);
+}
+.forge-hero .forge-affil a { color: var(--forge-accent-dk); }
+
+/* ---- Section scaffolding ------------------------------------------------ */
+.forge-section { padding: 54px 0; }
+.forge-section.alt { background: var(--forge-panel); }
+.forge-section > .container { max-width: 950px; }
+.forge-h2 {
+  font-size: 15px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--forge-accent-dk);
+  margin: 0 0 6px;
+}
+.forge-lead {
+  font-size: 27px;
+  font-weight: 500;
+  color: var(--forge-ink);
+  margin: 0 0 30px;
+}
+.forge-anchor { position: relative; top: -60px; visibility: hidden; }
+
+/* ---- Research themes ---------------------------------------------------- */
+.theme {
+  background: #fff;
+  border: 1px solid var(--forge-line);
+  border-top: 3px solid var(--forge-accent);
+  border-radius: 3px;
+  padding: 24px 22px;
+  height: 100%;
+}
+.theme .theme-icon {
+  color: var(--forge-navy);
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+.theme h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--forge-ink);
+  margin: 0 0 10px;
+  line-height: 1.3;
+}
+.theme p { font-size: 14.5px; line-height: 1.6; margin: 0; }
+.theme .theme-tag {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--forge-muted);
+}
+
+/* "How we work" subsections under the theme cards */
+.research-more { margin-top: 42px; }
+.forge-sub {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--forge-ink);
+  margin: 36px 0 10px;
+}
+.research-more p { font-size: 16px; line-height: 1.65; max-width: 760px; }
+.research-more p a { color: var(--forge-accent-dk); }
+.loop-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 16px;
+}
+.loop-steps .step {
+  background: var(--forge-panel);
+  border: 1px solid var(--forge-line);
+  border-bottom: 2px solid var(--forge-accent);
+  border-radius: 3px;
+  padding: 6px 13px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--forge-ink);
+}
+.loop-steps i { color: var(--forge-accent); font-size: 13px; }
+
+/* ---- People ------------------------------------------------------------- */
+.forge-role {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--forge-muted);
+  margin: 26px 0 16px;
+  border-bottom: 1px solid var(--forge-line);
+  padding-bottom: 6px;
+}
+.people-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+.person { width: 150px; text-align: center; }
+.person img {
+  width: 108px;
+  height: 108px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 10px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--forge-line);
+}
+.person .person-name { font-weight: 500; color: var(--forge-ink); }
+.person .person-note { font-size: 12px; color: var(--forge-muted); }
+
+.director { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-bottom: 8px; }
+.director img {
+  width: 132px; height: 132px; object-fit: cover; border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--forge-line);
+}
+.director .director-name { font-size: 22px; font-weight: 500; color: var(--forge-ink); }
+.director .director-title { color: var(--forge-muted); }
+.director .director-desc {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--forge-body);
+  max-width: 560px;
+}
+.director .director-links { margin-top: 6px; font-size: 15px; }
+.director .director-links a { color: var(--forge-accent-dk); margin-right: 14px; }
+
+/* ---- News --------------------------------------------------------------- */
+.news-item {
+  display: flex;
+  gap: 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--forge-line);
+}
+.news-item:last-child { border-bottom: 0; }
+.news-date {
+  flex: 0 0 92px;
+  color: var(--forge-navy);
+  font-weight: 500;
+  font-size: 14px;
+}
+.news-body { font-size: 15px; line-height: 1.55; }
+.news-body a { color: var(--forge-accent-dk); }
+
+/* ---- Join --------------------------------------------------------------- */
+.join-card {
+  background: #fff;
+  border: 1px solid var(--forge-line);
+  border-radius: 3px;
+  padding: 26px 28px;
+}
+.join-card p { font-size: 15.5px; line-height: 1.65; }
+.forge-btn {
+  display: inline-block;
+  background: var(--forge-navy);
+  color: #fff;
+  padding: 9px 20px;
+  border-radius: 3px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  margin-top: 6px;
+  border-bottom: 2px solid var(--forge-accent);
+}
+.forge-btn:hover, .forge-btn:focus { background: var(--forge-navy-dk); color: #fff; text-decoration: none; }
+.join-card .forge-btn { margin-right: 10px; }
+
+/* ---- Publications ------------------------------------------------------- */
+.pub-item {
+  display: flex;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--forge-line);
+}
+.pub-item:last-child { border-bottom: 0; }
+.pub-year {
+  flex: 0 0 56px;
+  font-weight: 700;
+  color: var(--forge-accent-dk);
+  font-size: 15px;
+  padding-top: 1px;
+}
+.pub-body { font-size: 15px; line-height: 1.55; }
+.pub-title { font-weight: 500; }
+.pub-title a { color: var(--forge-navy); }
+.pub-authors { color: var(--forge-body); }
+.pub-authors .me { font-weight: 700; color: var(--forge-ink); }
+.pub-venue { color: var(--forge-muted); font-size: 13.5px; }
+.pub-extra { font-size: 13px; }
+.pub-extra a { color: var(--forge-accent-dk); }
+
+/* ---- Seminar ------------------------------------------------------------ */
+.seminar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 34px;
+  margin: 6px 0 4px;
+}
+.seminar-meta .meta {
+  font-size: 15px;
+}
+.seminar-meta .meta i { color: var(--forge-navy); width: 20px; }
+.seminar-meta .meta a { color: var(--forge-accent-dk); }
+.seminar-meta .meta .meta-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--forge-muted);
+}
+.shared-note {
+  border-left: 3px solid var(--forge-accent);
+  background: var(--forge-panel);
+  padding: 12px 18px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin: 22px 0 0;
+}
+.sem-table { width: 100%; border-collapse: collapse; }
+.sem-table th {
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--forge-muted);
+  border-bottom: 2px solid var(--forge-line);
+  padding: 8px 12px;
+  font-weight: 500;
+}
+.sem-table td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--forge-line);
+  font-size: 15px;
+  vertical-align: top;
+}
+.sem-table .sem-date { white-space: nowrap; color: var(--forge-ink); font-weight: 500; width: 96px; }
+.sem-table .sem-speaker { font-weight: 500; color: var(--forge-ink); }
+.sem-table .sem-affil { color: var(--forge-muted); font-size: 13px; }
+.sem-table .sem-tbd { color: var(--forge-muted); font-style: italic; }
+.sem-table tr.next td { background: #fbf6e8; }
+.sem-badge {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--forge-navy);
+  padding: 1px 7px;
+  border-radius: 2px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.sem-link { font-size: 13px; color: var(--forge-accent-dk); white-space: nowrap; }
+.sem-link i { font-size: 10px; }
+.sem-details { margin-top: 7px; }
+.sem-details > summary {
+  cursor: pointer;
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--forge-accent-dk);
+  list-style: none;
+}
+.sem-details > summary::-webkit-details-marker { display: none; }
+.sem-details > summary::before { content: "\25B8"; margin-right: 5px; font-size: 10px; }
+.sem-details[open] > summary::before { content: "\25BE"; }
+.sem-abstract-body {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--forge-body);
+  max-width: 560px;
+}
+
+/* ---- Footer ------------------------------------------------------------- */
+.forge-footer {
+  background: var(--forge-ink);
+  color: #9aa2ac;
+  text-align: center;
+  padding: 26px 0;
+  font-size: 13.5px;
+}
+.forge-footer a { color: var(--forge-accent); }
+.forge-footer .footer-mark { color: #fff; letter-spacing: 0.16em; font-weight: 500; }
+
+@media (max-width: 767px) {
+  .forge-hero .forge-page-title { font-size: 44px; }
+  .forge-hero .forge-mission { font-size: 17px; }
+  .theme { margin-bottom: 18px; }
+}

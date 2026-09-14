@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>FORGE Seminar</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="description" content="A weekly seminar on programming languages, formal methods, security, and trustworthy AI, hosted by the FORGE and HACR labs at Montana State University." />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:400,500,700|Roboto+Condensed:300,400|Chakra+Petch:500,600,700" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+  <link rel="stylesheet" type="text/css" href="forge.css" />
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+</head>
+
+<body>
+
+<!-- FORGE-branded nav (kept in sync with index.html). -->
+<nav class="navbar navbar-default navbar-fixed-top forge-nav">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#forgeNav">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html"><i class="fas fa-hammer"></i>FORGE</a>
+    </div>
+    <div id="forgeNav" class="collapse navbar-collapse">
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="index.html#research">Research</a></li>
+        <li><a href="publications.html">Publications</a></li>
+        <li><a href="people.html">People</a></li>
+        <li class="active"><a href="seminar.html">Seminar</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================ HERO ============================ -->
+<header class="forge-hero">
+  <div class="container">
+    <h1 class="forge-page-title">Seminar</h1>
+  </div>
+</header>
+
+<!-- ============================ ABOUT / LOGISTICS ============================ -->
+<section class="forge-section">
+  <div class="container">
+    <p class="forge-h2">About</p>
+    <p style="font-size:16px; line-height:1.65; max-width:760px;">
+      Each week a member or guest presents a paper, a work in progress, or an open
+      problem in programming languages, formal methods, security, or trustworthy AI.
+      Sessions are informal and discussion-driven&mdash;bring questions.
+    </p>
+
+    <div class="seminar-meta">
+      <div class="meta">
+        <span class="meta-label">When</span>
+        <i class="far fa-clock"></i> Mondays 3&ndash;4pm
+      </div>
+      <div class="meta">
+        <span class="meta-label">Where</span>
+        <i class="fas fa-location-dot"></i> Gianforte Hall &mdash; room 325
+      </div>
+      <div class="meta">
+        <span class="meta-label">Online</span>
+        <i class="fas fa-video"></i>
+        <a href="https://teams.microsoft.com/meet/227928230851135?p=XIzoc3NylgwYxz2L0h">Join via Teams</a>
+      </div>
+      <div class="meta">
+        <span class="meta-label">Format</span>
+        <i class="fas fa-users"></i> One talk + discussion
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ SCHEDULE ============================ -->
+<section class="forge-section alt">
+  <div class="container">
+    <p class="forge-h2">Schedule</p>
+    <p class="forge-lead">Fall 2026.</p>
+    <p style="font-size:16px; line-height:1.65; max-width:760px;">
+      Speaking slots are managed on the
+      <a href="https://docs.google.com/spreadsheets/d/16SPrChp2UHgSmwtqtiCr93GoQQ_-8vhYF1y91GQEIR8/edit?usp=sharing" id="sem-signup">signup sheet</a>. Claim a week, and post the paper or
+      topic you'll lead by the end of the preceding week&mdash;the schedule below fills in
+      from the sheet automatically.
+    </p>
+
+    <!-- Rows in <tbody id="sem-rows"> are replaced from the signup sheet by the script
+         at the end of this file. The rows below are the fallback if it isn't configured. -->
+    <div style="overflow-x:auto;">
+      <table class="sem-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Speaker</th>
+            <th>Topic</th>
+          </tr>
+        </thead>
+        <tbody id="sem-rows">
+          <tr>
+            <td class="sem-date sem-tbd" colspan="3">Loading schedule from the signup sheet&hellip;</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ JOIN ============================ -->
+<section class="forge-section">
+  <div class="container">
+    <p class="forge-h2">Attend</p>
+    <p class="forge-lead">Everyone's welcome.</p>
+    <div class="join-card">
+      <p>
+        The seminar is open to anyone interested in programming languages, formal methods,
+        security, or trustworthy AI. It's centered at Montana State, but visitors and folks
+        from other institutions are welcome&mdash;in person or over Teams.
+      </p>
+      <p style="margin-bottom:16px;">
+        For announcements, join the
+        <a href="https://sympa.montana.edu/sympa/subscribe/formal-methods-interest">formal-methods-interest mailing list</a>,
+        our campus channel for formal-methods research. To give a talk, just claim a slot on the
+        <a href="https://docs.google.com/spreadsheets/d/16SPrChp2UHgSmwtqtiCr93GoQQ_-8vhYF1y91GQEIR8/edit?usp=sharing">sign-up sheet</a>&mdash;no
+        need to ask.
+      </p>
+      <p style="margin-bottom:16px;">
+        Visiting from another institution? If you'd like a fuller visit&mdash;a seminar talk
+        plus meetings with members of the lab&mdash;email Charlie and he'll put together a
+        schedule for your visit.
+      </p>
+      <a class="forge-btn" href="https://sympa.montana.edu/sympa/subscribe/formal-methods-interest">Join the mailing list</a>
+      <a class="forge-btn" href="mailto:charlie.murphy1@montana.edu?subject=FORGE%20lab%20visit">Arrange a visit</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ FOOTER ============================ -->
+<footer class="forge-footer">
+  <div class="container">
+    <span class="footer-mark">FORGE</span> &middot; Foundations of Reasoning and Generative Engineering<br />
+    <a href="https://www.cs.montana.edu">Gianforte School of Computing</a>, <a href="https://www.montana.edu">Montana State University</a> &middot;
+    <a href="../index.html">Charlie Murphy</a>
+  </div>
+</footer>
+
+<!-- ================= Seminar schedule: auto-fill from the signup sheet =================
+     Wired to the Google Sheet linked as the "signup sheet" above, read as CSV through
+     the gviz endpoint (works while the sheet is viewable by anyone with the link).
+     Sheet columns (row 1 headers): Date | Speaker | Topic | Link | Abstract
+       - Link and Abstract are optional; add the columns only if you want them.
+       - Link renders as a "paper" link; Abstract becomes a collapsible toggle.
+       - "Speaker" may instead be headed "Discussion Lead".
+     To point at a different sheet, swap the ID in both SHEET_CSV_URL and the signup link. -->
+<script>
+(function () {
+  var SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/16SPrChp2UHgSmwtqtiCr93GoQQ_-8vhYF1y91GQEIR8/gviz/tq?tqx=out:csv";
+  var SHEET_LINK = document.getElementById("sem-signup");
+  SHEET_LINK = SHEET_LINK ? SHEET_LINK.getAttribute("href") : "#";
+
+  function parseCSV(text) {
+    var rows = [], row = [], field = "", q = false, i, c;
+    for (i = 0; i < text.length; i++) {
+      c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else { q = false; } }
+        else { field += c; }
+      } else if (c === '"') { q = true; }
+      else if (c === ',') { row.push(field); field = ""; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ""; }
+      else if (c !== '\r') { field += c; }
+    }
+    if (field !== "" || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  }
+  function esc(s) {
+    return (s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  // Hour (viewer's local time, 24h) at which a session is "over" and no longer Next.
+  // 16 = 4pm, the end of the Mon 3-4pm seminar; bump this if the meeting time changes.
+  var END_HOUR = 16;
+  // Parse a date to that day's END_HOUR. A date with no year (e.g. "9/14")
+  // assumes the current year.
+  function parseDate(s) {
+    s = (s || "").trim(); if (!s) return null;
+    var y, mo, da;
+    var m = s.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/);
+    if (m) {
+      mo = +m[1] - 1; da = +m[2];
+      y = m[3] ? +m[3] : new Date().getFullYear(); if (y < 100) y += 2000;
+    } else {
+      var t = Date.parse(s); if (isNaN(t)) return null;
+      var d = new Date(t); y = d.getFullYear(); mo = d.getMonth(); da = d.getDate();
+    }
+    var end = new Date(y, mo, da, END_HOUR, 0, 0, 0);
+    return isNaN(end) ? null : end.getTime();
+  }
+  function fallback() {
+    var tb = document.getElementById("sem-rows");
+    if (tb) tb.innerHTML = '<tr><td class="sem-tbd" colspan="3">' +
+      'Schedule is on the <a href="' + esc(SHEET_LINK) + '">signup sheet</a>.</td></tr>';
+  }
+
+  fetch(SHEET_CSV_URL).then(function (r) { if (!r.ok) throw 0; return r.text(); }).then(function (txt) {
+    var rows = parseCSV(txt).filter(function (r) { return r.some(function (c) { return c.trim() !== ""; }); });
+    if (rows.length < 2) { fallback(); return; }
+    var head = rows[0].map(function (h) { return h.trim().toLowerCase(); });
+    var di = head.indexOf("date"), ti = head.indexOf("topic"),
+        li = head.indexOf("link"), ai = head.indexOf("abstract");
+    var si = head.indexOf("discussion lead");
+    if (si < 0) si = head.indexOf("speaker");
+    if (di < 0 || si < 0 || ti < 0) { fallback(); return; }
+
+    var items = rows.slice(1).map(function (r) {
+      var ds = (r[di] || "").trim();
+      return {
+        date: ds, speaker: (r[si] || "").trim(), topic: (r[ti] || "").trim(),
+        link: li >= 0 ? (r[li] || "").trim() : "",
+        abstract: ai >= 0 ? (r[ai] || "").trim() : "", t: parseDate(ds)
+      };
+    });
+
+    // "Next" = earliest session not yet over (its END_HOUR is still in the future).
+    var now = Date.now();
+    var nextIdx = -1, best = Infinity;
+    items.forEach(function (it, idx) { if (it.t !== null && it.t >= now && it.t < best) { best = it.t; nextIdx = idx; } });
+
+    var html = items.map(function (it, idx) {
+      var parts = [];
+      if (it.topic) parts.push(esc(it.topic));
+      if (it.link) parts.push('<a class="sem-link" href="' + esc(it.link) +
+        '">paper <i class="fas fa-arrow-up-right-from-square"></i></a>');
+      var topic = parts.length ? parts.join(" ") : '<span class="sem-tbd">&mdash;</span>';
+      if (it.abstract) {
+        topic += '<details class="sem-details"><summary>Abstract</summary>' +
+          '<div class="sem-abstract-body">' + esc(it.abstract).replace(/\n/g, "<br>") + '</div></details>';
+      }
+      var lead = it.speaker ? '<span class="sem-speaker">' + esc(it.speaker) + '</span>'
+        : '<span class="sem-tbd">Open slot</span>';
+      if (idx === nextIdx) lead += ' <span class="sem-badge">Next</span>';
+      return '<tr' + (idx === nextIdx ? ' class="next"' : '') + '>' +
+        '<td class="sem-date' + (it.date ? '' : ' sem-tbd') + '">' + (esc(it.date) || "TBD") + '</td>' +
+        '<td>' + lead + '</td>' +
+        '<td>' + topic + '</td></tr>';
+    }).join("");
+
+    var tb = document.getElementById("sem-rows");
+    if (html && tb) { tb.innerHTML = html; } else { fallback(); }
+  }).catch(fallback);
+})();
+</script>
+
+</body>
+</html>
