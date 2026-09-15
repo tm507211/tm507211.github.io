@@ -12,26 +12,27 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../favicon-de23e50b.svg">
-        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
-        <link rel="stylesheet" href="../css/variables-8adf115d.css">
-        <link rel="stylesheet" href="../css/general-e96d0476.css">
-        <link rel="stylesheet" href="../css/chrome-d279d366.css">
-        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
-        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
-        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../css/book-271586e2.css">
-        <link rel="stylesheet" href="../css/timeline-b697568e.css">
-        <link rel="stylesheet" href="../css/highlight-fixes-88adc288.css">
-        <link rel="stylesheet" href="../css/under-construction-17603da8.css">
+        <link rel="stylesheet" href="../css/book.css">
+        <link rel="stylesheet" href="../css/timeline.css">
+        <link rel="stylesheet" href="../css/highlight-fixes.css">
+        <link rel="stylesheet" href="../css/under-construction.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -39,10 +40,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-dde52ce2.js";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-7edc4796.js"></script>
+        <script src="../toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -56,7 +57,7 @@
             </div>
         </div>
     </div>
-    <div id="mdbook-body-container">
+    <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
@@ -85,12 +86,12 @@
             html.classList.add("js");
         </script>
 
-        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             let sidebar = null;
-            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -105,39 +106,39 @@
             }
         </script>
 
-        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
                 <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
             </noscript>
-            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
             </div>
         </nav>
 
-        <div id="mdbook-page-wrapper" class="page-wrapper">
+        <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="mdbook-menu-bar-hover-placeholder"></div>
-                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
-                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
                         </label>
-                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
-                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
                         </button>
-                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
-                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
                         </button>
                     </div>
 
@@ -145,85 +146,263 @@
 
                     <div class="right-buttons">
                         <a href="../print.html" title="Print this book" aria-label="Print this book">
-                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                            <i id="print-button" class="fa fa-print"></i>
                         </a>
 
                     </div>
                 </div>
 
-                <div id="mdbook-search-wrapper" class="hidden">
-                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
                         <div class="search-wrapper">
-                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
                             <div class="spinner-wrapper">
-                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                                <i class="fa fa-spinner fa-spin"></i>
                             </div>
                         </div>
                     </form>
-                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
-                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
-                        <ul id="mdbook-searchresults">
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
                         </ul>
                     </div>
                 </div>
 
                 <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
                 <script>
-                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
-                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
-                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
                         link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
                     });
                 </script>
 
-                <div id="mdbook-content" class="content">
+                <div id="content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="lexical-scope"><a class="header" href="#lexical-scope">Lexical Scope</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
      Milestone M2 · lecture: Lexical Scoping.
-     Status: placeholder — spine authored just-in-time.
+     SEAM: continues environments.md. That chapter built the runtime MECHANISM
+     (E-Var reads the threaded \env; E-Let extends over the TEXTUAL rest of the
+     block; nested blocks, shadowing, read-only \env). This chapter names the
+     PROPERTY that mechanism already has: which binding each occurrence of a name
+     refers to is fixed by the program text and resolvable before the program runs
+     (= lexical / static scope). NO new evaluator arm is added here — the property
+     is a consequence of E-Let extending over the textual remainder; the M2 build
+     lives in environments.md + representations.md.
+     INTRODUCES the free/bound occurrence vocabulary, relative to a region. Planted
+     here so Part V can say "free variable" for closures without defining it
+     (functions/scope.md already uses the term). ast.md / language-reference use
+     "unbound"/"bound" loosely; this is the first careful definition.
+     HANDS OFF: resolving names to fixed positions (lexical addressing / de Bruijn)
+     -> representations.md; the static-vs-dynamic DEMONSTRATION, the Lisp accident /
+     Scheme repair history, and "dynamic scope breaks the type checker"
+     -> functions/scope.md (Part V). Do NOT tell that story or show a divergence
+     example here.
+     DESIGN-SPACE DECISION (2026-09-15, with instructor): NAME dynamic scope as the
+     alternative discipline and state it is invisible until a region of code can run
+     where it was not written (a function), deferring the demonstration to Part V.
+     No Bridger example, no Lisp/Scheme narrative in this chapter.
+     HISTORY: Algol 60 block structure is already anchored and cited in history.md
+     ("region of validity"; ALGOL 60 report, doi 10.1145/367236.367262). Reuse the
+     thread; cite the report only in Further reading, not inline. "static, or
+     lexical" — both terms are used, per the reference and functions/scope.md.
+     Status: draft authored 2026-09-15, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
-
-- Lexical scope via nested `let`, as a concept *before* functions arrive.
-- How this sets up the static-vs-dynamic scope question that only becomes observable with
-  closures (Part V).
--->
+<p>The <a href="environments.html">environment</a> is a runtime object: it is built as a program runs, growing by a
+binding each time evaluation meets a <code>let</code> and reverting to what it was when a block ends. Which
+value a name reads therefore depends on how far the program has run. Yet the question this chapter
+asks has an answer that does not wait for the program to run at all. In the following code block,</p>
+<pre><code class="language-text">{
+    let x = 1;
+    let y = { let x = 2; x + 10 };
+    x + y
+}
+</code></pre>
+<p>the name <code>x</code> inside the inner block reads <code>2</code> and the <code>x</code> on the last line reads <code>1</code>, and that
+interpretation is settled by determining which binding each reference to <code>x</code> refers to by reading
+the braces, without evaluating anything. Every use of a name in a program refers to one definite
+binding, and that binding is fixed by where the use is written. Determining a name's binding from
+the shape of the program text, ahead of running it, is <strong>lexical scope</strong> (also called <strong>static
+scope</strong>), since the binding is settled before, and independently of, any execution.</p>
+<h2 id="free-and-bound-occurrences"><a class="header" href="#free-and-bound-occurrences">Free and bound occurrences</a></h2>
+<p>For every occurrence of a name (one location where the name is written and read), we say the
+occurrence is <strong>bound</strong> in an enclosing block of code when that block contains a <code>let</code> binding for
+the name somewhere before the occurrence; otherwise, the occurrence is <strong>free</strong> in that block. In
+the following block of code,</p>
+<pre><code class="language-text">{ let x = 2; x + 10 }
+</code></pre>
+<p>the occurrence of <code>x</code> in <code>x + 10</code> is bound: the <code>let x = 2</code> that precedes it in the same block is
+the binder that <code>x</code> is bound to. However, in the following block of code without the let binding,</p>
+<pre><code class="language-text">x + 10        // x is free here — nothing in this fragment binds it
+</code></pre>
+<p>the occurrence of <code>x</code> is free, because the region under consideration no longer contains the <code>let</code>
+that bound <code>x</code>. Whether an occurrence is free or bound is relative to the region you are reading. A
+<code>let</code> binding reaches inward over the text it encloses, and an occurrence of a name is bound exactly
+when it falls inside the reach of a binder that binds its name.</p>
+<h2 id="the-scope-of-a-binding"><a class="header" href="#the-scope-of-a-binding">The scope of a binding</a></h2>
+<p>The <strong>scope</strong> of a binding is the region of program text over which its name refers to it. For a
+<code>let</code> binding, the rule <a href="environments.html#the-let-operator">E-Let</a> already fixed that region: a <code>let</code>
+extends its scope over the rest of its block, so the binding's scope runs from just after the <code>let</code>
+binding to the closing brace of the block that holds it. This notion of lexical scope was introduced
+by Algol 60 in what it named <a href="../foundations/history.html">block structure</a> — a name declared inside a
+region means something there and nowhere else — and it is what gives a block-structured program its
+nesting of scopes, each one the text between a binder and the brace that closes over it.</p>
+<p>Scopes nest because blocks nest. An occurrence lies within the scope of a binding when it falls
+inside that binding's region — the text from the <code>let</code> to the closing brace of its block, nested
+sub-blocks included. An occurrence can lie within the scopes of several bindings of the same name,
+one nested inside another; it is then bound by the innermost binding (the binding whose scope is
+the smallest) of the same name.</p>
+<figure style="margin:1em 0">
+<svg viewBox="0 0 220 196" role="img" style="max-width:220px;width:100%;height:auto;font-variant-ligatures:none" xmlns="http://www.w3.org/2000/svg" aria-label="A block with three let bindings, each tinted to match a vertical bar in the left margin that marks its scope. The blue let x = 1 bar spans the rest of the outer block, broken by a gap at the x + 10 line where the inner x shadows it. The orange let x = 2 bar covers the x + 10 line. The green let y bar covers the final x + y line.">
+<style>.sc-c{font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
+<rect x="5" y="56" width="6" height="44" rx="3" fill="#2563EB"></rect>
+<rect x="5" y="122" width="6" height="44" rx="3" fill="#2563EB"></rect>
+<rect x="26" y="100" width="6" height="22" rx="3" fill="#C2410C"></rect>
+<rect x="15" y="144" width="6" height="22" rx="3" fill="#047857"></rect>
+<text class="sc-c" x="5" y="28" fill="currentColor">{</text>
+<text class="sc-c" x="26" y="50" fill="currentColor"><tspan fill="#2563EB">let x</tspan> = 1;</text>
+<text class="sc-c" x="26" y="72" fill="currentColor"><tspan fill="#047857">let y</tspan> = {</text>
+<text class="sc-c" x="42" y="94" fill="currentColor"><tspan fill="#C2410C">let x</tspan> = 2;</text>
+<text class="sc-c" x="42" y="116" fill="currentColor">x + 10</text>
+<text class="sc-c" x="26" y="138" fill="currentColor">};</text>
+<text class="sc-c" x="26" y="160" fill="currentColor">x + y</text>
+<text class="sc-c" x="5" y="182" fill="currentColor">}</text>
+</svg>
+</figure>
+<p>In the margin, each binding's scope is drawn as a bar in its own colour.
+<code><span class="sc-blue">let x</span> = 1</code> reaches over the rest of the outer block, but
+its bar breaks along the <code>x + 10</code> line, where the inner
+<code><span class="sc-orange">let x</span> = 2</code> binds <code>x</code>, its scope drawn by the orange
+bar. That break is a hole in the outer binding's scope. We say that the
+innermost binding of <code>x</code> <a href="environments.html#the-let-operator">shadows</a> the outer binding of <code>x</code>.
+The <code>x</code> in <code>x + 10</code> lies inside both blocks and resolves to the orange binding; on the <code>x + y</code> line,
+past the inner block, the outer (blue) binding is in force again, so that <code>x</code> reads <code>1</code>.
+<code class="sc-green">let y</code> reaches only the final line <code>x + y</code>, the one place <code>y</code> can be
+read, so its green bar covers just that row.</p>
+<p>The rule for reading a program is uniform. An occurrence of a name refers to the binding of the
+nearest binder that encloses it — nearest meaning the smallest enclosing region that contains both
+the occurrence and a binder for the name. When no binder encloses it, the occurrence is free, and a
+name still free at the top of a program has no binding to resolve to: evaluating it results in an
+<a href="environments.html#a-name-has-a-value-only-in-context"><code>UnboundVariable</code></a> error. None of this appeals
+to a value, an input, or how far the program has run. The binding each occurrence refers to is a
+function of the program text alone, which is why it can be read from the program's text itself
+(without ever executing the program) — and why the word for the discipline is <em>lexical</em>, from the
+arrangement of the text itself.</p>
+<h2 id="lexical-scoping-as-a-property"><a class="header" href="#lexical-scoping-as-a-property">Lexical scoping as a property</a></h2>
+<p>In Bridger, nothing new is added to the evaluator to enforce lexical scoping; instead, lexical
+scoping of <code>let</code> bindings is a property of the <a href="../milestones/m2.html">Milestone M2</a> semantic rules
+that were already described in the previous chapter. The <code>E-Let</code> rule extends the environment over
+the <em>textual</em> remainder of the block, and
+<a href="environments.html#a-name-has-a-value-only-in-context"><code>E-Var</code></a> reads whatever environment has been
+threaded to the point of the occurrence: so the binding a variable finds at run time is the one the
+enclosing text put there.</p>
+<p>The two views line up because the environments built at run time take the shape of the text. Each
+block is evaluated by extending the environment it was entered in, and a block is entered from the
+environment of the text that surrounds it, so at any point during the run the environments form a
+chain of children whose nesting matches the blocks that enclose that point in the source. Looking a
+name up — reading the current environment, then its parent, and outward — visits the same bindings,
+in the same order, as reading outward from the occurrence through the blocks that enclose it. The
+run-time lookup and the reading off the page cannot disagree, because they walk the same nesting.
+How that chain is represented, and what walking it costs as scopes deepen, is the topic of the next
+chapter<!-- xref:representations.md -->.</p>
+<p>Settling a name's binding before the program runs is what later work builds on. Resolving every
+occurrence to a fixed position in the enclosing scopes — so a name need not be searched for by
+spelling at all — is the subject of the next chapter<!-- xref:representations.md -->. And because a
+name's binding is fixed by its definition, the type of what it holds can be too, which is what lets
+the checker in Part VI decide a program's types without running it<!-- xref:../types/type-checker.md -->.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<p>A name that is free in a fragment must ultimately resolve somewhere, and there are two disciplines
+for where. Under lexical scope (the scoping rules that Bridger uses), a free occurrence resolves
+in the environment that textually encloses it: the environment present where the code is <em>written</em>.
+Under <strong>dynamic scope</strong>, it resolves in the environment present where the code <em>runs</em>, the
+environment active at the moment control reaches the occurrence, which is decided by the execution
+order of the program.</p>
+<p>In a language whose only way to enter a new environment is to enter a block, the code that runs in
+an environment is precisely the code written inside it, so the two disciplines choose the same
+binding for every occurrence, and nothing a program can do distinguishes them. They come apart only
+once a region of code can be carried away from where it was written and run somewhere else (i.e.,
+via a function call from a separate part of the program). A function body mentions names it does not
+itself bind, and the two disciplines answer differently once its body runs under a call rather than
+where it was defined. That is where the choice becomes observable, and where Bridger's commitment to
+lexical scope is made executable and weighed against the alternative (dynamic scoping); it is the
+subject of Part V<!-- xref:../functions/scope.md -->.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Block structure</strong>: the <em><a href="https://doi.org/10.1145/367236.367262">Report on the Algorithmic Language ALGOL
+60</a></em> (1960) is where a name declared inside a region of a
+program is given a region of validity determined by the program's own nesting — the arrangement this
+chapter reads scopes off of.</p>
+<p><strong>The environment model of scope</strong>: Abelson and Sussman's <em><a href="https://mitpress.mit.edu/sites/default/files/sicp/full-text/book/book.html">Structure and Interpretation of Computer
+Programs</a></em> (MIT Press,
+free online) develops evaluation as the extension of environments, and works through how a name is
+looked up by searching outward through the enclosing scopes.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>List the free variables of <code>{ let a = b; a + c }</code>. Which occurrences are bound, and by what?</summary>
+<p>The free variables are <code>b</code> and <code>c</code>. The occurrence of <code>b</code> on the right-hand side of the <code>let</code> is
+free: the <code>let a</code> has not taken effect yet where <code>b</code> is read (its scope begins <em>after</em> it), so
+nothing in the fragment binds <code>b</code>. The occurrence of <code>c</code> is free because no <code>let c</code> encloses it. The
+two occurrences of <code>a</code> — none is written on the right; the <code>a</code> in <code>a + c</code> — are bound, by the
+<code>let a = b</code>, whose scope is the rest of the block. Read as a whole program, <code>b</code> and <code>c</code> are still
+free, so evaluating the block raises <code>UnboundVariable</code> on <code>b</code>.</p>
+</details>
+<details>
+<summary>In <code>{ let x = 1; { let x = 2; x }; x }</code>, which binding does each of the two <code>x</code> occurrences refer to, and how did you decide without running it?</summary>
+<p>The <code>x</code> inside the inner block refers to <code>let x = 2</code>; the <code>x</code> on the last line refers to
+<code>let x = 1</code>. Each occurrence takes the nearest enclosing binder. The inner <code>x</code> sits inside both
+<code>let</code>s' scopes and resolves to the smaller, inner one — the inner <code>let x = 2</code> carves a hole in the
+outer binding's scope over the inner block. The final <code>x</code> sits outside the inner block, where the
+outer binding is again in force. The decision needs only the braces: the binding each occurrence
+refers to is fixed by the
+text, so it is read off the nesting rather than computed by evaluating the program.</p>
+</details>
+<details>
+<summary>Lexical scope is also called <em>static</em> scope. What does "static" claim, and what does the claim make possible?</summary>
+<p>"Static" claims that the binding each occurrence refers to is settled before, and independently of,
+running the program — it is a function of the program text alone, settled without reference to any
+value, input, or how far execution has progressed. Because the binding is fixed ahead of time, work
+that would otherwise wait
+for the run can be done by reading: the next chapter resolves every name to a fixed position in its
+enclosing scopes, so no name need be searched for by spelling at run time, and the type checker of
+Part VI can fix the type of what a name holds at the name's definition and certify a program's types
+without executing it.</p>
+</details>
+<details>
+<summary>No evaluator code is added in this chapter, yet Bridger is committed to lexical scope. Which rule carries the commitment, and how?</summary>
+<p><code>E-Let</code> carries it. <code>E-Let</code> extends the environment over the <em>textual</em> rest of the block — the
+region between the <code>let</code> and the closing brace — so the environment a variable is read in at run
+time is the one the enclosing text placed it in. Because each block is entered from the environment
+of the text around it, the environments built during a run nest the same way the blocks do, and
+<code>E-Var</code> reading
+the current environment and its parents visits the same bindings as reading outward through the
+enclosing blocks. The lexical reading and the run-time lookup agree because the rule already makes a
+binding's reach follow the text.</p>
+</details>
+<details>
+<summary>In a language with blocks but no functions, no program can tell lexical scope from dynamic scope. Why, and what feature changes that?</summary>
+<p>Dynamic scope resolves a free occurrence in the environment active where the code runs, lexical
+scope in the environment where it is written. With blocks as the only way to enter a new
+environment, the code that runs in an environment is exactly the code written inside it, so "where
+it runs" and "where it is written" are the same place and the two disciplines choose the same
+binding
+every time. The feature that separates them is the function: a function body can be carried away
+from where it was written and run under a call somewhere else, so its free names have one
+environment at the definition and possibly another at the call. Once bodies run away from home the
+two disciplines diverge, which
+is why the question is taken up in Part V rather than here.</p>
+</details>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                             <a rel="prev" href="../binding/environments.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                                <i class="fa fa-angle-left"></i>
                             </a>
 
                             <a rel="next prefetch" href="../binding/representations.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                                <i class="fa fa-angle-right"></i>
                             </a>
 
                         <div style="clear: both"></div>
@@ -233,21 +412,16 @@ This chapter will cover:
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                     <a rel="prev" href="../binding/environments.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                        <i class="fa fa-angle-left"></i>
                     </a>
 
                     <a rel="next prefetch" href="../binding/representations.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                        <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
 
         </div>
 
-        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
-        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
-        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
-        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
-        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
 
 
@@ -256,16 +430,16 @@ This chapter will cover:
         </script>
 
 
-        <script src="../elasticlunr-ef4e11c1.min.js"></script>
-        <script src="../mark-09e88c2c.min.js"></script>
-        <script src="../searcher-09f2665d.js"></script>
+        <script src="../elasticlunr.min.js"></script>
+        <script src="../mark.min.js"></script>
+        <script src="../searcher.js"></script>
 
-        <script src="../clipboard-1626706a.min.js"></script>
-        <script src="../highlight-1c64dc54.js"></script>
-        <script src="../book-609e4cb8.js"></script>
+        <script src="../clipboard.min.js"></script>
+        <script src="../highlight.js"></script>
+        <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="../js/appendix-numbering-b52058a4.js"></script>
+        <script src="../js/appendix-numbering.js"></script>
 
 
 

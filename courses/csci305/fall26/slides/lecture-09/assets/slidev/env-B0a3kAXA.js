@@ -1,0 +1,16 @@
+import{_ as e}from"../modules/shiki-BDOa5D_m.js";import{s as t}from"./utils-DxqEjQLz.js";var n={theme:`../theme-csci305`,title:`Lexical Scope`,titleTemplate:`%s - Slidev`,addons:[],remoteAssets:!1,monaco:!0,monacoTypesSource:`local`,monacoTypesAdditionalPackages:[],monacoTypesIgnorePackages:[],monacoRunAdditionalDeps:[],monacoRunUseStrict:!0,download:!1,export:{},info:`<p>Lecture 9 (Lexical Scoping). Covers Ch. 12 (lexical scope), the middle chapter
+of Part III. Names the PROPERTY the M2 rules already have: which binding each
+occurrence refers to is fixed by the program text, resolvable before the program
+runs. No new evaluator arm. Example-led, with several nestings worked live.
+Jeopardy opener on Algol 60 block structure. Arc: free vs bound occurrences
+(relative to a region; binders reach into sub-blocks); the scope of a binding =
+region from the let to the closing brace (E-Let already fixed it); the coloured
+scope figure with the shadowing hole; nearest-enclosing-binder rule; deeper
+nestings (three-level shadow walk, sibling blocks don't share); why &quot;lexical&quot; =
+static (read it off the text, the env chain has the shape of the text, runtime
+lookup = reading outward); nothing new to build (a property of E-Let); design
+space by EXAMPLE — lexical vs dynamic, invisible with only blocks, then a worked
+divergence with an intuitive lambda (lexical -&gt; 1, dynamic -&gt; 2). Bridger is
+lexical; the full treatment (history, type-checker coupling) is Part V. Target
+40-45 min.</p>
+`,highlighter:`shiki`,twoslash:!0,lineNumbers:!1,colorSchema:`light`,routerMode:`hash`,aspectRatio:1.7777777777777777,canvasWidth:980,exportFilename:``,selectable:!1,themeConfig:{},fonts:{sans:[`ui-sans-serif`,`system-ui`,`-apple-system`,`BlinkMacSystemFont`,`"Segoe UI"`,`Roboto`,`"Helvetica Neue"`,`Arial`,`"Noto Sans"`,`sans-serif`,`"Apple Color Emoji"`,`"Segoe UI Emoji"`,`"Segoe UI Symbol"`,`"Noto Color Emoji"`],serif:[`ui-serif`,`Georgia`,`Cambria`,`"Times New Roman"`,`Times`,`serif`],mono:[`ui-monospace`,`SFMono-Regular`,`Menlo`,`Monaco`,`Consolas`,`"Liberation Mono"`,`"Courier New"`,`monospace`],webfonts:[],provider:`google`,local:[],italic:!1,weights:[`200`,`400`,`600`]},favicon:`https://cdn.jsdelivr.net/gh/slidevjs/slidev/assets/favicon.png`,drawings:{enabled:!0,persist:!1,presenterOnly:!1,syncAll:!0},plantUmlServer:`https://www.plantuml.com/plantuml`,codeCopy:!0,magicMoveCopy:!0,author:``,record:`dev`,css:`unocss`,presenter:!0,browserExporter:`dev`,htmlAttrs:{},transition:`slide-left`,editor:!0,mcp:!0,contextMenu:null,wakeLock:!0,pwa:!1,mdc:!1,comark:!1,seoMeta:{},notesAutoRuby:{},duration:`30min`,timer:`stopwatch`,magicMoveDuration:800,preloadImages:!0,clickAnimation:``,layout:`cover`,date:`Wednesday, September 16, 2026`,readings:`<a href="../../../../../books/pl-design/binding/lexical-scope.html">Ch. 12</a>`,slidesTitle:`Lexical Scope - Slidev`},r=`build`,i=e(()=>n.aspectRatio),a=e(()=>n.canvasWidth),o=e(()=>Math.ceil(a.value/i.value)),s=e(()=>t(n.themeConfig||{},(e,t)=>[`--slidev-theme-${e}`,t])),c=n.slidesTitle,l=`./#/`;export{a,n as c,o as i,l as n,c as o,i as r,s,r as t};
