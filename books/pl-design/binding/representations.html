@@ -181,41 +181,339 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="environment-representations-and-lookup"><a class="header" href="#environment-representations-and-lookup">Environment Representations and Lookup</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  <hr>
-  <p class="uc-label">
-    <svg class="uc-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
-    Under Construction
-    <svg class="uc-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
-  </p>
-  <hr>
-</div>
 <!-- AUTHORING NOTE (not rendered)
      Milestone M2 · lecture: Environment Representations & Lookup · spec §6.
-     Split out of environments.md so each lecture owns whole chapters.
-     Status: placeholder — spine authored just-in-time.
+     Third chapter of Part III; splits the M2 lecture block from environments.md +
+     lexical-scope.md so each lecture owns whole chapters.
+     SEAM: environments.md built the API (lookup/extend, read-only \env, extend =>
+     new child scope); lexical-scope.md the property (binding fixed by text; the run-
+     time chain nests like the enclosing blocks). This chapter opens the API: what the
+     scope chain is MADE OF and what lookup COSTS as it deepens. NO new evaluator arm
+     — the whole M2 build lives in environments.md. Here the reader sees what is UNDER
+     the provided Env; students still only call lookup/extend (rep is provided-only).
+     THROUGHLINE: a lookup is a walk outward through the scope chain, and the
+     representation decides its cost. Chain of scopes (cheap extend/discard, O(walk)
+     lookup) vs a flat map (O(1) lookup, save/restore at each scope boundary). Static
+     scope (prev chapter) lets a reference be pre-resolved to a (depth,index)
+     coordinate so no spelling search happens at run time = de Bruijn / lexical
+     addressing = design space; Bridger keeps name lookup (error messages report a
+     name; no resolution pass a tree-walker doesn't need).
+     RUST at point of use: Rc = shared ownership, so a scope can outlive the block that
+     built it — the reason the chain is refcounted, not owned. WHY that matters is
+     deferred to closures (Part V; functions/closures.md OWNS capture); here only the
+     motivation, no capture demo. Rc added to Appendix A (2026-09-16) so the ref is
+     live and closures.md can reuse it. The RefCell-backed root / back-patch (mutual
+     recursion) stays out — provided-only, not a representation concern the reader
+     needs; the root is mentioned once as "assembled by provided setup," no RefCell.
+     FIGURES (per instructor 2026-09-16): representation-neutral scope-chain diagram
+     (the lookup walk) + a de Bruijn index diagram — a single distance, because each scope
+     binds one name; lexical addressing's second coordinate (the ⟨scope, binding⟩ pair) is
+     the multi-binding generalization and stays in prose, not the figure. House SVG style,
+     currentColor + reused tints (#2563EB/#C2410C/#047857), theme-safe.
+     Illustrative Rust (rust,ignore): a single-binding scope per `let` —
+     { name, val, Option<Rc<Scope>> parent } — matching the figures and the real
+     `Scope::Frame` in interpreter/src/interp/env.rs. The real enum ends the chain with a
+     distinct Root(RefCell<HashMap>) variant (prelude seed + mutual-recursion back-patch); the
+     illustration ends it with None and leaves the root's map to provided setup, per the
+     RefCell-stays-out note above.
+     Prefer "scope"/"scope chain" over "frame" (frame already = call-stack frame in
+     tree-walking.md / language-reference.md).
+     Worked example is consistent across fig 1, fig 2, and concept check 1:
+     { let x = 1; { let y = 2; { let z = 3; x + z } } } — chain {z}->{y}->{x}->root.
+     VERIFIED CITATION (2026-09-16; doi.org redirect + JSL/Cambridge review +
+     ScienceDirect pii 1385725872900340): de Bruijn, "Lambda calculus notation with
+     nameless dummies, a tool for automatic formula manipulation, with application to
+     the Church-Rosser theorem," Indagationes Mathematicae 34 (1972), pp. 381-392
+     (also Kon. Ned. Akad. Wetensch. Proc. ser. A, vol. 75), doi
+     10.1016/1385-7258(72)90034-0. Do NOT quote (no verified wording on hand);
+     attribute the concept only. Landin SECD is anchored in environments.md; SICP is
+     in both prior chapters' Further reading — cite it here for lexical addressing
+     specifically (different content).
+     Status: draft authored 2026-09-16, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p>The <a href="environments.html#building-it">previous chapter</a> settled what an environment has to provide:
+<code>lookup</code>, which reads the value a name is currently bound to, and <code>extend</code>, which produces a new
+environment binding a name to a value — the two operations Bridger's <a href="lexical-scope.html">lexical
+scope</a> is built from. A running program reads a variable at nearly every step and
+enters or leaves a block at many of them, so <code>lookup</code> and <code>extend</code> run constantly, and the way the
+environment is represented sets what they cost. This chapter opens the representation the Bridger
+starter repository provides: what the scope chain is made of, and what a lookup costs as the chain
+deepens. It is the environment your interpreter uses in <a href="../milestones/m2.html">Milestone M2</a> to
+evaluate variables, <code>let</code> bindings, and blocks.</p>
+<h2 id="the-chain-of-scopes"><a class="header" href="#the-chain-of-scopes">The chain of scopes</a></h2>
+<p>In the previous chapter, we learned how to read the value a name was bound to by following
+lexical scoping rules. How do we make that mechanical? The general intuition we used in lexical
+scoping was that the value a name was bound to was defined by the innermost <code>let</code> binding for that
+name next to the occurrence being read. We use that intuition to represent the environment as an
+immutable linked list of bindings whose head is the innermost binding and whose tail is the
+outermost binding. Consider the following block of code:</p>
+<pre><code class="language-text">let x = 1;
+{
+  let y = 2;
+  {
+    let z = 3;
+    x + z
+  }
+}
+</code></pre>
+<p>On line 6, when we evaluate <code>x + z</code>, the scope has an environment with the bindings <code>x = 1</code>,
+<code>y = 2</code>, and <code>z = 3</code>. Pictorially, the linked list of bindings would appear as a chain with the
+innermost binding being <code>z = 3</code>, then <code>y = 2</code>, then <code>x = 1</code>, and finally any environment containing
+the block of code (e.g., the global/root environment). If we wanted to look up the value of <code>x</code> in
+the environment, we would walk from the innermost binding (<code>z = 3</code>) rightward until we found a
+binding for <code>x</code>, or reached the end of the list and reported that <code>x</code> is unbound.</p>
+<figure style="margin:1em 0">
+<svg viewBox="0 0 672 190" role="img"
+     style="max-width:672px;width:100%;height:auto;font-variant-ligatures:none"
+     xmlns="http://www.w3.org/2000/svg"
+     aria-label="Four scopes in a row, each joined by a parent arrow to the one that
+     encloses it: the innermost binds z to 3, then y to 2, then x to 1, then the root
+     scope holding the prelude. Looking up x starts at the innermost scope and walks
+     rightward along the parent links — a miss at z, a miss at y, and a hit at x in the
+     third scope.">
+<defs>
+  <marker id="rp-ah" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+  </marker>
+</defs>
+<style>
+  .rp-b{font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .rp-l{font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .rp-box{fill:none;stroke:currentColor;stroke-width:1.5}
+</style>
+<text class="rp-l" x="14" y="26" fill="currentColor">look up x — walk outward until x is found</text>
+<text class="rp-l" x="78"  y="82" fill="currentColor" text-anchor="middle" opacity="0.55">innermost</text>
+<text class="rp-l" x="594" y="82" fill="currentColor" text-anchor="middle" opacity="0.55">root</text>
+<rect class="rp-box" x="14"  y="90" width="128" height="52" rx="6"></rect>
+<rect class="rp-box" x="186" y="90" width="128" height="52" rx="6"></rect>
+<rect x="358" y="90" width="128" height="52" rx="6" fill="none" stroke="#047857" stroke-width="1.5"></rect>
+<rect class="rp-box" x="530" y="90" width="128" height="52" rx="6"></rect>
+<text class="rp-b" x="78"  y="121" fill="currentColor" text-anchor="middle">z = 3</text>
+<text class="rp-b" x="250" y="121" fill="currentColor" text-anchor="middle">y = 2</text>
+<text class="rp-b" x="422" y="121" fill="#047857" text-anchor="middle">x = 1</text>
+<text class="rp-b" x="594" y="121" fill="currentColor" text-anchor="middle">prelude</text>
+<line x1="142" y1="116" x2="182" y2="116" stroke="currentColor" marker-end="url(#rp-ah)"></line>
+<line x1="314" y1="116" x2="354" y2="116" stroke="currentColor" marker-end="url(#rp-ah)"></line>
+<line x1="486" y1="116" x2="526" y2="116" stroke="currentColor" marker-end="url(#rp-ah)"></line>
+<text class="rp-l" x="78"  y="168" fill="currentColor" text-anchor="middle" opacity="0.6">miss</text>
+<text class="rp-l" x="250" y="168" fill="currentColor" text-anchor="middle" opacity="0.6">miss</text>
+<text class="rp-l" x="422" y="168" fill="#047857" text-anchor="middle">hit</text>
+</svg>
+</figure>
+<p>The figure traces that walk for <code>x</code>: a miss at <code>z</code>'s scope, a miss at <code>y</code>'s, and a hit at the third.
+That walk is <a href="environments.html#a-name-has-a-value-only-in-context"><code>E-Var</code></a> — a name is read by
+starting at the innermost scope and following the links outward, taking the first binding it finds —
+and running off the end of the chain without a match is the
+<a href="environments.html#a-name-has-a-value-only-in-context"><code>UnboundVariable</code></a> case. Because the walk stops
+at the first match, an inner binding is reached before an outer one of the same name: the walk is
+what makes <a href="environments.html#the-let-operator">shadowing</a> resolve to the innermost binding.</p>
+<p>Each <code>extend</code> produces one such scope — a binding and a link to the scope enclosing it — and leaves
+its parent untouched, because the environment is <a href="environments.html#building-it">read-only</a>. A parent
+is therefore shared by every scope built on top of it, and leaving a block discards only the
+innermost scope and exposes the chain below it unchanged: a name bound inside a block is out of
+scope the moment the block ends, because nothing was written that has to be undone.</p>
+<p>In Rust, a scope is a small record — a name bound to a value, and a link to its parent:</p>
+<pre><code class="language-rust ignore">// A scope: one binding, and a link to the scope that encloses
+// it. `Rc` lets a scope be shared — several scopes can hold the
+// same parent, and a value can keep a scope alive after the
+// block that built it has returned.
+struct Scope {
+    name:   Name,
+    val:    Value,
+    parent: Option&lt;Rc&lt;Scope&gt;&gt;,
+}
 
-- How an environment is actually *represented*: the parent-chain of scopes, and what lookup costs
-  as the chain deepens.
-- Alternative representations and their trade-offs — a flat map with shadowing stacks, a chain of
-  frames, de Bruijn indices / lexical addressing where names are resolved to offsets ahead of time.
-- Why Bridger uses the **`Rc<Scope>` parent chain** (provided), and why that matters once closures
-  need to keep an environment alive past the call that created it.
+// `extend` puts a new scope in front and leaves its parent as
+// it was — the read-only environment of the previous chapter.
+fn extend(parent: &amp;Rc&lt;Scope&gt;, x: Name, v: Value) -&gt; Rc&lt;Scope&gt; {
+    Rc::new(Scope { name: x, val: v, parent: Some(Rc::clone(parent)) })
+}
 
-*Rust (at point of use):* shared ownership with `Rc`, and why the environment is refcounted rather
-than owned by one scope ([Appendix A](../appendix/rust-reference.md)).
--->
+// `lookup` walks outward: this scope, then its parent, and on
+// until the name matches or the chain runs out — a run-out is
+// the `UnboundVariable` of the previous chapter.
+fn lookup(scope: &amp;Rc&lt;Scope&gt;, x: &amp;Name) -&gt; Option&lt;Value&gt; {
+    let mut cur = scope;
+    loop {
+        if cur.name == *x {
+            return Some(cur.val.clone());
+        }
+        match &amp;cur.parent {
+            Some(p) =&gt; cur = p,
+            None =&gt; return None,
+        }
+    }
+}</code></pre>
+<p>The parent link is an <a href="../appendix/rust-reference.html#shared-ownership-with-rc"><code>Rc</code></a>, a
+reference-counted shared pointer. A plain owned pointer — one scope owning its parent outright —
+would be enough while a scope lives no longer than the block that built it and is freed when that
+block ends. It stops being enough once a value can carry a scope away from its block: a function
+value keeps the scope it was defined in so it can read its free names when it later runs, and that
+scope has to stay alive after the block that created it has returned (the subject of
+Part V<!-- xref:../functions/closures.md -->). Shared ownership lets the carried-away scope and the
+chain both hold it, and it lives as long as either does. The reason the chain is refcounted rather
+than owned lands with closures; the representation is chosen here so that it can.</p>
+<p>Each scope holds a single binding because Bridger adds one scope per <code>let</code>, so the chain grows by a
+link at every binding. A common alternative gives each <em>block</em> one scope holding all of its bindings
+in a map; a lookup then walks scope to scope and probes the map at each. The distance a lookup
+travels is measured in bindings one way and in scopes the other, and the walk is otherwise the same.</p>
+<h2 id="what-a-lookup-costs"><a class="header" href="#what-a-lookup-costs">What a lookup costs</a></h2>
+<p>A lookup costs its walk: the number of scopes visited before the binding is found. A name bound in
+the current block is a step away; a name from an enclosing block is as many steps as the scopes
+between the use and the binding; a prelude name read from deep inside nested blocks is the length of
+the whole chain. <code>extend</code> adds a single scope at the front, and discarding a scope drops the
+innermost link, so growing and shrinking the environment are each a constant-time operation and the
+cost of the representation sits on <code>lookup</code>.</p>
+<p>A different representation moves that cost. A single map from every name currently in scope to its
+value answers a lookup in one probe, with no walk at all. What it does not get for nothing is the
+coming and going of scopes: entering a block has to record every name the block shadows, and leaving
+the block has to put the shadowed values back, so the map carries a stack of shadowed bindings per
+name, or a snapshot restored on exit. The bookkeeping the chain spends on a lookup, the flat map
+spends at every scope boundary instead. Which representation costs less depends on whether a program
+reads variables more often than it opens scopes, or the reverse.</p>
+<h2 id="resolving-names-before-the-run"><a class="header" href="#resolving-names-before-the-run">Resolving names before the run</a></h2>
+<p><a href="lexical-scope.html">Lexical scope</a> settles which binding an occurrence refers to before the program
+runs, so the walk's outcome is fixed ahead of time too: for a given occurrence of a name, the number
+of scopes to skip before its binding is found is the same on every run, because the nesting of
+scopes at that point is the nesting of the enclosing blocks, and the text fixes that. Because each
+scope holds one binding, that count is the whole answer. A name can then be replaced, before the
+run, by the number of scopes the walk would have crossed, and the reference read by stepping out
+that many scopes — with no name compared along the way.</p>
+<p>That single number is what Nicolaas de Bruijn introduced in 1972: drop the names entirely and write
+each variable as the distance to its binder — the count of enclosing binders to cross — so a term
+carries no variable names at all (<a href="https://doi.org/10.1016/1385-7258(72)90034-0">de Bruijn, 1972</a>).
+Two terms that differ only in their choice of names become the same term, and shadowing is just a
+larger distance, so the renaming questions that surround names do not arise. A scope that holds
+several bindings — the block representation, where one scope carries a whole block's names — needs a
+second coordinate on top of the distance: which scope to stop at, and which binding within it. That
+pair is called <strong>lexical addressing</strong>, and over a single-binding chain its second coordinate is
+always zero, leaving de Bruijn's lone index.</p>
+<figure style="margin:1em 0">
+<svg viewBox="0 0 672 202" role="img"
+     style="max-width:672px;width:100%;height:auto;font-variant-ligatures:none"
+     xmlns="http://www.w3.org/2000/svg"
+     aria-label="The same four scopes, now numbered by depth from the innermost: 0, 1,
+     2, 3. The occurrence x is replaced by the single index 2 — skip two scopes — and the
+     scope at depth 2, which binds x to 1, is highlighted as the one the index names.">
+<defs>
+  <marker id="rp-ah2" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+  </marker>
+</defs>
+<style>
+  .rq-b{font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .rq-l{font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .rq-box{fill:none;stroke:currentColor;stroke-width:1.5}
+</style>
+<text class="rq-b" x="14" y="28" fill="currentColor">x</text>
+<text class="rq-l" x="34" y="28" fill="currentColor">becomes the index</text>
+<text class="rq-b" x="172" y="28" fill="#047857">2</text>
+<text class="rq-l" x="192" y="28" fill="currentColor" opacity="0.6">skip 2 scopes</text>
+<text class="rq-l" x="78"  y="80" fill="currentColor" text-anchor="middle" opacity="0.55">depth 0</text>
+<text class="rq-l" x="250" y="80" fill="currentColor" text-anchor="middle" opacity="0.55">depth 1</text>
+<text class="rq-l" x="422" y="80" fill="#047857" text-anchor="middle">depth 2</text>
+<text class="rq-l" x="594" y="80" fill="currentColor" text-anchor="middle" opacity="0.55">depth 3</text>
+<rect class="rq-box" x="14"  y="90" width="128" height="52" rx="6"></rect>
+<rect class="rq-box" x="186" y="90" width="128" height="52" rx="6"></rect>
+<rect x="358" y="90" width="128" height="52" rx="6" fill="none" stroke="#047857" stroke-width="1.5"></rect>
+<rect class="rq-box" x="530" y="90" width="128" height="52" rx="6"></rect>
+<text class="rq-b" x="78"  y="121" fill="currentColor" text-anchor="middle">z = 3</text>
+<text class="rq-b" x="250" y="121" fill="currentColor" text-anchor="middle">y = 2</text>
+<text class="rq-b" x="422" y="121" fill="#047857" text-anchor="middle">x = 1</text>
+<text class="rq-b" x="594" y="121" fill="currentColor" text-anchor="middle">prelude</text>
+<line x1="142" y1="116" x2="182" y2="116" stroke="currentColor" marker-end="url(#rp-ah2)"></line>
+<line x1="314" y1="116" x2="354" y2="116" stroke="currentColor" marker-end="url(#rp-ah2)"></line>
+<line x1="486" y1="116" x2="526" y2="116" stroke="currentColor" marker-end="url(#rp-ah2)"></line>
+<text class="rq-l" x="422" y="168" fill="#047857" text-anchor="middle">the index lands here</text>
+</svg>
+</figure>
+<p>It is the same chain, with <code>x</code>'s spelling replaced by its distance. Because the target is fixed by
+the text, computing that distance is a pass over the program made before it runs, and once done the
+run-time lookup steps out a fixed number of scopes, with no name searched for.</p>
+<p>Bridger keeps names. Resolving references to coordinates is a pass a tree-walker can do without, and
+the speed it buys is not what a tree-walker is for; against it, a name is what an error reports.
+<code>UnboundVariable</code> names the variable, and so do the type errors of
+Part VI<!-- xref:../types/type-checker.md -->, while a coordinate has no name to hand back. The chain
+stays keyed by name, and a lookup stays a walk.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<p>Several choices sit behind the environment, and Bridger has taken a point in each.</p>
+<p><strong>Where a lookup's cost falls.</strong> A chain of scopes puts it on the walk and keeps extension and exit
+cheap; a flat map spends it on save-and-restore at each scope boundary and keeps a lookup a single
+probe. A program that reads variables far more often than it opens scopes is served by the first; a
+program dominated by scope changes over shallow lookups by the second.</p>
+<p><strong>By name or by position.</strong> Keyed by name, a reference is searched for by spelling at run time and
+every name survives into the running program, where an error can report it. Resolved to a position —
+a de Bruijn index over the single-binding chain, or the ⟨scope, binding⟩ pair of lexical addressing
+once a scope holds several — a reference is found without a search, at the price of a resolution
+pass and of the names an error might have used. This choice is open only because scope is lexical: a
+language deciding bindings while running could not resolve them before it.</p>
+<p><strong>Owned or shared.</strong> A singly owned chain is enough while a scope dies with its block. Sharing —
+Bridger's <code>Rc</code> — is forced once a value outlives its defining block and has to carry that block's
+scope with it, which is what a closure does. Bridger shares from the start, so the chain a block
+builds can be captured without copying it (Part V<!-- xref:../functions/closures.md -->).</p>
+<p>The one scope not built by an <code>extend</code> is the root, which holds the prelude and the top-level
+functions. Because those functions may call one another regardless of the order they are written in,
+the root is assembled by the interpreter's provided setup before any of them runs, rather than grown
+a binding at a time the way a block's scopes are.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Nameless variable representations</strong>: N. G. de Bruijn's <em><a href="https://doi.org/10.1016/1385-7258(72)90034-0">Lambda calculus notation with nameless
+dummies</a></em> (Indagationes Mathematicae, 1972) represents
+each variable by the distance to its binder, so that terms differing only in their choice of names
+coincide and renaming is unnecessary — the representation an interpreter borrows when it resolves
+references to positions.</p>
+<p><strong>Lexical addressing</strong>: Abelson and Sussman's <em><a href="https://mitpress.mit.edu/sites/default/files/sicp/full-text/book/book.html">Structure and Interpretation of Computer
+Programs</a></em> (MIT Press,
+free online) works through resolving a variable reference to a coordinate — which enclosing scope,
+and which binding within it — in its treatment of compilation, so that a name is found by position
+rather than searched for by spelling.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>In <code>{ let x = 1; { let y = 2; { let z = 3; x + z } } }</code>, how many scopes does the lookup of <code>z</code> walk on the last line, and how many does the lookup of <code>x</code> walk? Why are <code>extend</code> and leaving a block cheap however deep the chain is?</summary>
+<p>The chain at <code>x + z</code> is <code>{z:3}</code> → <code>{y:2}</code> → <code>{x:1}</code> → root. Looking up <code>z</code> finds it in the innermost
+scope — one scope visited. Looking up <code>x</code> misses in <code>z</code>'s scope, misses in <code>y</code>'s, and hits in the
+third — three scopes visited. <code>extend</code> adds one scope at the front and leaving a block drops the
+innermost link, so each is one operation regardless of how many scopes are already in the chain: the
+representation puts its whole cost on the lookup's walk.</p>
+</details>
+<details>
+<summary>The parent link is an <code>Rc</code> (shared ownership) rather than a plain owned pointer. What later feature makes single ownership insufficient, and what would go wrong under it?</summary>
+<p>A function value (Part V) captures the scope it was defined in so it can read its free names when it
+is later called, which means that scope must stay alive after the block that built it has returned.
+Under single ownership the block owns the chain and it is freed when the block ends, so the captured
+scope would be left dangling — Rust would reject the program rather than allow it. Shared ownership
+lets the closure and the chain both hold the scope, and it lives as long as either does. Bridger
+shares from the start so capture takes no copy of the chain.</p>
+</details>
+<details>
+<summary>In <code>{ let a = 1; { let b = 2; a } }</code>, give the de Bruijn index — the number of scopes to skip — for the occurrence of <code>a</code>. Why can it be computed without running the program, and why does Bridger keep names anyway?</summary>
+<p>At <code>a</code> the chain is <code>{b:2}</code> → <code>{a:1}</code> → root, so the index is <code>1</code>: skip one scope (past <code>b</code>'s) and
+take the binding there. A ⟨scope, binding⟩ lexical address would be ⟨1, 0⟩ — the second coordinate
+stays zero while each scope holds one binding. It is computable ahead of the run because lexical
+scope fixes the binding from the text — the nesting of scopes at the occurrence is the nesting of
+the enclosing blocks, the same on every run, so the count to skip is a constant. Bridger keeps names
+because resolving to positions is an extra pass buying speed a tree-walker does not need, and
+because its errors report names: <code>UnboundVariable</code> and the type errors of Part VI name the
+variable, and an index has none to give.</p>
+</details>
+<details>
+<summary>A single flat map from names to values answers a lookup in one probe, with no walk. What does it have to do that the chain does not, and when does the trade favor each?</summary>
+<p>The map has to undo scope changes at every block boundary: entering a block records what each new
+binding shadows, and leaving it puts them back — a stack of shadowed bindings per name,
+or a snapshot restored on exit. The chain skips that (leaving a block just drops the innermost link)
+and pays a walk on every lookup instead. The map is favored when lookups are frequent relative to
+scope entry and exit and a one-probe lookup is worth the boundary bookkeeping; the chain is favored
+when extension and exit dominate and the walk runs over a shallow chain.</p>
+</details>
+<details>
+<summary>Leaving a block returns the environment to what it was before the block, and the chain does this with no work. Which property from the previous chapter makes that possible?</summary>
+<p>That <code>extend</code> returns a new child scope and leaves its parent untouched — the environment is
+read-only. The scope a block runs in is a fresh link on top of the caller's chain, and the caller's
+chain is never modified, so discarding the block's innermost scope exposes the unchanged parent,
+which is exactly the environment before the block. No binding was overwritten, so none has to be
+put back: restoring is just dropping the child.</p>
+</details>
 
                     </main>
 

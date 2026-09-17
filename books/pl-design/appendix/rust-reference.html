@@ -370,6 +370,23 @@ the code this book asks you to write it rarely has to be named.</p>
 <p>M0's <code>combine</code> leans on the move rule directly: taking its two purses <strong>by value</strong> consumes them, so
 Rust then stops you from reusing a purse you have already emptied into another. An operation that
 changes the purse borrows it as <code>&amp;mut</code>; one that only reads it borrows as <code>&amp;</code>.</p>
+<h2 id="shared-ownership-with-rc"><a class="header" href="#shared-ownership-with-rc">Shared ownership with <code>Rc</code></a></h2>
+<p>Single ownership fits a value with one clear home. Some structures instead need a value reachable
+from several places at once, with no one holder entitled to free it while another still points at
+it. <code>Rc&lt;T&gt;</code> — a <em>reference-counted</em> pointer — is the standard library's answer. <code>Rc::new(v)</code> places
+<code>v</code> on the heap behind a shared handle; <code>Rc::clone(&amp;h)</code> hands back another handle to the same <code>v</code>
+without copying it and adds one to a count of live holders, and <code>v</code> is released only when the last
+handle is dropped and the count reaches zero. An <code>Rc&lt;T&gt;</code> gives shared, read-only access (<code>&amp;T</code>) to
+what it holds, so it does not by itself allow mutation — the many-readers-or-one-writer rule stays
+intact.</p>
+<pre><pre class="playground"><code class="language-rust">use std::rc::Rc;
+
+fn main() {
+    let a = Rc::new(vec![1, 2, 3]);
+    let b = Rc::clone(&amp;a);                 // same Vec, one more holder
+    println!("{} {}", a.len(), b.len());   // 3 3
+    println!("{}", Rc::strong_count(&amp;a));  // 2
+}</code></pre></pre>
 <h2 id="option-and-result"><a class="header" href="#option-and-result"><code>Option</code> and <code>Result</code></a></h2>
 <p>Two <code>enum</code>s from the standard library carry the possibility of "no value" in the value itself, so a
 caller cannot ignore it:</p>
