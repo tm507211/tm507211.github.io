@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Milestone M2 — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 100rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    h3 { margin-top: 1.4rem; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    pre { font-size: .9em; }
+    table code { white-space: nowrap; }
+    .grade-table td:first-child { white-space: nowrap; }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Milestone M2 <small>Environments and Binding</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      In this milestone you make the evaluator's <code>env</code> parameter &mdash; carried unused since
+      M1 &mdash; finally do work. You put a variable and a block into the interpreter: a variable reads
+      its value from the environment, and a block threads an environment that each <code>let</code>
+      extends over the rest of the block. You fill in two <code>match</code> arms of
+      <code>eval_expr</code>, <code>Expr::Var</code> and <code>Expr::Block</code>, so that every one of
+      these forms either evaluates to a value or reports a well-formed runtime error.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>At a glance</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>Due</dt><dd>Friday, September 25, at 11:59&nbsp;PM.</dd>
+          <dt>Submit</dt><dd>Through Gradescope, linked from the course Canvas page.</dd>
+          <dt>Attempts</dt><dd><strong>Unlimited.</strong> Resubmit as many times as you like before
+            the deadline; only your last submission is graded.</dd>
+          <dt>Deliverables</dt><dd>A single <code>.zip</code> of your entire project &mdash; the whole
+            repository, including your completed <code>src/interp/eval.rs</code> and a
+            <code>Description.md</code> at its root.</dd>
+          <dt>Reading</dt><dd>The textbook's
+            <a href="../../../../books/pl-design/milestones/m2.html">Milestone M2</a> chapter is the
+            full specification. This page adds the course-specific rules: how to submit and how it is
+            graded.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>What to build <small class="text-muted">the specification</small></h2>
+    <p class="refs text-muted">
+      Full specification:
+      <a href="../../../../books/pl-design/milestones/m2.html">Textbook &mdash; Milestone M2: environments and binding</a>
+      &nbsp;|&nbsp; Previous milestone:
+      <a href="m1.html">Milestone M1: the expression evaluator</a>
+    </p>
+    <p>
+      Read the <a href="../../../../books/pl-design/milestones/m2.html">Milestone M2 chapter</a> before
+      you start &mdash; it is the authoritative specification, including the exact rule for each form and
+      the one case in which a variable is <em>stuck</em>. In short, you implement the two
+      milestone-tagged holes in <code>eval_expr</code>:
+    </p>
+    <pre><code>// src/interp/eval.rs — the two M2 arms
+Expr::Var(..)   =&gt; todo_m2!("E-Var"),
+Expr::Block(..) =&gt; todo_m2!("E-Block / E-Let / E-Seq"),</code></pre>
+    <p>
+      Everything else in the interpreter &mdash; the parser, the value and error types, and the
+      <code>Env</code> itself &mdash; is provided and frozen. Your work is the <em>meaning</em> of a
+      variable and a block. A variable is read against the environment: <code>env.lookup(x)</code>
+      returns <code>Some(v)</code> for a name in scope and <code>None</code> for one that is not, and a
+      <code>None</code> is the only new stuck case &mdash;
+      <code>RuntimeError::UnboundVariable { name, span }</code>, blaming the variable's span. A block
+      walks its items top to bottom, threading an environment that each <code>let</code>
+      <code>extend</code>s (producing a <em>new</em> child scope, never rewriting the parent), and its
+      value is the trailing expression, or <code>Value::Unit</code> when there is none. Blocks and lets
+      are never themselves stuck &mdash; only a stuck subexpression makes them so, and the
+      <code>?</code> operator sends it straight out, aborting the block at that item's span.
+    </p>
+
+    <h2>Getting the code and running the tests</h2>
+    <p>
+      M2 builds directly on your M1 code. Because the milestones are <strong>cumulative</strong>,
+      <code>cargo m2</code> runs every M1 test too, and the provided-test gate (below) will fail the
+      whole milestone if any of them fail. <strong>Finish
+      <a href="m1.html">Milestone M1</a> first</strong> &mdash; keep working in the same clone with
+      your completed M1 arms in place. If you have not done M1 yet, do it before starting M2; without
+      the M1 expression arms, the carried-over tests cannot pass no matter what you write here.
+    </p>
+    <p>
+      The toolchain, the clone, and the layout of the codebase are the ones from
+      <a href="m1.html#getting-the-code-and-running-the-tests">Milestone M1</a> &mdash; that setup is
+      done once, and this milestone does not change it. If you are starting fresh, follow the M1 page to
+      install <a href="https://rustup.rs"><code>rustup</code></a>, clone
+      <a href="https://github.com/chaluli/bridger-interpreter"><code>bridger-interpreter</code></a>, and
+      complete M1. Then pick up the same loop, with the milestone number advanced:
+    </p>
+    <pre><code>cargo m2                                    # run the Milestone-2 tests
+cargo fmt                                   # format your code
+cargo clippy --all-targets -- -D warnings   # lint</code></pre>
+    <p>
+      <code>cargo m2</code> is short for <code>cargo test --features m2</code>. Milestones are
+      <strong>cumulative</strong>, so <code>cargo m2</code> runs both the M2 tests <em>and</em> every M1
+      test &mdash; the expression fragment keeps passing as you grow the evaluator. To list exactly what
+      M2 asks of you at any time:
+    </p>
+    <pre><code>grep -rn 'todo_m2!' src</code></pre>
+    <p>
+      The two holes turn up in <code>src/interp/eval.rs</code>. Every other <code>Expr</code> variant is
+      a hole tagged for a later milestone, so the crate still compiles with these two unwritten.
+    </p>
+
+    <h3>A few examples</h3>
+    <p>Blocks and variables, and the values your evaluator should produce:</p>
+    <pre><code>{ let x = 2; x + 3 }              &rArr; 5
+{ let x = 1; let y = x + 1; y }  &rArr; 2      (a later let sees the earlier one)
+{ let x = 1; let x = x + 1; x }  &rArr; 2      (the second binding shadows the first)
+{ 1; 2; 3 }                      &rArr; 3      (the first two are discarded)
+{ let x = 5; }                   &rArr; ()     (a trailing ; leaves no tail)
+{ }                              &rArr; ()</code></pre>
+    <p>Expressions that are <em>stuck</em> &mdash; no value, and the run reports a runtime error:</p>
+    <pre><code>y                        &rArr; stuck   (UnboundVariable: y is not in scope)
+{ { let x = 1; x }; x }  &rArr; stuck   (x's scope ended at the inner })
+{ z; 1 }                 &rArr; stuck   (the unbound z aborts the block before the tail)</code></pre>
+    <p>
+      The provided tests build an <code>Expr</code> by hand and check either the resulting
+      <code>Value</code> or, for a stuck expression, the error's variant, its name, and the span it
+      blames. When <code>cargo m2</code> is all green, your evaluator is very likely correct.
+    </p>
+
+    <h2>How M2 is graded</h2>
+    <p>M2 is worth <strong>100 points</strong>:</p>
+    <div class="table-responsive">
+      <table class="table table-bordered grade-table">
+        <thead>
+          <tr><th>Item</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Auto-graded tests</td>
+            <td><strong>80</strong>, split <strong>40 / 40</strong>: <strong>40</strong> on the new M2
+              behavior and <strong>40</strong> on the carried-over tests for past milestones (M1), since
+              M2 is cumulative and your evaluator must keep the expression fragment working. Each half is
+              split evenly across <strong>5 properties</strong> (8 points each). These are held-back
+              tests, run on Gradescope against the public interface &mdash; separate from the provided
+              tests you run locally with <code>cargo m2</code>.</td>
+          </tr>
+          <tr>
+            <td>Formatting &amp; linting</td>
+            <td><strong>10</strong>: <strong>5</strong> for <code>cargo fmt</code> (checked on your
+              submitted files) and <strong>5</strong> for <code>cargo clippy</code> (checked with
+              <code>-D warnings</code>). Run both before submitting; the starter is clean on a fresh
+              clone, so a warning means something you introduced.</td>
+          </tr>
+          <tr>
+            <td><code>Description.md</code></td>
+            <td><strong>10</strong>, human-graded (see below).</td>
+          </tr>
+          <tr class="danger">
+            <td>Does not compile</td>
+            <td><strong>0</strong> for the entire milestone. Make sure a fresh clone of exactly what
+              you submit runs <code>cargo build</code>.</td>
+          </tr>
+          <tr class="danger">
+            <td>Fails any provided test</td>
+            <td><strong>0</strong> for the entire milestone. The provided (visible) tests are a hard
+              gate: passing all of them &mdash; the M2 tests <em>and</em> the carried-over M1 tests
+              &mdash; is required before any of the 80 auto-graded points are counted.</td>
+          </tr>
+          <tr class="danger">
+            <td>Description does not match your code</td>
+            <td>The <code>Description.md</code> can be scored <strong>negative</strong> &mdash; roughly
+              <strong>&minus;20</strong>, and up to <strong>&minus;40</strong> &mdash; at the
+              discretion of the TA or instructor (see below). Passing every test does not by itself
+              secure full credit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The two <strong>0 gates</strong> come first: code that does not compile, or that fails any of the
+      tests shipped with the repository, earns no credit for the milestone regardless of anything else.
+      Because M2 is cumulative, a change that breaks an M1 test trips this gate too. Only after both
+      gates pass are the 80 auto-graded points, the 10 style points, and the 10 description points
+      assessed.
+    </p>
+    <p>
+      Each of the 80 points is tied to one <strong>property</strong> &mdash; a single rule your
+      evaluator must obey. Five properties cover the new M2 behavior, such as &ldquo;an unbound variable
+      is stuck with an <code>UnboundVariable</code> error at the variable&rsquo;s span&rdquo; or &ldquo;a
+      later <code>let</code> in a block sees the bindings the earlier ones made&rdquo;; the other five
+      re-check the expression-fragment rules from M1, so a regression there costs points here. A
+      property is
+      <strong>all-or-nothing</strong>: it is checked by several cases &mdash; some
+      <strong>visible</strong>, some <strong>hidden</strong> &mdash; and you earn its 8 points only
+      when all of them pass. When a property fails, Gradescope reports <strong>which property</strong>
+      it was and states the rule it checks, so you know what behavior to fix. If the failing case is a
+      visible one, you also see a short description of it; if it is a hidden one, you see only the
+      property&rsquo;s rule, not the specific input. Because attempts are unlimited, the workflow is:
+      submit, read which properties failed, fix them, and resubmit.
+    </p>
+
+    <h2>The write-up: <code>Description.md</code></h2>
+    <p>
+      You may use generative AI on this project, and a coding assistant can likely solve M2 on its
+      own. That is fine &mdash; what I grade is not <em>only</em> that the code works, but that
+      <strong>you understand the code you submitted</strong>. The <code>Description.md</code> is how I
+      judge that. Write it yourself, in your own words, about the code you are actually turning in.
+    </p>
+    <p>Put a <code>Description.md</code> at the root of the repository that answers all of the following.</p>
+
+    <h3>Concept questions</h3>
+    <p>
+      A few sentences each, in your own words. These are about the code <em>you</em> wrote &mdash;
+      point at your own implementation where a question asks you to, rather than repeating the
+      textbook's answers.
+    </p>
+    <ol>
+      <li>
+        What does <code>env.lookup(x)</code> return, and how does your <code>Expr::Var</code> arm turn
+        each of its two outcomes into a result of <code>eval_expr</code>? For the stuck outcome, name
+        the <code>RuntimeError</code> variant you build, which fields it carries, and which node's span
+        it blames.
+      </li>
+      <li>
+        Explain how your block arm threads the environment through its items. When you evaluate a
+        <code>Stmt::Let</code>, in which environment do you evaluate its right-hand side, and what do
+        you pass to the items that follow? Point to the lines where you call <code>env.extend</code>.
+      </li>
+      <li>
+        <code>env.extend</code> returns a <em>new</em> <code>Env</code> and leaves the one it was called
+        on untouched. Using that fact, explain why a name bound by a <code>let</code> inside a block is
+        not in scope outside the block &mdash; refer to what happens to the block's environment when
+        your arm returns.
+      </li>
+      <li>
+        In <code>{ let x = 1; let x = x + 1; x }</code> the second <code>let</code> <em>shadows</em> the
+        first rather than changing it. Explain, in terms of what <code>extend</code> does, why this
+        produces <code>2</code> and not a mutation of the original binding &mdash; and why M2's
+        <code>let</code> could not build a counter whose value changes over time.
+      </li>
+      <li>
+        When a block contains a stuck item &mdash; say <code>{ z; 1 }</code> with <code>z</code>
+        unbound &mdash; the block is stuck and the tail <code>1</code> is never reached. Walk through
+        how the <code>?</code> operator in your arm produces that: what it does when a sub-evaluation
+        returns <code>Err(Control::Raise(..))</code>, and which node's span the reported error carries.
+      </li>
+    </ol>
+
+    <h3>How you implemented it</h3>
+    <ul>
+      <li>
+        Walk through your <code>Expr::Block</code> arm: how do you destructure it into its items and
+        optional tail, iterate the items while carrying the growing environment, dispatch on
+        <code>Stmt::Let</code> versus <code>Stmt::Expr</code>, and produce the block's value (including
+        <code>Value::Unit</code> when there is no tail)? Naming the provided tools you used
+        (<code>self.eval_expr</code>, <code>env.lookup</code>, <code>env.extend</code>,
+        <code>RuntimeError</code>, <code>.into()</code>/<code>?</code>) is encouraged. Note that the
+        <code>Option&lt;Ty&gt;</code> annotation on a <code>let</code> is ignored at this milestone.
+      </li>
+      <li>
+        Point out anything that was tricky, a bug you fixed, or a design choice you made &mdash; and if
+        you used an assistant, say what you had it do and how you checked its work.
+      </li>
+    </ul>
+
+    <div class="panel panel-warning">
+      <div class="panel-heading"><strong>Understanding what you submit</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The <code>Description.md</code> is worth up to <strong>10 points</strong>, graded by hand.
+          But it can also be scored <strong>negative</strong>: if your description does not actually
+          match the code you submitted &mdash; it describes an approach your code does not take, gets
+          the behavior wrong, or reads as though you cannot explain your own submission &mdash; you can
+          lose roughly <strong>20 points, and up to 40</strong>, as judged by the TA or instructor, who
+          may also ask you to explain your submission in person. Passing every test does not by itself
+          secure full credit.
+        </p>
+        <p style="margin-bottom:0">
+          You are welcome to use a coding assistant to <em>write</em> the code. You are responsible for
+          <em>understanding</em> it. Code you cannot explain will not earn full credit. This
+          expectation grows across the semester, so keep building the habit while the milestones are
+          still small.
+        </p>
+      </div>
+    </div>
+
+    <h2>Submitting</h2>
+    <p>
+      First write your <code>Description.md</code> at the root of the repository. Then, from inside the
+      project folder, check the code and package the <strong>entire project</strong> into a
+      <code>.zip</code>:
+    </p>
+    <pre><code>cd bridger-interpreter                       # the project root
+
+cargo m2                                     # all Milestone-2 tests pass (M1 too)?
+cargo fmt                                     # format your code
+cargo clippy --all-targets -- -D warnings    # lint — fix any warnings
+
+zip -r ../m2-submission.zip . -x '.git/*' 'target/*'</code></pre>
+    <p>
+      That writes <code>m2-submission.zip</code> in the folder just above the project. The
+      <code>-x</code> flags leave out the <code>.git/</code> history and the <code>target/</code> build
+      directory, which you do not need to submit. Submit the whole project, not just
+      <code>eval.rs</code>.
+    </p>
+    <p>
+      Then upload <code>m2-submission.zip</code> to the <strong>Milestone M2</strong> assignment on
+      Gradescope (linked from Canvas). Some tests are visible, so you will get results back shortly and
+      can resubmit before the deadline; other tests are hidden, so passing every visible test does not
+      guarantee full credit.
+    </p>
+    <p class="text-muted" style="font-size:.92em">
+      No <code>zip</code> command? The simplest route on any system is the GUI: select the project
+      folder in Finder (macOS) or File Explorer (Windows) and choose <strong>Compress</strong> /
+      <strong>Send to &rarr; Compressed (zipped) folder</strong>. Just make sure the files sit at the
+      top of the archive (with <code>src/</code> and <code>Cargo.toml</code> at its root), not nested
+      inside an extra folder. If you would rather have the command line: macOS and most Linux systems
+      already include <code>zip</code> (on Debian/Ubuntu, install it with
+      <code>sudo apt install zip</code>); on Windows, install a zip tool such as
+      <a href="https://www.7-zip.org/">7-Zip</a>, or use the built-in PowerShell command
+      <a href="https://learn.microsoft.com/powershell/module/microsoft.powershell.archive/compress-archive"><code>Compress-Archive</code></a>.
+    </p>
+    <p>
+      See the <strong>Course Project Policies</strong> on the
+      <a href="../../fall26.html">main course page</a> for the collaboration, generative-AI, and
+      late-work rules that apply to every milestone.
+    </p>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages &middot;
+      <a href="../../fall26.html">Course home</a>
+    </footer>
+
+  </div>
+</body>
+</html>
