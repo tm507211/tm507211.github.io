@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 4 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 4 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lectures 10&ndash;12 and their textbook
+      chapters: environment representations and lookup, expressions and statements, and mutation and
+      references. One question also looks back at a design decision in your Milestone&nbsp;1
+      evaluator. Answers are short: a sentence or two, in your own words, earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 15 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions. Some give you a small block of
+            Bridger code to trace by hand, or an inference rule to read; one asks you to compare two
+            designs (for example, a scope chain vs.&nbsp;a flat map, or Bridger's cells
+            vs.&nbsp;C's variables). One question looks back at your Milestone&nbsp;1 evaluator ---
+            no Rust to write, just explain a decision in words.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.
+            You may name a rule (<code>E-Var</code>, <code>E-Ref</code>) if it helps, but you are
+            never required to.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Environment representations and lookup
+      <small class="text-muted">Lecture 10</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/binding/representations.html">Environment representations and lookup</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-10/index.html">Lecture 10</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Describe the environment as an <em>immutable chain of scopes</em>, innermost first, with
+        one binding per <code>let</code>, and say why leaving a block just drops the innermost link
+        (nothing was overwritten, so nothing has to be put back &mdash; the environment is
+        read-only).</li>
+      <li>Explain that a lookup is a <em>walk outward</em>: start at the innermost scope, take the
+        first binding found (which is why shadowing resolves inward), and running off the end is
+        <code>UnboundVariable</code>.</li>
+      <li>State the <em>cost</em>: a lookup costs its walk (the number of scopes visited), while
+        <code>extend</code> (a link at the front) and leaving a block (drop the head) are each
+        constant-time however deep the chain is &mdash; the representation puts its whole cost on the
+        lookup.</li>
+      <li>Trace a lookup by hand: in
+        <code>{ let x = 1; { let y = 2; { let z = 3; x + z } } }</code>, say how many scopes the
+        lookups of <code>z</code> and <code>x</code> each walk.</li>
+      <li>Contrast the chain with a <em>flat map</em> from all names in scope to values: one probe
+        per lookup, but it must save what each binding shadows on entering a block and restore it on
+        leaving &mdash; and say when each representation comes out ahead (frequent lookups favor the
+        map; frequent scope changes favor the chain).</li>
+      <li>Give the <em>de Bruijn index</em> of an occurrence &mdash; the number of scopes to skip to
+        its binder &mdash; and explain why it is computable <em>before the program runs</em> (lexical
+        scope fixes the target from the text, so the count is the same on every run). Know that
+        <em>lexical addressing</em> generalizes it to a &#10216;scope, binding&#10217; pair once a
+        scope holds several bindings.</li>
+      <li>Say why Bridger <em>keeps names</em> rather than resolving to indices: an error reports a
+        name (<code>UnboundVariable</code>, and the type errors to come), and a resolution pass buys
+        a speed a tree-walker does not need.</li>
+      <li>Explain why the parent link is <em>shared</em> (<code>Rc</code>) rather than owned: a value
+        can outlive the block that built it &mdash; a function will later carry off the scope it was
+        defined in &mdash; so single ownership is not enough (the details are Part&nbsp;V's; the
+        representation is chosen now so it can).</li>
+    </ul>
+
+    <h2>Expressions, statements, and blocks
+      <small class="text-muted">Lecture 11</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/imperative/control-flow.html">Expressions, statements, and blocks</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-11/index.html">Lecture 11</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Define an <em>effect</em> &mdash; a change a construct makes that a later step can observe,
+        over and above the value it computes &mdash; and name Bridger's one built-in effect
+        (mutation).</li>
+      <li>Describe the <em>statement/expression line</em> and where languages draw it: Fortran and
+        Algol&nbsp;60 kept statements in a category apart, carrying no value; Algol&nbsp;68 lowered
+        the line with <em>units</em> and a <code>void</code> type; Bridger (with ML, Ruby, Rust)
+        draws it <em>low</em>.</li>
+      <li>Say what &ldquo;drawn low&rdquo; means in Bridger: <code>if</code>, <code>match</code>,
+        <code>while</code>, <code>for</code>, and a block are all <em>expressions</em> with a value,
+        and the effect-only forms (<code>:=</code>, a <code>while</code>) produce <em>unit</em>,
+        <code>()</code>.</li>
+      <li>Explain why <em>unit</em> is the right value for an effect-only form (it reports only that
+        the work was done) and why giving those forms a value at all lets the one expression grammar
+        absorb them with no special case.</li>
+      <li>Say what remains a <em>statement</em>: a <em>block item</em> &mdash; a <code>let</code> or
+        <code>ref</code> binding, or an expression closed with <code>;</code> (its value discarded).
+        The trailing expression with no <code>;</code> is the block's value; the <code>;</code> is
+        the whole of what turns an expression into a statement.</li>
+      <li>Explain why <code>let x = let y = 0;</code> does <em>not</em> parse: a binding's work is to
+        extend the environment over the <em>rest of the block</em>, so it is a block item, not an
+        expression, and has no value to hand back as a right-hand side.</li>
+      <li>State the payoff of the low line: one <code>eval_expr</code> returning a <code>Value</code>
+        with no <code>eval_stmt</code> beside it, and (later) one typing judgment &mdash; the
+        effectful forms are handled by the same arms as <code>2 + 2</code> and return
+        <code>()</code>.</li>
+      <li>Recognize the design space: C and Java keep the boundary, so they carry <em>two</em>
+        conditionals (the <code>if</code> statement and the operator <code>c ? a : b</code>) and let
+        <code>a = b</code> be an expression (hence <code>if (x = 0)</code> compiles); ML, Ruby, and
+        Rust draw it low as Bridger does.</li>
+    </ul>
+
+    <h2>Mutation and references
+      <small class="text-muted">Lecture 12</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/imperative/mutation.html">Mutation and references</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-12/index.html">Lecture 12</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Say why the environment alone cannot express a value that <em>changes over time</em>: it
+        maps a name to a value once, and a second <code>let</code> makes a new binding rather than
+        altering the first.</li>
+      <li>Describe the <em>reference cell</em>: a box whose contents a program can overwrite, with
+        the name holding the cell's <em>location</em> rather than its contents. Know the tradition it
+        comes from &mdash; ML keeps the binding immutable and adds a first-class cell, against the
+        variable-as-cell model of Fortran, C, and Java where the name <em>is</em> the cell.</li>
+      <li>Read the store-threaded judgment
+        <code>&#961; &#8866; &#10216;e, &#963;&#10217; &#8681; &#10216;v, &#963;&#8242;&#10217;</code>
+        and explain why the store goes <em>in and out</em> (evaluation can change a cell) while the
+        environment <code>&#961;</code> only goes in (no expression revises an existing binding).</li>
+      <li>Explain that threading the store also <em>fixes left-to-right order</em>: a two-operand form
+        evaluates the first against the incoming store and the second against the store the first
+        handed out.</li>
+      <li>State what each of the three forms does: <code>ref e</code> allocates a fresh cell and
+        returns its <em>location</em>; <code>deref e</code> reads the cell (<code>&#963;(&#8467;)</code>);
+        <code>e1 := e2</code> evaluates the <em>cell first</em>, then the value, writes, and returns
+        <code>()</code>. A <code>deref</code> or <code>:=</code> on a non-location is a runtime type
+        error &mdash; the store's stuck case.</li>
+      <li>Trace <em>aliasing</em>: after <code>let a = ref 0; let b = a; a := 1;</code>,
+        <code>deref b</code> is <code>1</code>, because <code>a</code> and <code>b</code> hold the
+        same location and so name one cell &mdash; a write through one is seen through the other.</li>
+      <li>Recognize <code>ref x = e</code> as sugar for <code>let x = ref e</code> (bind a name to a
+        fresh cell), so the evaluator sees only the <code>let</code> and the <code>ref</code> it
+        already has.</li>
+      <li>Compare the design space: variable-as-cell (C, Java, Python &mdash; every name mutable,
+        aliasing implicit), ML's first-class cell (mutation visible as <code>ref</code>/<code>deref</code>/<code>:=</code>,
+        the model Bridger follows), and Rust (<code>mut</code> on the binding, aliasing restricted by
+        the borrow checker).</li>
+    </ul>
+
+    <h2>Looking back at Milestone 1
+      <small class="text-muted">Reflection</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/milestones/m1.html">Milestone M1</a>
+      &nbsp;and its design problems.
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain why <code>eval_expr</code> reports a stuck expression on the <em>error channel</em>
+        (<code>Err(Control::Raise(&hellip;))</code>) rather than returning a special error
+        <code>Value</code> or panicking: <em>stuck</em> is the <em>absence</em> of a value, so there
+        is no value to return &mdash; reporting makes the absence observable and lets it propagate
+        with <code>?</code>, while the success path stays a plain <code>Value</code>.</li>
+      <li>Explain <em>short-circuiting</em>: <code>false and (1 / 0)</code> evaluates to
+        <code>false</code> because the <code>and</code> arm settles the result from the left operand
+        and never evaluates the right; an arm that evaluated both first would run <code>1 / 0</code>
+        and get stuck.</li>
+      <li>Connect the two: your M1 evaluator returned a single <code>Value</code> (or an error)
+        because evaluation is <em>deterministic</em> &mdash; <code>e &#8681; v</code> is a partial
+        function, one value or none &mdash; and the rules are syntax-directed, with the two-rule
+        forms (<code>and</code>, <code>or</code>) having mutually exclusive premises.</li>
+    </ul>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Beyond that: take a
+        nested block and, by hand, draw its scope chain and count the scopes each lookup walks, then
+        write the de Bruijn index of each occurrence; take a small program using <code>ref</code>,
+        <code>deref</code>, and <code>:=</code> and trace the store cell by cell, watching for two
+        names that alias one cell; and for each design choice (chain vs.&nbsp;flat map, statement
+        vs.&nbsp;expression, variable-as-cell vs.&nbsp;first-class cell) say in a sentence what each
+        side makes easy and what it gives up.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>scope chain / chain of scopes</li>
+        <li>lookup as a walk outward</li>
+        <li>unbound variable</li>
+        <li>constant-time <code>extend</code> / block exit</li>
+        <li>flat-map environment</li>
+        <li>save-and-restore at a scope boundary</li>
+        <li>de Bruijn index</li>
+        <li>lexical addressing</li>
+        <li>resolving names before the run</li>
+        <li>shared ownership (<code>Rc</code>)</li>
+        <li>effect</li>
+        <li>statement vs. expression</li>
+        <li>unit (<code>()</code>)</li>
+        <li>block item</li>
+        <li>expression statement (the <code>;</code>)</li>
+        <li>trailing expression / block value</li>
+        <li>the store (<code>&#963;</code>)</li>
+        <li>location (<code>&#8467;</code>)</li>
+        <li>reference cell</li>
+        <li><code>ref</code> / <code>deref</code> / <code>:=</code></li>
+        <li>aliasing</li>
+        <li>variable-as-cell vs. first-class cell</li>
+        <li>error channel (<code>Control::Raise</code>)</li>
+        <li>short-circuit evaluation</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluating Statements - Slidev</title>
+<link rel="icon" href="https://cdn.jsdelivr.net/gh/slidevjs/slidev/assets/favicon.png">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta property="slidev:version" content="52.19.1">
+<meta name="description" content="&quot;Lecture 12 (Evaluating Statements). Part IV, Ch. 16 / mutation.md, on the road\nto M3. Mutation and references — the imperative core. The design question:\n`let` binds once, so how does a value CHANGE over time? Bridger&#039;s answer (ML&#039;s):\nkeep bindings immutable, put change in a separate first-class value — a cell in\nthe STORE. Visual/example-led: the counter `let` can&#039;t write; two traditions\n(variable-as-cell vs immutable-binding + ref cell); the store drawn beside the\nenvironment (name → location → contents); the judgment gains a store,\nρ ⊢ ⟨e,σ⟩ ⇓ ⟨v,σ&#039;⟩, threaded left-to-right; ref / deref / := animated on a\nstore box; the counter stepped; ALIASING as the headline consequence (two\nnames, one cell); build = Store alloc/read/write + Value::Ref(Loc), in-place\nmutation IS σ→σ&#039;; `ref x = e` sugar. Design space: C/Java/Python (every var a\ncell) vs ML/Bridger (first-class ref) vs Rust (mut + borrow checker). This is\nthe first chapter where the store enters the judgment. Target 40–45 min.\n&quot;">
+<meta property="og:title" content="Evaluating Statements - Slidev">
+<meta property="og:description" content="&quot;Lecture 12 (Evaluating Statements). Part IV, Ch. 16 / mutation.md, on the road\nto M3. Mutation and references — the imperative core. The design question:\n`let` binds once, so how does a value CHANGE over time? Bridger&#039;s answer (ML&#039;s):\nkeep bindings immutable, put change in a separate first-class value — a cell in\nthe STORE. Visual/example-led: the counter `let` can&#039;t write; two traditions\n(variable-as-cell vs immutable-binding + ref cell); the store drawn beside the\nenvironment (name → location → contents); the judgment gains a store,\nρ ⊢ ⟨e,σ⟩ ⇓ ⟨v,σ&#039;⟩, threaded left-to-right; ref / deref / := animated on a\nstore box; the counter stepped; ALIASING as the headline consequence (two\nnames, one cell); build = Store alloc/read/write + Value::Ref(Loc), in-place\nmutation IS σ→σ&#039;; `ref x = e` sugar. Design space: C/Java/Python (every var a\ncell) vs ML/Bridger (first-class ref) vs Rust (mut + borrow checker). This is\nthe first chapter where the store enters the judgment. Target 40–45 min.\n&quot;">  <script type="module" crossorigin src="./assets/index-DWYDE1rA.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-hePW80VL.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/shiki-BDOa5D_m.js">
+  <link rel="modulepreload" crossorigin href="./assets/slidev/utils-DxqEjQLz.js">
+  <link rel="modulepreload" crossorigin href="./assets/slidev/env-DawUeCU1.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/vue-CTLAYFu5.js">
+  <link rel="stylesheet" crossorigin href="./assets/modules/shiki-BrmBd2_v.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-DSPaC6an.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="mermaid-rendering-container"></div>
+  
+</body>
+</html>
