@@ -148,11 +148,12 @@ cargo clippy --all-targets -- -D warnings   # lint</code></pre>
           <tr>
             <td>Auto-graded tests</td>
             <td><strong>80</strong>, split <strong>40 / 40</strong>: <strong>40</strong> on the new M2
-              behavior and <strong>40</strong> on the carried-over tests for past milestones (M1), since
-              M2 is cumulative and your evaluator must keep the expression fragment working. Each half is
-              split evenly across <strong>5 properties</strong> (8 points each). These are held-back
-              tests, run on Gradescope against the public interface &mdash; separate from the provided
-              tests you run locally with <code>cargo m2</code>.</td>
+              behavior &mdash; four properties, <strong>10 points each</strong> &mdash; and
+              <strong>40</strong> on carried-over regression tests for the past milestone (M1), since
+              M2 is cumulative and your evaluator must keep the expression fragment working. The
+              carried-over 40 is spread across M1's ten properties. These are held-back tests, run on
+              Gradescope against the public interface &mdash; separate from the provided tests you run
+              locally with <code>cargo m2</code>.</td>
           </tr>
           <tr>
             <td>Formatting &amp; linting</td>
@@ -195,10 +196,10 @@ cargo clippy --all-targets -- -D warnings   # lint</code></pre>
     </p>
     <p>
       Each of the 80 points is tied to one <strong>property</strong> &mdash; a single rule your
-      evaluator must obey. Five properties cover the new M2 behavior, such as &ldquo;an unbound variable
+      evaluator must obey. Four properties cover the new M2 behavior, such as &ldquo;an unbound variable
       is stuck with an <code>UnboundVariable</code> error at the variable&rsquo;s span&rdquo; or &ldquo;a
-      later <code>let</code> in a block sees the bindings the earlier ones made&rdquo;; the other five
-      re-check the expression-fragment rules from M1, so a regression there costs points here. A
+      later <code>let</code> in a block sees the bindings the earlier ones made&rdquo;; the carried-over
+      40 re-checks the expression-fragment rules from M1, so a regression there costs points here. A
       property is
       <strong>all-or-nothing</strong>: it is checked by several cases &mdash; some
       <strong>visible</strong>, some <strong>hidden</strong> &mdash; and you earn its 8 points only
