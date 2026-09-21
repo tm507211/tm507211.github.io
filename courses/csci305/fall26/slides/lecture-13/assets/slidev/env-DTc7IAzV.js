@@ -1,0 +1,18 @@
+import{_ as e}from"../modules/shiki-BDOa5D_m.js";import{s as t}from"./utils-DxqEjQLz.js";var n={theme:`../theme-csci305`,title:`Conditionals and Loops`,titleTemplate:`%s - Slidev`,addons:[],remoteAssets:!1,monaco:!0,monacoTypesSource:`local`,monacoTypesAdditionalPackages:[],monacoTypesIgnorePackages:[],monacoRunAdditionalDeps:[],monacoRunUseStrict:!0,download:!1,export:{},info:`<p>Lecture 13 (Conditionals &amp; Loops). Part IV, Ch. 17 / conditionals-loops.md, the
+last content chapter before M3. Delivers E-If, E-While, E-For over a list, and a
+LIGHT E-Return. The store from Ch. 16 threads through unchanged; two forms are
+added — one CHOOSES a branch by a value (<code>if</code>, valued by the branch), one REPEATS
+an action (<code>while</code>/<code>for</code>, valued <code>()</code>). Visual/example-led: E-If-True/False (only
+the taken branch runs; branch agreement is a TYPING rule → Part VI); else-less
+<code>if</code> → <code>()</code>; <code>while</code> two rules, the first whose conclusion RECURS in its premises
+— the store is what makes a terminating loop's derivation finite and a diverging
+one have none; the counter stepped; <code>for</code> walks a list's cons cells, x bound fresh
+per element, accumulate in a cell that outlives the loop; <code>return</code> LIGHT — E-Return
+yields Ret v, travels out and abandons the loop, function boundary deferred to
+Part V. Design space: if-as-expression vs statement + ternary; while + list-for vs
+C's do/while/3-part-for vs Python/Rust iterator-for; NO break/continue/do-while;
+the functional answer that makes none of jump/loop/branch a primitive (recursion +
+selection-as-expression, the lambda/Lisp line). Quiz day — target 25 min, picture-
+heavy. Judgment slice is env+store only, as Ch. 16 established; Ret surfaced only
+at E-Return.</p>
+`,highlighter:`shiki`,twoslash:!0,lineNumbers:!1,colorSchema:`light`,routerMode:`hash`,aspectRatio:1.7777777777777777,canvasWidth:980,exportFilename:``,selectable:!1,themeConfig:{},fonts:{sans:[`ui-sans-serif`,`system-ui`,`-apple-system`,`BlinkMacSystemFont`,`"Segoe UI"`,`Roboto`,`"Helvetica Neue"`,`Arial`,`"Noto Sans"`,`sans-serif`,`"Apple Color Emoji"`,`"Segoe UI Emoji"`,`"Segoe UI Symbol"`,`"Noto Color Emoji"`],serif:[`ui-serif`,`Georgia`,`Cambria`,`"Times New Roman"`,`Times`,`serif`],mono:[`ui-monospace`,`SFMono-Regular`,`Menlo`,`Monaco`,`Consolas`,`"Liberation Mono"`,`"Courier New"`,`monospace`],webfonts:[],provider:`google`,local:[],italic:!1,weights:[`200`,`400`,`600`]},favicon:`https://cdn.jsdelivr.net/gh/slidevjs/slidev/assets/favicon.png`,drawings:{enabled:!0,persist:!1,presenterOnly:!1,syncAll:!0},plantUmlServer:`https://www.plantuml.com/plantuml`,codeCopy:!0,magicMoveCopy:!0,author:``,record:`dev`,css:`unocss`,presenter:!0,browserExporter:`dev`,htmlAttrs:{},transition:`slide-left`,editor:!0,mcp:!0,contextMenu:null,wakeLock:!0,pwa:!1,mdc:!1,comark:!1,seoMeta:{},notesAutoRuby:{},duration:`30min`,timer:`stopwatch`,magicMoveDuration:800,preloadImages:!0,clickAnimation:``,layout:`cover`,date:`Friday, September 25, 2026`,readings:`<a href="../../../../../books/pl-design/imperative/conditionals-loops.html">Ch. 17</a>`,slidesTitle:`Conditionals and Loops - Slidev`},r=`build`,i=e(()=>n.aspectRatio),a=e(()=>n.canvasWidth),o=e(()=>Math.ceil(a.value/i.value)),s=e(()=>t(n.themeConfig||{},(e,t)=>[`--slidev-theme-${e}`,t])),c=n.slidesTitle,l=`./#/`;export{a,n as c,o as i,l as n,c as o,i as r,s,r as t};

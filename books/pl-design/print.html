@@ -40,7 +40,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-7b52d823.js";
+            window.path_to_searchindex_js = "searchindex-d39d5e1b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-7edc4796.js"></script>
@@ -4455,66 +4455,214 @@ put back: restoring is just dropping the child.</p>
 <h1 id="milestone-m2"><a class="header" href="#milestone-m2">Milestone M2</a></h1>
 <p class="chapter-subtitle">Environments and Binding</p>
 
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Closes Part III. Course offering: due Fri Sep 25.
-     Sources: spec §6
-     Status: placeholder — spine authored just-in-time.
-     Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
-     satisfy, worked examples, self-check tests). Grading, deadlines, submission
-     and autograder mechanics stay in the syllabus and never appear here.
+     Closes Part III. SPEC ONLY (plan §9.5): what to build, the checklist, worked
+     examples, self-check; NO grading, deadlines, submission, or autograder text,
+     and no course/institution names in rendered prose.
+     TEMPLATE: M1 is the template-setter (codebase orientation, toolchain, clone,
+     build, cargo mN / fmt / clippy, how to find holes). M2–M8 do NOT re-derive
+     that; they backlink M1 and cover only the new arms. Same CHECKLIST-TABLE shape
+     as M1; DEFER full rules to environments.md — the reader just read E-Var /
+     E-Let / E-Seq / E-Block / E-Empty there.
+     REPO FACTS (bridger-interpreter, verified against the interpreter crate
+     2026-09-20):
+       - Two todo_m2! holes in src/interp/eval.rs: Expr::Var, Expr::Block. The M1
+         `let _ = env;` throwaway is deleted here (env is now read). grep -rn
+         'todo_m2!' src lists the two.
+       - M2 Expr fields: Var(Name, Span); Block(Vec<Stmt>, Option<Box<Expr>>, Span).
+         Stmt = Let(Name, Option<Ty>, Expr, Span) | Expr(Expr). The Option<Ty> on a
+         Let is the optional annotation; the evaluator ignores it (checked at M5).
+       - tools: env.lookup(&str)->Option<Value>; env.extend(Name,Value)->Env, a NEW
+         child scope (original untouched); RuntimeError::UnboundVariable{name,span}.
+         The provided Env is the Rc<Scope> parent chain (appendix table); its
+         internal rep is provided-only and not shown here (representations.md).
+       - Block threads: start scope = env.clone(); a Let evaluates its RHS in the
+         current scope then scope = scope.extend(x, v); an Expr item is evaluated
+         and discarded; the trailing expr (if any) is the value, else Value::Unit.
+       - `cargo m2` = `cargo test --features m2`, cumulative (runs M2 AND M1).
+       - test helpers in tests/common: builders var/block/let_/expr_stmt (+ M1's),
+         assertions value_of/stuck, and env_with(&[(name,Value)])->Env +
+         eval_in(&e,&env)->Result to evaluate under a starting environment; sp(n)
+         builds a one-byte span for the UnboundVariable span check. Tests FROZEN.
+     PROPERTIES (instructor, not rendered): P2.1 VARIABLES, P2.2 LET-SCOPE, P2.3
+     BLOCKS, P2.4 BLOCK-SCOPE. Book stays spec-only; do not print point splits.
+     DESIGN PROBLEMS: Part III cross-chapter; do NOT duplicate environments.md's
+     concept checks (unbound=stuck, shadow block, let-vs-lambda, read-only env,
+     block-ending-in-let=unit). Lean on reasoning across representations.md /
+     lexical-scope.md + one small forward tie to mutation (order needs the store).
+     Course offering (instructor note, not rendered): due Fri Sep 25.
+     Status: draft authored 2026-09-20, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-Everything in Part III has been building toward one thing: an interpreter that actually runs these
-programs. This chapter says what yours should do now, and how to know it works.
+<p>Part III gave the evaluator names. The <a href="#environments-and-let">environment</a> supplies each
+name’s value, <a href="#the-let-operator"><code>let</code></a> binds one over the rest of a
+block, <a href="#lexical-scope">lexical scope</a> fixes how far a binding reaches, and the
+<a href="#environment-representations-and-lookup">representation</a> makes a lookup through nested scopes work. This
+milestone puts them into the evaluator: two arms of <code>eval_expr</code> that read a variable and evaluate a
+block, and the run of the language grows from single expressions to programs that name their
+intermediate values.</p>
+<p>The codebase, the toolchain, and the build loop are the ones <a href="#milestone-m1">Milestone M1</a> set up; this
+milestone adds two arms to the same <code>eval_expr</code>. If you have not built the starter yet, do that
+first — <a href="#setting-up">M1</a> is required to be completed and correct before this milestone
+can be completed.</p>
+<h2 id="the-two-arms"><a class="header" href="#the-two-arms">The two arms</a></h2>
+<p><code>grep -rn 'todo_m2!' src</code> lists exactly what this milestone asks for — the two arms left as holes
+after M1:</p>
+<pre><code class="language-rust ignore">// src/interp/eval.rs — the two M2 arms of eval_expr
+Expr::Var(..)   =&gt; todo_m2!("E-Var"),
+Expr::Block(..) =&gt; todo_m2!("E-Block / E-Let / E-Seq"),</code></pre>
+<p>These are the first arms that consult the <code>env</code> parameter. Through M1 it was carried unused, kept
+quiet by a <code>let _ = env;</code> at the top of <code>eval_expr</code>; delete that line once an arm reads from <code>env</code>,
+or the lint will point out that it is now redundant.</p>
+<h2 id="the-specification-you-must-satisfy-1"><a class="header" href="#the-specification-you-must-satisfy-1">The specification you must satisfy</a></h2>
+<p>Below each row gives the form, semantic rule, and the value (or error) each new construct this
+milestone adds:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Form</th><th>Rule</th><th>Evaluates to</th></tr>
+</thead>
+<tbody>
+<tr><td><code>x</code></td><td><code>E-Var</code></td><td>the value the environment binds to <code>x</code>; <strong>stuck</strong> if none</td></tr>
+<tr><td><code>let x = e;</code> (block item)</td><td><code>E-Let</code></td><td>binds <code>x</code> over the rest of the block</td></tr>
+<tr><td><code>e;</code> (block item)</td><td><code>E-Seq</code></td><td>runs <code>e</code> and discards its value</td></tr>
+<tr><td><code>{ … e }</code> (trailing)</td><td><code>E-Block</code></td><td>the value of the trailing expression</td></tr>
+<tr><td><code>{ }</code> (empty, or ends in <code>;</code>)</td><td><code>E-Empty</code></td><td><code>()</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>The full rules are in <a href="#environments-and-let">the Environments chapter</a>; this table is the
+checklist your evaluator is measured against, not a second statement of them.</p>
+<p>Two contracts hold across the block. The environment is <strong>read-only</strong>: a <code>let</code> never rewrites an
+existing binding — it adds one that shadows the old, so the <strong>nearest binding of a name wins</strong> — and
+<code>extend</code> produces a child scope while leaving its parent untouched. That is why a binding reaches
+exactly the rest of its block and no further: the scope a block grows is discarded when the block
+ends, and the caller’s environment is the one it started with. And a block <strong>aborts at a stuck
+item</strong>: if an item gets stuck, the <code>?</code> carries the error straight out with that item’s span, and the
+items after it never run.</p>
+<h2 id="implementing-the-arms-1"><a class="header" href="#implementing-the-arms-1">Implementing the arms</a></h2>
+<p>Destructure each arm’s <code>..</code> into the fields you need. The two M2 variants and what they carry:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variant</th><th>Fields</th><th>Covers</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Expr::Var</code></td><td><code>(Name, Span)</code></td><td>a variable reference</td></tr>
+<tr><td><code>Expr::Block</code></td><td><code>(Vec&lt;Stmt&gt;, Option&lt;Box&lt;Expr&gt;&gt;, Span)</code></td><td>items, then an optional tail</td></tr>
+</tbody>
+</table>
+</div>
+<p>A block’s items are <code>Stmt</code> values, of two kinds:</p>
+<pre><code class="language-rust ignore">enum Stmt {
+    Let(Name, Option&lt;Ty&gt;, Expr, Span),   // a binding; the Option&lt;Ty&gt;
+    Expr(Expr),                          // is an annotation, ignored here
+}</code></pre>
+<p>The <code>Option&lt;Ty&gt;</code> on a <code>Let</code> is an optional type annotation; the evaluator ignores it — it is read by
+the type checker we implement in
+<a href="#a-type-checker">Part VI</a><!-- xref:../types/type-checker.md -->.</p>
+<p>Two tools do the work of both arms:</p>
+<ul>
+<li><strong>Look a name up</strong> with <code>env.lookup(name)</code>, which returns <code>Some(v)</code> when the name is in scope and
+<code>None</code> when it is not. A miss is the stuck case: return <code>RuntimeError::UnboundVariable { name, span }</code>, carrying the offending variable’s own span.</li>
+<li><strong>Extend a scope</strong> with <code>env.extend(name, value)</code>, which returns a <em>new</em> environment with one more
+binding and leaves the one it was called on unchanged.</li>
+</ul>
+<p>A block threads that second tool through its items. Start from <code>env</code>, and walk the items in order: a
+<code>Stmt::Let</code> evaluates its right-hand side in the current scope and then extends the scope with the
+new binding for the items that follow; a <code>Stmt::Expr</code> evaluates its expression in the current scope
+and drops the value. The trailing expression, if there is one, is evaluated in the scope the items
+built and is the block’s value; a block with no trailing expression is <code>Value::Unit</code>. Because
+<code>extend</code> returns a child rather than mutating in place, the growing scope is local to the block —
+nothing you do to it reaches the environment the block was entered with.</p>
+<p><code>E-Var</code> you have already seen worked in the Environments chapter’s
+<a href="#building-it">build section</a>; the block arm is the same environment
+threading that chapter describes, carried out one item at a time.</p>
+<h2 id="worked-examples-1"><a class="header" href="#worked-examples-1">Worked examples</a></h2>
+<p>An expression, the environment it needs, and the value it evaluates to:</p>
+<pre><code class="language-text">x            (x bound to 5)          ⇓ 5
+{ let x = 2; x + 3 }                 ⇓ 5
+{ let x = 1; let x = x + 1; x }      ⇓ 2      (shadowing)
+{ 1; 2; 3 }                          ⇓ 3      (the trailing expression)
+{ let x = 5; }                       ⇓ ()     (ends in a binding)
+{ }                                  ⇓ ()
+</code></pre>
+<p>And expressions with no value, which halt the run:</p>
+<pre><code class="language-text">y            (y unbound)             ⇓ stuck  (UnboundVariable)
+{ { let x = 1; x }; x }              ⇓ stuck  (x's scope ended at the inner })
+{ z; 1 }                             ⇓ stuck  (z unbound; the block aborts at z)
+</code></pre>
+<h2 id="how-to-know-it-works-1"><a class="header" href="#how-to-know-it-works-1">How to know it works</a></h2>
+<p><code>cargo m2</code> runs the provided milestone M2 tests, and — because the milestones are cumulative — the
+M1 tests along with them, so a change that breaks the expression fragment shows up here too. Each
+test builds an <code>Expr</code> and checks the <code>Value</code> it evaluates to, or, for a stuck test, the error’s
+<strong>variant and the span</strong> it blames. The builders <code>var</code>, <code>block</code>, <code>let_</code>, and <code>expr_stmt</code> join the
+M1 ones, and <code>env_with</code> and <code>eval_in</code> evaluate an expression under a starting environment, so a
+check reads close to the rule it exercises:</p>
+<pre><code class="language-rust ignore">// { let x = 2; x + 3 }  ⇓  5
+let b = block(vec![let_("x", int(2, 1), 0)],
+              Some(binary(Add, var("x", 2), int(3, 3), 4)), 5);
+assert_eq!(value_of(&amp;b), Value::Int(5));
 
-## What you build
+// x, with x bound to 5, reads its binding
+let env = env_with(&amp;[("x", Value::Int(5))]);
+assert_eq!(eval_in(&amp;var("x", 0), &amp;env).unwrap(), Value::Int(5));
 
-Name binding: `let`, variable lookup through the scope chain, shadowing, and unbound-variable errors.
-
-## What is provided
-
-The `Rc<Scope>` parent-chain environment.
-
-## The specification you must satisfy
-
-*To be written: the inference rules from this part, collected — the checklist your evaluator is
-measured against. Sources: spec §6.*
-
-## How to know it works
-
-Shadowing resolves to the innermost binding, an inner scope's bindings are invisible outside it, and an unbound name is an error rather than a panic.
-
-*To be written: worked examples with expected output, and a self-check test set you can run on your
-own machine.*
-
-## Design problems
-
-*To be written (plan §9.5, tier two): exercises that reason across this part's chapters, plus
-programming exercises written in Bridger, where the goal is to think in the paradigm as well as
-implement it. Answers in collapsible blocks.*
--->
+// y is unbound: UnboundVariable at its span
+assert!(matches!(stuck(&amp;var("y", 3)),
+    RuntimeError::UnboundVariable { .. }));</code></pre>
+<p>Fill an arm, run <code>cargo m2</code>, and repeat until every M2 test — and every M1 test — passes.</p>
+<h2 id="design-problems-1"><a class="header" href="#design-problems-1">Design problems</a></h2>
+<details>
+<summary>The evaluator takes an environment in but never hands one back, while Part IV's store will be threaded both in and out. Given the <code>Rc</code>-chained representation, why does discarding a block's bindings when it ends cost nothing?</summary>
+<p>Evaluating an expression cannot change what a name is bound to, so the environment is an input the
+evaluator reads and never an output it revises — <code>extend</code> builds a child scope for the code under a
+binding and returns it downward, and nothing propagates a new environment back up. In the
+<a href="#environment-representations-and-lookup">representation</a>, a scope is a small node that holds its own bindings
+and an <code>Rc</code> pointer to its parent, and <code>extend</code> allocates one such node in front of the current
+chain. When a block ends, evaluation simply stops using the child node and goes on with the parent
+chain it already held; there is no unwinding to do and nothing to copy back, because the parent was
+never altered. Discarding the block’s bindings is just dropping a reference to the front of the
+chain. The store is threaded out precisely because it <em>is</em> changed by evaluation, and that is the
+distinction <a href="#mutation-and-references">Part IV</a><!-- xref:../imperative/mutation.md --> turns on.</p>
+</details>
+<details>
+<summary>A block <code>let x = e_1; rest</code> computes the same value as applying <code>λx. rest</code> to <code>e_1</code>. Since the two agree, why does the milestone still implement a block arm rather than desugaring <code>let</code> to a function call?</summary>
+<p>The equivalence, which is Landin’s, holds because both evaluate <code>e_1</code>, bind the result to <code>x</code>, and
+evaluate the body in the extended environment — the block arm’s <code>extend</code> is exactly the environment
+step a function call will make when
+<a href="#first-class-functions">Part V</a><!-- xref:../functions/functions.md --> arrives. Bridger keeps
+<code>let</code> a form of its own because binding is available from the first block a program writes, before
+functions exist, so the evaluator needs a rule for it that does not depend on a feature two parts
+away; desugaring <code>let</code> to a call would make the whole binding mechanism wait on closures. It costs
+one arm now and buys blocks that stand on their own. The equivalence pays off: when the closure
+rule lands, it extends the environment as this arm does, so there is one binding mechanism,
+reached by two forms.</p>
+</details>
+<details>
+<summary>Using only the variables and blocks of this milestone — no mutation — can you write a program whose result depends on the <em>order</em> in which two bindings are evaluated? If not, what would you need?</summary>
+<p>You cannot. A <code>let</code>’s right-hand side is evaluated in the environment before the binding is added,
+and the environment is read-only, so evaluating one binding cannot change what a later binding sees
+except by putting a value in scope under a name — and a name, once bound, denotes that one value
+wherever it is read. Two bindings that do not mention each other are independent, and one that
+mentions the other reads a fixed value, not a value the second could have altered. Order becomes
+observable only once a step can <em>change</em> something a later step reads — a cell whose contents one
+binding writes and another reads — which is the mutation of
+<a href="#mutation-and-references">Part IV</a><!-- xref:../imperative/mutation.md -->. Until then the language
+is order-insensitive in this sense, which is exactly what a read-only environment buys and what the
+threaded store gives up.</p>
+</details>
+<details>
+<summary>Bridger allows a block to bind a name that is already in scope, shadowing the earlier binding; some languages reject a second binding of the same name in one scope. What does each choice make easy, and what does each rule out?</summary>
+<p>Allowing shadowing lets a block reuse one name across a series of related values —
+<code>let x = read(); let x = trim(x); let x = parse(x)</code> — without inventing <code>x1</code>, <code>x2</code>, <code>x3</code>, and each
+<code>let</code> may define the name in terms of the value it held before, since the right-hand side is
+evaluated before the new binding is added. What it gives up is a check: a name accidentally reused,
+where a fresh one was meant, is silently accepted rather than flagged. A language that rejects the
+second binding turns that accident into a compile error, at the cost of the deliberate reuse, which
+must then be spelled with a new name or an explicit mutation. The trade is a convenience against a
+class of caught mistake; Bridger takes the convenience, and its scope rules make the shadow’s reach
+exactly the rest of the block, so an inner shadow is gone once the block ends.</p>
+</details>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="expressions-statements-and-blocks"><a class="header" href="#expressions-statements-and-blocks">Expressions, Statements, and Blocks</a></h1>
 <!-- AUTHORING NOTE (not rendered)
@@ -5005,113 +5153,650 @@ the semantics.</p>
 </details>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="conditionals-and-loops"><a class="header" href="#conditionals-and-loops">Conditionals and Loops</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Milestone M3 · lecture: Conditionals & Loops · spec §7.
-     Split out of control-flow.md so each lecture owns whole chapters.
-     Ordering note: mutation is taught BEFORE this chapter, because `while` is
-     only meaningful once state can change (plan §5).
-     Status: placeholder — spine authored just-in-time.
+     Milestone M3 · lecture: Conditionals & Loops · spec §7. Closes the trio of
+     Part IV content chapters (control-flow.md, mutation.md, this) before the M3
+     milestone.
+     SEAM: mutation.md (prev) delivered the store and the cell — the mutable state
+     `while`/`for` consume to do work; it forward-pointed here ("the shape a `while`
+     repeats"). control-flow.md set the CATEGORY: `if`/`while`/`for` are expressions,
+     `if` valued by its branch, the loops valued `()`; it deferred their RULES here.
+     This chapter delivers E-If, E-While, E-For(list). Next is milestones/m3.md.
+     DECISION (2026-09-20, with instructor): cover `if` + `while` + list-`for` here;
+     the relational `for q` waits for the relations material. This CORRECTS the old
+     stub note "keeps only while" — Bridger HAS `for` in both forms (App B, App D).
+     Also (2026-09-20): introduce `return` here but LIGHTLY — E-Return + the returning
+     outcome only, its real use with functions deferred to Part V; and add a design-space
+     paragraph on the FUNCTIONAL alternative to the jump (recursion for loops, selection
+     as an expression, no primitive loop/branch/jump — the lambda-calculus/Lisp line),
+     which is the alternative to goto AND to loops and conditionals. SEAM TO RECONCILE:
+     error-handling.md ("built Part IV / control-flow.md") and control-flow.md forward-ref
+     return's intro to control-flow.md; its rule actually lands HERE. Fix those pointers
+     when convenient (not done in this pass).
+     JUDGMENT SLICE: env+store only, `env ⊢ ⟨e,σ⟩ ⇓ ⟨v,σ'⟩`, exactly as mutation.md
+     established. App D additionally threads Δ (relations) and carries Val/Ret; that
+     slice is presented once in mutation.md — reuse it, do not re-explain. The returning
+     outcome Ret is surfaced ONLY at E-Return (App D's own economy: "Ret is mentioned
+     only by E-Return"); every other rule reads as plain big-step, with the one
+     convention that a Ret premise makes its rule yield Ret. Rules use the ABSTRACT
+     keyword form (`if e then e else e`, `while e e`, `for x in e e`, `return e`),
+     braced concrete in `text` examples — App D's convention.
+     VERIFIED against App D "Conditionals" and "Loops":
+       - E-If-True/False: condition must be bool, threads its store into the CHOSEN
+         branch, the other branch is NOT evaluated. Else-less admitted only when the
+         then-branch is `()`; behaves as `if e then e else ()`. Both branches must
+         share a type = a TYPING rule (Part VI), not evaluation.
+       - E-While-False/True: the true-rule names `while e1 e2` AGAIN as a premise —
+         first place the semantics repeats its own conclusion. Body value discarded,
+         is `()`. `return` in body abandons the loop (Ret), don't typeset Ret.
+       - E-For / E-For-Nil / E-For-Cons: evaluate iterable to a LIST value, then walk
+         cons cells; x bound FRESH per element; body value discarded; whole `for` is
+         `()`; `return` abandons; iterating a non-list is stuck. Concrete
+         `for ident in expr block`.
+     LISTS: already taught in tree-walking.md (literals [a,b], `::` cons right-assoc,
+     `++`), with NO indexing by design — `for` (here, M3) and patterns (Part VIII) are
+     how a list is consumed. Backlink tree-walking.md; DO NOT re-teach lists.
+     AST (ast.md / starter, locked): If(Box<Expr>,Box<Expr>,Option<Box<Expr>>,Span);
+     While(Box<Expr>,Box<Expr>,Span); For(Name,Box<Expr>,Box<Expr>,Span);
+     ForQuery(Query,Box<Expr>,Span) is the relational form (M6, Part VII).
+     THROUGHLINE: two forms — one chooses a branch by a value, one repeats an action.
+     The loop rule is the first whose conclusion form recurs in its premises, so a
+     terminating loop has a finite derivation and a diverging one has none — matching
+     that a loop which never stops computes no value. The interpreter realizes that
+     recursion as a host `loop`, as mutation realized store-threading as in-place
+     mutation.
+     HANDS OFF: branch/loop TYPING (cond:Bool, both arms agree, ()-body) -> Part VI
+     (xref); relational `for q` -> Part VII (xref); `return`'s Control mechanism ->
+     error-handling.md (written); list PATTERNS -> Part VIII (xref). Bridger has NO
+     break/continue/do-while/loop keyword (App B keyword list) — say so in the design
+     space, factually.
+     HISTORY: conditional — Fortran arithmetic IF (three-way on sign) -> Algol 60
+     structured if-then-else (the two-conditional split is control-flow.md's — backlink;
+     Fortran anchored history.md — backlink, do not re-cite origin). loop — jump/goto ->
+     structured `while`; Dijkstra 1968, Böhm–Jacopini 1966. CLU iterators for the
+     for/iterator design point.
+     CITATIONS TO VERIFY before publish (cited by title/author/venue/year, NO link —
+     DOIs unconfirmed): Dijkstra, "Go To Statement Considered Harmful" (CACM, 1968);
+     Böhm & Jacopini, "Flow Diagrams, Turing Machines and Languages with Only Two
+     Formation Rules" (CACM, 1966); Liskov et al., "Abstraction Mechanisms in CLU"
+     (CACM, 1977). Concepts attributed, not quoted.
+     Status: draft authored 2026-09-20, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
-
-- Conditionals **as expressions**: `if` produces a value, which is why both branches must agree —
-  and what that implies for a one-armed `if`.
-- `while` as an expression of type `()`, and why it needs the mutation of the previous chapter to
-  do anything at all.
-- The evaluation rules for both, and the loop rule as the first place the semantics *repeats* a
-  premise.
-
-*Design-space (woven):* statement-`if` vs. expression-`if` (C vs. ML/Rust); the conditional
-expression `?:` as the patch languages add when they regret the choice; `for`/iterator loops and
-why Bridger keeps only `while`.
--->
+<p>The <a href="#mutation-and-references">previous chapter</a> gave a program a cell whose contents change: a value can be
+written where an earlier one stood, and a later read finds the new one. Writing one assignment
+changes the cell once. A program that sums the numbers in a list, or counts up to a bound, or halves
+a number until it drops below one, changes a cell a number of times it does not know when it is
+written, and decides each time whether to change it again. Two forms are missing. One chooses
+whether to act according to a value; the other repeats an action. This chapter adds the conditional
+<code>if</code> and the loops <code>while</code> and <code>for</code>.</p>
+<p>Their category is already settled. The <a href="#expressions-statements-and-blocks">opening chapter of this part</a> placed <code>if</code>,
+<code>while</code>, and <code>for</code> among the expressions: an <code>if</code> takes the value of the branch it runs, and a loop
+takes the value <code>()</code>, since a loop runs for the effect its body has on the store rather than for a
+result. What that chapter left open, and this one fixes, is what each evaluates to — the rules that
+pick a branch, and the rules that repeat one. The store threads through them as it threads through
+every form now, one store in and one store out, <code>env ⊢ ⟨e, σ⟩ ⇓ ⟨v, σ'⟩</code>. (The reference’s rules
+thread the relation database of <a href="#declarative-thinking-and-datalog">Part VII</a><!-- xref:../relations/datalog.md -->
+and carry the outcome a <a href="#error-handling"><code>return</code></a> produces; this part uses the
+env-and-store slice <a href="#mutation-and-references">mutation.md</a> introduced.) The rules below are written with the
+keyword forms <code>if e then e else e</code> and <code>while e e</code>; the concrete syntax braces them, <code>if c { … }</code>
+and <code>while c { … }</code>, with no <code>then</code>.</p>
+<h2 id="choosing-a-branch-if"><a class="header" href="#choosing-a-branch-if">Choosing a branch: <code>if</code></a></h2>
+<p>The conditional is among the oldest control forms, and its shape changed as languages moved the
+choice into the program’s expressions. <a href="#from-machine-code-to-high-level-languages">Fortran</a>’s conditional was the
+arithmetic <code>IF</code>: <code>IF (e) n1, n2, n3</code> jumped to one of three statement labels according to whether
+<code>e</code> was negative, zero, or positive — a branch to a label, decided by a sign. Algol 60 gave the
+<code>if c then S else S</code> that chooses a course of action in place, named by the condition being true or
+false, and set beside it a conditional <em>expression</em> that chooses between two values — the two-form
+split the <a href="#expressions-statements-and-blocks">first chapter of this part</a> traced. Bridger keeps the single expression
+form: one <code>if</code>, valued by the branch it takes.</p>
+<p><code>if</code> evaluates its condition to a boolean, then evaluates the chosen branch against the store the
+condition produced. The other branch is not evaluated, so only the taken branch’s effects happen:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.363em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">if</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">then</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">else</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">true</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:1em;"></span><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-If-True</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.363em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">if</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">then</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">else</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">false</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:1em;"></span><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-If-False</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The condition threads its store into the branch, and the branch hands the store out; a write the
+condition makes is in place when the branch runs, and a write the branch makes is what the whole
+<code>if</code> leaves behind. The value the <code>if</code> yields is the branch’s value, which is what lets it stand
+where a value is wanted:</p>
+<pre><code class="language-text">let n = if x &gt; 0 { x } else { -x };
+</code></pre>
+<p>Because the whole form has one value, its two branches have to agree on a type — the result is the
+value of one branch or the other, and one form carries one type. That agreement is a typing rule,
+checked before the program runs; it is the subject of the <a href="#a-type-checker">type checker</a><!-- xref:../types/type-checker.md -->,
+and the evaluator here runs whichever branch the condition selects without consulting it.</p>
+<p>An <code>if</code> may drop its <code>else</code>:</p>
+<pre><code class="language-text">if x &gt; 0 { print(x) };
+</code></pre>
+<p>runs its branch when the condition holds and does nothing when it does not. The form still has a
+value on both paths, so the missing branch has to supply one, and the only value the language can
+supply without a branch to evaluate is <code>()</code>. An else-less <code>if</code> reads as <code>if e1 then e2 else ()</code> and
+is admitted only when its branch is itself <code>()</code>-valued, so that both paths agree; a one-armed <code>if</code>
+whose branch produced an <code>Int</code> would have no matching value to give when the condition is false.
+Chained conditions are the <code>else</code> holding another <code>if</code>, <code>if c1 { … } else if c2 { … } else { … }</code>,
+which the grammar reads as an <code>if</code> in the <code>else</code> position rather than a new form.</p>
+<h3 id="building-it-3"><a class="header" href="#building-it-3">Building it</a></h3>
+<p><code>if</code> is one arm of <a href="#environments-and-let"><code>eval_expr</code></a>, matching the provided
+<a href="#the-abstract-syntax-tree"><code>Expr::If</code></a> node — a condition, a then-branch, and an <code>Option</code> for the
+else-branch that is absent in the one-armed form:</p>
+<pre><code class="language-rust ignore">Expr::If(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Option&lt;Box&lt;Expr&gt;&gt;, Span)</code></pre>
+<p>The two <code>E-If</code> rules say what the arm does: evaluate the condition, and on a <code>Value::Bool</code> evaluate
+the branch that boolean selects, leaving the other unevaluated; when the else-branch is absent and
+the condition is false, the value is <code>Value::Unit</code>. A condition that evaluates to anything but a
+boolean is a runtime <a href="#error-handling">type error</a>, the conditional’s stuck case, ruled
+out ahead of time once the type checker of Part VI is in place.</p>
+<h2 id="repeating-an-action-while"><a class="header" href="#repeating-an-action-while">Repeating an action: <code>while</code></a></h2>
+<p>Repetition began as an arrangement of jumps. Early machine code and Fortran repeated work by testing
+a value and jumping back to a label with <code>GO TO</code>; the loop existed in how the jumps were placed
+rather than as a form the language named, and Fortran’s counting <code>DO</code> was the one repeat given a
+construct of its own. Structured programming replaced the placed jumps with constructs that control
+enters and leaves at a single point, so the repeat becomes a form in the grammar: the <code>while</code> that
+tests a condition and runs its body again as long as the condition holds.
+<a href="#further-reading-14">Dijkstra (1968)</a> argued for retiring the <code>GO TO</code> in favor of such constructs, and
+<a href="#further-reading-14">Böhm and Jacopini (1966)</a> had shown that sequence, selection, and iteration alone
+express any flowchart, so a language with
+<code>if</code> and <code>while</code> can describe any control a program of jumps could. Bridger’s <code>while</code> is that
+structured loop.</p>
+<p><code>while</code> needs the mutation of the previous chapter to do anything. Its condition is evaluated afresh
+each time around, and a re-evaluation can give a different answer only if something the condition
+reads has changed; without a store to change, a <code>while</code> whose condition starts true stays true and
+never stops, and one that starts false never runs. Ordering mutation before the loop is what lets
+the loop’s body move the condition toward false — a counter the body steps, a total it adds into, a
+list it shortens.</p>
+<p>Two rules define it. When the condition is false the loop stops, yielding <code>()</code> and the store the
+condition produced:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.363em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">while</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">false</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-While-False</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>When it is true the loop runs the body, discards the body’s value, and then runs <em>the same <code>while</code>
+again</em> against the store the body left:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:5.826em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:4.89em;"><span style="top:-3.814em;"><span class="pstrut" style="height:4.5em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">while</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-4.73em;"><span class="pstrut" style="height:4.5em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-6.89em;"><span class="pstrut" style="height:4.5em;"></span><span class="mord"><span class="mord"><span class="mtable"><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.5em;"><span style="top:-4.66em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">true</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-3.16em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-1.66em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">while</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:2em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-While-True</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The third premise is a derivation of the very form the rule concludes. Every rule up to here broke a
+form into strictly smaller parts, and a derivation bottomed out when the parts were literals; this
+one names its own conclusion among its premises, and the store is what makes the naming finite. Each
+turn of the loop derives the next against a store the body has moved, and a run that reaches a false
+condition is a finite stack of <code>E-While-True</code> closed at the top by <code>E-While-False</code>. A loop whose
+condition never becomes false has no such finite stack — and so no derivation, and no value — which
+is the rule’s way of saying that a loop that never stops computes nothing to hand back. The store
+carries the difference between the two cases.</p>
+<p>The counter the <a href="#mutation-and-references">previous chapter</a> allocated is what a <code>while</code> drives:</p>
+<pre><code class="language-text">let counter = ref 0;
+while deref counter &lt; 3 {
+  counter := deref counter + 1
+};
+deref counter                  // 3
+</code></pre>
+<p><code>counter</code> holds a cell starting at <code>0</code>. Each turn reads the cell, and while it is below <code>3</code> the body
+writes back one more; the store the body leaves is the store the next condition reads, so
+<code>deref counter &lt; 3</code> is <code>true</code>, <code>true</code>, <code>true</code>, <code>false</code> across four evaluations, and the loop stops
+with the cell at <code>3</code>. The loop’s own value is <code>()</code>; the result the program wants is in the cell,
+read out afterward. A <code>while</code> with no cell to move — <code>while true { }</code> — matches only
+<code>E-While-True</code>, forever, and has no derivation.</p>
+<h3 id="building-it-1-1"><a class="header" href="#building-it-1-1">Building it</a></h3>
+<p>The <code>while</code> arm matches the provided <a href="#the-abstract-syntax-tree"><code>Expr::While</code></a> node, a condition and a
+body:</p>
+<pre><code class="language-rust ignore">Expr::While(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></pre>
+<p>The recursion the rule expresses as a repeated premise, the interpreter can express as a loop of its
+own: it need not call itself to run the next turn, since a host loop re-evaluates the condition and
+body in place, threading the one store on the interpreter exactly as the rule threads <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span></span></span></span>. The
+body’s value is evaluated and dropped, matching the rule’s discard of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span>, and the loop yields
+<code>Value::Unit</code>. A <a href="#error-handling"><code>return</code></a> reached in the body leaves the host loop at
+once — the interpreter carries it on the same <code>Control</code> channel it uses for an error, so the
+remaining turns do not run, the reference’s convention that a <code>return</code> abandons the whole <code>while</code>.
+That returning outcome is the subject of a <a href="#leaving-early-return">later section</a>.</p>
+<h2 id="walking-a-list-for"><a class="header" href="#walking-a-list-for">Walking a list: <code>for</code></a></h2>
+<p>A <code>while</code> repeats until a condition falls; a <code>for</code> repeats once for each element of a collection.
+Bridger’s <code>for</code> walks a <a href="#tree-walking-evaluation">list</a> — the values written <code>[1, 2, 3]</code> and built
+with <code>::</code>, introduced with the other compound values in Part II. A list there had no way to read its
+elements back out: there is no <code>xs[i]</code> and no <code>xs.0</code>, by design. <code>for</code> is the form that reads them,
+taking each element in turn and binding a name to it for the body:</p>
+<pre><code class="language-text">let total = ref 0;
+for x in [1, 2, 3] {
+  total := deref total + x
+};
+deref total                    // 6
+</code></pre>
+<p><code>for</code> evaluates the iterable to a list value, then walks it. The walk is two rules over the list’s
+structure — an empty list, and a cons of a head and a tail — with the evaluated list standing in the
+<code>in</code> position as the walk proceeds:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.4208em;vertical-align:-0.9419em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.4789em;"><span style="top:-2.3081em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">for</span></span><span class="mspace"> </span><span class="mord mathnormal">x</span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">in</span></span><span class="mspace"> </span><span class="mord mathnormal">e</span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">e</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathit mtight">list</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:1em;"></span><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">for</span></span><span class="mspace"> </span><span class="mord mathnormal">x</span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">in</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathit mtight">list</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9419em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-For</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.686em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">for</span></span><span class="mspace"> </span><span class="mord mathnormal">x</span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">in</span></span><span class="mspace"> </span><span class="mopen">[</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mclose">]</span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-For-Nil</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.363em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">for</span></span><span class="mspace"> </span><span class="mord mathnormal">x</span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">in</span></span><span class="mspace"> </span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">h</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">::</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mopen">[</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">h</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:1em;"></span><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">for</span></span><span class="mspace"> </span><span class="mord mathnormal">x</span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">in</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-For-Cons</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>An empty list runs the body no times. A cons binds <code>x</code> to the head, runs the body against the
+incoming store and discards its value, then walks the tail against the store the body left. The
+binding of <code>x</code> is fresh on each turn and belongs to the body alone; it is not a cell, so writing
+<code>x := …</code> is not how a <code>for</code> accumulates. To carry a result across the turns, the body writes a cell
+that outlives the loop — <code>total</code> in the example — the same division of labor as <code>while</code>: the loop
+supplies the repetition, the store supplies the memory. Like <code>while</code>, the whole <code>for</code> yields <code>()</code>, a
+<code>return</code> in the body abandons the rest of the walk, and a <code>for</code> over a value that is not a list is
+stuck.</p>
+<p>Because the list is finite and the walk shortens it by one each turn, a <code>for</code> over a list always
+stops — the property <code>while</code> gives up in exchange for looping on an arbitrary condition. The one
+other thing a Bridger program walks is the set of solutions to a relational query, written
+<code>for q { … }</code>; that form belongs with the <a href="#declarative-thinking-and-datalog">relations</a><!-- xref:../relations/datalog.md -->
+of Part VII, where the queries it draws from are defined.</p>
+<h3 id="building-it-2-1"><a class="header" href="#building-it-2-1">Building it</a></h3>
+<p>The <code>for</code> arm matches the provided <a href="#the-abstract-syntax-tree"><code>Expr::For</code></a> node — the bound name, the
+iterable, and the body:</p>
+<pre><code class="language-rust ignore">Expr::For(Name, Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></pre>
+<p>The three <code>E-For</code> rules describe the walk: evaluate the iterable, require a list, and for each
+element extend the environment with a fresh binding of the name before running the body against the
+current store, the body’s value discarded each turn. An iterable that is not a list is the stuck
+case — there are no cells to walk. The per-element binding extends the environment without
+disturbing the outer one, so the name is in scope for the body and gone after, and the whole <code>for</code>
+yields
+<code>Value::Unit</code>. The relational <code>Expr::ForQuery</code> node is the second walk, filled in with Part VII.</p>
+<h2 id="leaving-early-return"><a class="header" href="#leaving-early-return">Leaving early: <code>return</code></a></h2>
+<p>The forms so far hand their value to the expression around them: an <code>if</code> gives its branch’s value to
+whatever holds the <code>if</code>, and a block gives its trailing expression’s value to its surroundings.
+<code>return e</code> sends its value the other way. It evaluates <code>e</code> and carries the value <em>out</em> — past the
+rest of the block, past the turns of a loop still to come — to the boundary of the function that
+encloses it, which takes that value as its result. Its rule is the one place evaluation in this part
+produces something other than an ordinary value: a <strong>returning</strong> outcome, written <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord mathsf">Ret</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span>,
+that the surrounding forms pass along instead of continuing past.</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.4208em;vertical-align:-0.9419em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.4789em;"><span style="top:-2.3081em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">return</span></span><span class="mspace"> </span><span class="mord mathnormal">e</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathsf">Ret</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">e</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9419em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Return</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>Every other rule reads as it did, under one added convention: a premise that yields
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord mathsf">Ret</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span> makes its own rule yield that same <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord mathsf">Ret</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span>, so a returning outcome
+travels outward on its
+own. This is what the loop rules meant in saying a <code>return</code> in the body abandons the loop — the
+body’s premise yields <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord mathsf">Ret</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span>, the loop yields it in turn, and the iterations that would
+have followed never run. The interpreter already carries such an outcome: the
+<a href="#error-handling"><code>Control</code></a> channel <code>eval</code> returns for an error is the one a <code>return</code>
+rides, which is why the <code>?</code> in the loop arms above carries a <code>return</code> straight out of the host loop.</p>
+<p>A <code>return</code> leaves the enclosing function, the subject of
+<a href="#first-class-functions">Part V</a><!-- xref:../functions/functions.md -->; this chapter shows the
+returning outcome travelling out through the loops and blocks in its way, and that part supplies the
+function boundary that catches it and the calls that make an early exit worth writing. That a
+<code>return</code> stands inside a function at all is checked before the program runs — a <code>return</code> with none
+to leave is a static error rather than a value the evaluator computes.</p>
+<h2 id="the-design-space-5"><a class="header" href="#the-design-space-5">The design space</a></h2>
+<p>Two decisions show through the forms of this chapter: what a conditional yields, and which loops a
+language provides.</p>
+<p>Because Bridger’s <code>if</code> is an expression, its branches must agree on a type and a one-armed <code>if</code> is
+confined to <code>()</code>. A language whose <code>if</code> is a statement asks nothing of its branches, since the form
+yields nothing on either path; C and Java take that route and then add a second conditional, the
+operator <code>c ? a : b</code>, for the places a value is wanted — the split the
+<a href="#expressions-statements-and-blocks">first chapter of this part</a> followed. The choice is whether one form serves both
+jobs, at the cost of the branch agreement, or two forms divide them, at the cost of carrying the
+conditional twice.</p>
+<p>Loops vary more. C offers <code>while</code>, a <code>do</code>/<code>while</code> that tests after running the body once, and the
+three-part <code>for (init; cond; step)</code> that gathers a counter’s setup, test, and update into a header.
+Python and Rust make <code>for</code> a walk over an iterator — any value that yields elements on demand — and
+lean on it for counting too, over a range. Bridger provides <code>while</code> and a <code>for</code> that walks a list.
+<code>while</code> is the general loop: it repeats on any condition and can run without end, and the other
+shapes are <code>while</code> with state arranged around it — a counting loop steps a <code>ref</code> the body updates, a
+test-at-bottom loop runs its body before the first test. Bridger’s <code>for</code> names the one arrangement
+of walking a list’s elements, and it is bounded where <code>while</code> is not, stopping when the list runs
+out.
+What it does not do is walk an arbitrary producer the way an iterator protocol does; that generality
+rests on the traits and closures of <a href="#first-class-functions">later parts</a><!-- xref:../functions/functions.md -->,
+while a list is the concrete sequence already in hand.</p>
+<p>Beyond running to its end, a loop leaves only by the <code>return</code> of the previous section, which carries
+a value out past the loop and out of the enclosing function. There is no <code>break</code> to leave a loop
+early and no <code>continue</code> to skip to the next turn; a loop that must stop before its natural end folds
+that into its own condition, with a cell to signal it where the test alone will not do. The loops
+are kept to the two rules apiece that define them, and the state a program already has does the
+rest.</p>
+<p>Structured control is one answer to the jump: name the loop and the branch as forms, and build a
+program from them. Another tradition answers the jump, the loop, and the branch together, by making
+none of them a primitive. Its programs compute by <a href="#the-paradigm-branches">applying functions</a>:
+repetition is a function that calls itself, so iteration becomes recursion; selection is an
+expression that evaluates one subexpression or another; and nothing jumps, since control travels
+where a call goes and resumes where the call returns. In the most reduced form of that tradition —
+the lambda calculus, whose notation <a href="#the-paradigm-branches">Lisp</a> borrowed — the function is
+the only construct, and the loop and the branch alike are things a program expresses with it rather
+than forms the language hands it. Bridger offers both answers: the conditionals and loops of this
+part, and the functions and recursion of
+<a href="#recursion-and-higher-order-functions">Part V</a><!-- xref:../functions/functional.md -->, with a program free to
+keep to either. <code>return</code> sits on the structured side of that line — a function in the recursive
+style has nowhere to jump out to, since its value is the expression it evaluates.</p>
+<h2 id="further-reading-14"><a class="header" href="#further-reading-14">Further reading</a></h2>
+<p><strong>Structured control flow</strong>: Edsger Dijkstra’s letter “Go To Statement Considered Harmful”
+(<em>Communications of the ACM</em>, 1968) makes the case for control constructs that are entered and left
+at one point, the shape Bridger’s <code>if</code> and <code>while</code> take, in place of the jump. Corrado Böhm and
+Giuseppe Jacopini’s “Flow Diagrams, Turing Machines and Languages with Only Two Formation Rules”
+(<em>Communications of the ACM</em>, 1966) proves that sequence, selection, and iteration suffice to
+express any flowchart, so the loss of the general jump costs a language no control it could
+otherwise have.</p>
+<p><strong>Iteration constructs</strong>: CLU introduced the iterator, a <code>for</code> that draws successive values from a
+separate producer rather than from a stored collection, described in Barbara Liskov and colleagues’
+“Abstraction Mechanisms in CLU” (<em>Communications of the ACM</em>, 1977); it is the arrangement Python’s
+and Rust’s <code>for</code> follow. The <a href="https://doc.rust-lang.org/reference/expressions/loop-expr.html">Rust Reference</a>
+sets out the <code>loop</code>, <code>while</code>, and iterator-<code>for</code> that Bridger’s two loops are drawn from and pared
+against.</p>
+<h2 id="concept-checks-14"><a class="header" href="#concept-checks-14">Concept checks</a></h2>
+<details>
+<summary>An <code>if</code> with no <code>else</code> is admitted only when its branch has type <code>()</code>. Why does the missing branch force that?</summary>
+<p>An <code>if</code> is an expression, so it has a value on every path, including the one where the condition is
+false and there is no <code>else</code> to run. The language has to supply that value without a branch to
+evaluate, and the only value it can supply knowing nothing about the branch is <code>()</code>. For both paths
+to yield the same type — which an expression’s single type requires — the present branch must
+therefore also be <code>()</code>-valued. A one-armed <code>if</code> whose branch produced an <code>Int</code> would have no <code>Int</code>
+to hand back when the condition is false, so it is rejected; the else-less form reads as
+<code>if e1 then e2 else ()</code>.</p>
+</details>
+<details>
+<summary>The <code>E-While-True</code> rule has the same <code>while</code> among its premises that it has in its conclusion. What does a terminating loop's derivation look like, and why does a loop that never stops have no value?</summary>
+<p>A terminating loop’s derivation is a finite stack: each <code>E-While-True</code> sits above another derivation
+of the same <code>while</code>, taken against the store its body produced, and the stack is closed at the top
+by <code>E-While-False</code> once the condition comes out false. The store is what makes the stack finite —
+without a body that moves what the condition reads, the condition never changes and the only rule
+that ever applies is <code>E-While-True</code>. A loop whose condition never becomes false has no
+<code>E-While-False</code> to close the stack, so no finite derivation exists, and a form with no derivation
+has no value. That
+is the rules’ way of recording that a loop which never halts computes nothing to return.</p>
+</details>
+<details>
+<summary>In <code>if c { f() } else { g() }</code>, which of <code>f</code> and <code>g</code> runs, and whose effects on the store does the whole <code>if</code> leave behind?</summary>
+<p>Only the branch the condition selects is evaluated: on <code>true</code> the rule <code>E-If-True</code> evaluates the
+then-branch and never touches the else-branch, and <code>E-If-False</code> does the reverse. So exactly one of
+<code>f</code> and <code>g</code> runs, and the store the whole <code>if</code> hands out is the one that branch produced, threaded
+from the store the condition itself left. An effect written in the branch that is not taken never
+happens, because that branch is never evaluated — the rule has no premise for it.</p>
+</details>
+<details>
+<summary>A <code>for x in xs</code> binds <code>x</code> fresh on each turn. How does a loop accumulate a result across its turns, and why doesn't assigning to <code>x</code> do it?</summary>
+<p>The binding of <code>x</code> holds the element value directly, with no cell behind it, and it is remade for
+each element and scoped to the body, so a value placed in <code>x</code> on one turn is gone by the next; <code>x := …</code> is well-formed only when <code>x</code> itself holds a location. To carry a result across the turns, the
+body writes a mutable cell that lives outside the loop:
+<code>let total = ref 0; for x in xs { total := deref total + x }</code> reads and overwrites the one cell each
+turn, and <code>deref total</code> after the loop holds the accumulated
+result. The loop supplies the repetition and the store supplies the memory; the per-element binding
+carries only the current element into the body.</p>
+</details>
+<details>
+<summary>Bridger has <code>while</code> and a <code>for</code> that walks a list, but no C-style three-part <code>for</code>, no iterator protocol, and no <code>break</code> or <code>continue</code>. What does this keep small, and what does it give up?</summary>
+<p>Each loop is two rules: <code>while</code> repeats on a condition, <code>for</code> walks a list’s cells, and neither
+needs a third construct, because a counting loop is a <code>while</code> over a <code>ref</code> the body steps and an
+early exit is a condition the loop tests for itself. What that gives up is the uniform <code>for</code> over
+any producer of elements that an iterator protocol offers — Bridger’s <code>for</code> walks a concrete list,
+and a
+lazily generated or user-defined sequence would need the traits and closures of later parts — and
+the convenience of <code>break</code>/<code>continue</code>, which would travel the same non-local <code>Control</code> path as
+<code>return</code>
+and would add a second way for a loop to end. The trade is a smaller language, whose every loop is
+covered by the rules of this chapter, against the reach and brevity those extra constructs buy.</p>
+</details>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="milestone-m3"><a class="header" href="#milestone-m3">Milestone M3</a></h1>
 <p class="chapter-subtitle">Control Flow and Mutation</p>
 
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Closes Part IV. Course offering: due Fri Oct 2.
-     Sources: spec §2, §7
-     Status: placeholder — spine authored just-in-time.
-     Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
-     satisfy, worked examples, self-check tests). Grading, deadlines, submission
-     and autograder mechanics stay in the syllabus and never appear here.
+     Closes Part IV. SPEC ONLY (plan §9.5): what to build, the checklist, worked
+     examples, self-check; NO grading, deadlines, submission, or autograder text,
+     and no course/institution names in rendered prose.
+     TEMPLATE: M1 is the template-setter (codebase, toolchain, clone, build loop,
+     how to find holes). This chapter backlinks M1 and covers only the new arms.
+     Same CHECKLIST-TABLE shape as M1 (form -> rule -> stuck when); DEFER full rules
+     to the content chapters — the reader just read E-If / E-While / E-For /
+     E-Return in conditionals-loops.md and E-Ref / E-Deref / E-Assign in mutation.md.
+     REPO FACTS (bridger-interpreter, verified against the interpreter crate
+     2026-09-20):
+       - FIVE todo_m3! holes in src/interp/eval.rs: Expr::If, While, For, Assign,
+         Return. `grep -rn 'todo_m3!' src` lists those five. But ref & deref are NOT
+         a sixth hole: they are UnOp variants, so they are TWO NEW CASES added to the
+         match INSIDE the Expr::Unary arm the student already wrote at M1 (the stub
+         labels that arm "E-Neg / E-Not (ref & deref join at M3)"). Flag this — grep
+         under-counts M3 by the Unary cases.
+       - M3 fields: If(Box<Expr>, Box<Expr>, Option<Box<Expr>>, Span);
+         While(Box<Expr>, Box<Expr>, Span); For(Name, Box<Expr>, Box<Expr>, Span);
+         Assign(Box<Expr>, Box<Expr>, Span) [lhs=cell, rhs=value];
+         Return(Box<Expr>, Span); Unary(UnOp, Box<Expr>, Span) with UnOp::Ref|Deref.
+       - PROVIDED (first used at M3): the store. store.rs Store with
+         alloc(&mut, Value)->Loc, read(&self, Loc)->Value (clones out),
+         write(&mut, Loc, Value); Loc a small Copy handle; Value::Ref(Loc). Store
+         lives on the interpreter (self.store) and is MUTATED IN PLACE — the σ->σ'
+         threading made physical; monotonic (alloc never reuses/frees).
+       - tools: E-If/While match a Value::Bool cond (else non-Bool -> TypeError via
+         Ty::bool()); E-For matches Value::List, iterates items, env.extend(x,item)
+         fresh per element, body value discarded (non-list -> TypeError via
+         Ty::list(..)); E-Assign / E-Deref want Value::Ref (else TypeError via
+         Ty::reference(..)). While is a host `loop`; `?` in body carries a Return out.
+       - RETURN uses a SECOND Control variant: Err(Control::Return(v)), distinct from
+         Control::Raise(err). enter_call/leave_call and the catching boundary are M4;
+         at M3 a bare return has no function to catch it, so the test helper
+         `returned` unwraps Control::Return at top level. ReturnOutsideFunction is a
+         STATIC (checker) error, not the evaluator's concern here.
+       - `cargo m3` = `cargo test --features m3`, cumulative (M3 + M2 + M1).
+       - test helpers in tests/common: builders if_/if_else/while_/for_/assign/
+         return_ (+ M1/M2's; ref & deref built as unary(UnOp::Ref/Deref, ..)),
+         assertions value_of/stuck/returned. Tests FROZEN.
+     PROPERTIES (instructor, not rendered): P3.1 CONDITIONALS, P3.2 REFERENCES, P3.3
+     WHILE, P3.4 FOR, P3.5 RETURN. Book stays spec-only; do not print point splits.
+     DESIGN PROBLEMS: Part IV cross-chapter; do NOT duplicate the content chapters'
+     concept checks (else-less-if type, E-While-True derivation, only-taken-branch,
+     for-accumulate, no-break tradeoff, aliasing, assign order, store in/out, ref
+     sugar). Fresh: the two Control channels (return vs raise), host-loop/in-place
+     realization, a Bridger writing task (reverse via for+ref+cons), early exit
+     without break (flag cell).
+     Course offering (instructor note, not rendered): due Fri Oct 2.
+     Status: draft authored 2026-09-20, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-Everything in Part IV has been building toward one thing: an interpreter that actually runs these
-programs. This chapter says what yours should do now, and how to know it works.
+<p>Part IV let the language <em>do</em> things. A <a href="#mutation-and-references">cell</a> in the store holds a value
+that changes, <a href="#choosing-a-branch-if"><code>if</code></a> chooses a course of
+action, <a href="#repeating-an-action-while"><code>while</code> and <code>for</code></a> repeat
+one, and <a href="#leaving-early-return"><code>return</code></a> carries a value out
+past the code around it. This milestone puts them into the evaluator, and the run of the language
+grows from computing a value to changing state and controlling the order in which it changes.</p>
+<p>The codebase, the toolchain, and the build loop are the ones <a href="#milestone-m1">Milestone M1</a> set up. What is
+new here on the provided side is the <strong>store</strong>: a <code>Store</code> that lives on the interpreter, with three
+operations — allocate a cell, read one, write one — and a <code>Value::Ref</code> that carries a cell’s
+location. It is the state the mutation forms act on, described in full in the Mutation chapter’s
+<a href="#building-it-2">build section</a>.</p>
+<h2 id="the-arms"><a class="header" href="#the-arms">The arms</a></h2>
+<p><code>grep -rn 'todo_m3!' src</code> lists five arms left as holes after M2:</p>
+<pre><code class="language-rust ignore">// src/interp/eval.rs — the five M3 arms of eval_expr
+Expr::If(..)     =&gt; todo_m3!("E-If"),
+Expr::While(..)  =&gt; todo_m3!("E-While"),
+Expr::For(..)    =&gt; todo_m3!("E-For"),
+Expr::Assign(..) =&gt; todo_m3!("E-Assign"),
+Expr::Return(..) =&gt; todo_m3!("E-Return"),</code></pre>
+<p>Two more cases are not on that list. <code>ref</code> and <code>deref</code> are <code>UnOp</code> variants, so they are two new arms
+of the <code>match</code> <strong>inside</strong> <code>Expr::Unary</code> — the arm you filled at M1 for <code>-e</code> and <code>not e</code>, whose stub
+was labelled “ref &amp; deref join at M3”. The grep under-counts M3 by exactly those two: seven forms in
+all, five of them their own <code>Expr</code> variant and two of them cases of an existing one.</p>
+<h2 id="the-specification-you-must-satisfy-2"><a class="header" href="#the-specification-you-must-satisfy-2">The specification you must satisfy</a></h2>
+<p>Each form this milestone adds, the rule that gives it meaning, and the case that leaves it
+<a href="#expressions-that-do-not-evaluate-to-a-value">stuck</a>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Form</th><th>Rule</th><th>Stuck when</th></tr>
+</thead>
+<tbody>
+<tr><td><code>if c { … } else { … }</code></td><td><code>E-If</code></td><td><code>c</code> is not a <code>Bool</code></td></tr>
+<tr><td><code>ref e</code></td><td><code>E-Ref</code></td><td>—</td></tr>
+<tr><td><code>deref e</code></td><td><code>E-Deref</code></td><td><code>e</code> is not a reference</td></tr>
+<tr><td><code>e1 := e2</code></td><td><code>E-Assign</code></td><td><code>e1</code> is not a reference</td></tr>
+<tr><td><code>while c { … }</code></td><td><code>E-While</code></td><td><code>c</code> is not a <code>Bool</code></td></tr>
+<tr><td><code>for x in e { … }</code></td><td><code>E-For</code></td><td><code>e</code> is not a list</td></tr>
+<tr><td><code>return e</code></td><td><code>E-Return</code></td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<p>The full rules are in <a href="#mutation-and-references">Mutation and References</a> and
+<a href="#conditionals-and-loops">Conditionals and Loops</a>; this table is the checklist your
+evaluator is measured against, not a second statement of them. What each form <em>evaluates to</em> — the
+branch’s value for <code>if</code>, a fresh reference for <code>ref</code>, <code>()</code> for the effectful forms — is the subject
+of the contracts below.</p>
+<p>Three contracts hold across these arms. The effectful forms yield <strong>unit</strong>: <code>:=</code>, <code>while</code>, and <code>for</code>
+each evaluate to <code>()</code>, and an else-less <code>if</code> does too when its condition is false. A loop <strong>discards
+its body’s value</strong> each turn — a <code>while</code> body runs for its effect on the store, a <code>for</code> body for its
+effect once per element, and the loop’s own value is <code>()</code>. And a <strong><code>return</code> leaves on a channel of
+its own</strong>: it is not an ordinary value the arms combine but a control transfer that travels straight
+out through the loops and blocks in its way, abandoning the iterations that would have followed.</p>
+<h2 id="implementing-the-arms-2"><a class="header" href="#implementing-the-arms-2">Implementing the arms</a></h2>
+<p>Destructure each arm’s <code>..</code> into the fields you need:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variant</th><th>Fields</th><th>Covers</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Expr::If</code></td><td><code>(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Option&lt;Box&lt;Expr&gt;&gt;, Span)</code></td><td>cond, then, optional else</td></tr>
+<tr><td><code>Expr::While</code></td><td><code>(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td><td>condition, body</td></tr>
+<tr><td><code>Expr::For</code></td><td><code>(Name, Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td><td>bound name, iterable, body</td></tr>
+<tr><td><code>Expr::Assign</code></td><td><code>(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td><td>the cell (left), the value (right)</td></tr>
+<tr><td><code>Expr::Return</code></td><td><code>(Box&lt;Expr&gt;, Span)</code></td><td>the returned expression</td></tr>
+<tr><td><code>Expr::Unary</code></td><td><code>(UnOp, Box&lt;Expr&gt;, Span)</code></td><td>now also <code>UnOp::Ref</code>, <code>UnOp::Deref</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>The store is reached through the interpreter, <code>self.store</code>, and its three operations are the three
+mutation forms:</p>
+<ul>
+<li><strong><code>ref e</code></strong> evaluates <code>e</code> and calls <code>self.store.alloc(v)</code>, which makes a fresh cell and returns
+its <code>Loc</code>; the value the form returns is <code>Value::Ref(loc)</code>.</li>
+<li><strong><code>deref e</code></strong> evaluates <code>e</code> to a <code>Value::Ref(loc)</code> and returns <code>self.store.read(loc)</code>.</li>
+<li><strong><code>e1 := e2</code></strong> evaluates <code>e1</code> to a <code>Value::Ref(loc)</code>, then <code>e2</code> to a value, calls
+<code>self.store.write(loc, v)</code>, and returns <code>Value::Unit</code>.</li>
+</ul>
+<p>A <code>deref</code> or <code>:=</code> whose operand is not a <code>Value::Ref</code> is stuck — a <code>RuntimeError::TypeError</code>
+built with <code>Ty::reference(..)</code> for the expected type. The rules of
+<a href="#mutation-and-references">the Mutation chapter</a> thread a store in and a store out; the interpreter
+keeps the store on itself and mutates it in place, so <code>alloc</code> and <code>write</code> <em>are</em> the step from one
+store to the next.</p>
+<p>The control forms match the value they branch on:</p>
+<ul>
+<li><strong><code>if</code></strong> evaluates its condition; on <code>Value::Bool(true)</code> it evaluates the then-branch, on
+<code>Value::Bool(false)</code> the else-branch — or <code>Value::Unit</code> when there is none. Only the branch taken
+is evaluated. A non-boolean condition is stuck.</li>
+<li><strong><code>while</code></strong> is a host <code>loop</code>: re-evaluate the condition each turn, run the body while it is
+<code>Value::Bool(true)</code> (the body’s value taken with <code>?</code> and dropped), and stop with <code>Value::Unit</code>
+when it is <code>false</code>. A non-boolean condition is stuck.</li>
+<li><strong><code>for</code></strong> evaluates its iterable to a <code>Value::List</code>, then walks it, evaluating the body once
+per element in <code>env.extend(x, item)</code> — a fresh binding of <code>x</code> each turn, discarded after — and
+yields <code>Value::Unit</code>. An iterable that is not a list is stuck.</li>
+<li><strong><code>return e</code></strong> evaluates <code>e</code> and leaves through the return channel: <code>Err(Control::Return(v))</code>.
+This is the <em>second</em> variant of <code>Control</code>, beside the <code>Control::Raise</code> an error rides
+(<a href="#error-handling">error handling</a>). Because a loop body runs with <code>?</code>, a <code>return</code> in
+the body carries straight out of the host <code>loop</code>, which is what abandons the remaining iterations.</li>
+</ul>
+<p>At this milestone a <code>return</code> has no enclosing function to catch it — that boundary arrives with
+<a href="#first-class-functions">functions in Part V</a><!-- xref:../functions/functions.md -->. Reaching a
+<code>return</code> where none is allowed is ruled out before the program runs, so the evaluator’s job is only
+to raise the channel; nothing in this milestone catches it.</p>
+<h2 id="worked-examples-2"><a class="header" href="#worked-examples-2">Worked examples</a></h2>
+<p>A program, and the value it evaluates to:</p>
+<pre><code class="language-text">if true { 1 } else { 2 }             ⇓ 1
+if false { 9 }                       ⇓ ()   (else-less, condition false)
+deref (ref 5)                        ⇓ 5
 
-## What you build
+let r = ref 0;
+r := 7;
+deref r                              ⇓ 7    (write, then read it back)
 
-The imperative core: blocks that return their last expression, conditionals, `while`, references and assignment.
+let a = ref 1;
+let b = a;                           // b holds the same cell as a
+b := 9;
+deref a                              ⇓ 9    (aliasing)
 
-## What is provided
+let i = ref 0;
+while deref i &lt; 3 { i := deref i + 1 };
+deref i                              ⇓ 3
 
-—
+let acc = ref 0;
+for x in [1, 2, 3] { acc := deref acc + x };
+deref acc                            ⇓ 6
+</code></pre>
+<p>Programs that leave through the return channel rather than with a value:</p>
+<pre><code class="language-text">return 5                             → returns 5
+while true { return 7 }              → returns 7   (the loop is abandoned)
+</code></pre>
+<p>And programs with no value, which halt the run:</p>
+<pre><code class="language-text">if 3 { 1 } else { 2 }                ⇓ stuck  (condition is not a Bool)
+while 1 { }                          ⇓ stuck  (condition is not a Bool)
+for x in 5 { }                       ⇓ stuck  (iterable is not a list)
+deref 5                              ⇓ stuck  (deref of a non-reference)
+5 := 6                               ⇓ stuck  (assign to a non-reference)
+</code></pre>
+<h2 id="how-to-know-it-works-2"><a class="header" href="#how-to-know-it-works-2">How to know it works</a></h2>
+<p><code>cargo m3</code> runs the provided milestone M3 tests and, because the milestones are cumulative, the M2
+and M1 tests with them. Each test builds an <code>Expr</code> and checks the <code>Value</code> it evaluates to, the error
+a stuck test blames (its <strong>variant and span</strong>), or — for a <code>return</code> — the value it carries out. The
+builders <code>if_</code>, <code>if_else</code>, <code>while_</code>, <code>for_</code>, <code>assign</code>, and <code>return_</code> join the earlier ones, <code>ref</code>
+and <code>deref</code> are written as <code>unary(UnOp::Ref, …)</code> and <code>unary(UnOp::Deref, …)</code>, and the assertion
+<code>returned</code> unwraps the return channel where <code>value_of</code> and <code>stuck</code> unwrap a value or an error:</p>
+<pre><code class="language-rust ignore">// if true { 1 } else { 2 }  ⇓  1
+let e = if_else(boolean(true, 1), int(1, 2), int(2, 3), 0);
+assert_eq!(value_of(&amp;e), Value::Int(1));
 
-## The specification you must satisfy
+// deref (ref 5)  ⇓  5   (ref / deref are UnOp::Ref / UnOp::Deref)
+let e = unary(UnOp::Deref, unary(UnOp::Ref, int(5, 2), 1), 0);
+assert_eq!(value_of(&amp;e), Value::Int(5));
 
-*To be written: the inference rules from this part, collected — the checklist your evaluator is
-measured against. Sources: spec §2, §7.*
-
-## How to know it works
-
-A `while` loop that mutates a reference terminates with the expected value, and every construct in this part evaluates *as an expression* (spec §2).
-
-*To be written: worked examples with expected output, and a self-check test set you can run on your
-own machine.*
-
-## Design problems
-
-*To be written (plan §9.5, tier two): exercises that reason across this part's chapters, plus
-programming exercises written in Bridger, where the goal is to think in the paradigm as well as
-implement it. Answers in collapsible blocks.*
--->
+// while true { return 7 }  returns 7 through the return channel
+let e = while_(boolean(true, 1), return_(int(7, 3), 2), 0);
+assert_eq!(returned(&amp;e), Value::Int(7));</code></pre>
+<p>Fill an arm, run <code>cargo m3</code>, and repeat until every M3 test — and every M2 and M1 test — passes.</p>
+<h2 id="design-problems-2"><a class="header" href="#design-problems-2">Design problems</a></h2>
+<details>
+<summary>Your <code>eval_expr</code> returns <code>Result&lt;Value, Control&gt;</code>, and a <code>return</code> travels as <code>Err(Control::Return(v))</code> — the same <code>Err</code> side an error uses. Why carry a <code>return</code> as an <code>Err</code> at all, rather than as an ordinary <code>Value</code>, and how do the two channels stay distinct?</summary>
+<p>A <code>return</code> has to leave the code around it <em>without</em> that code folding it into a larger value — the
+<code>1 +</code> in <code>1 + return 2</code> must not add anything, the rest of a block after <code>return</code> must not run, the
+turns of a loop still to come must not happen. An ordinary <code>Value</code> cannot do that: the arm that
+receives it would go on and use it. Travelling on the <code>Err</code> side is what gives it that reach — every
+<code>?</code> in the evaluator passes an <code>Err</code> straight out untouched, so a <code>return</code> threads out through
+arithmetic, blocks, and loops alike with no arm having to check for it. It rides the same channel as
+an error for exactly that shared behaviour: both are non-local exits. They stay distinct as two
+variants of <code>Control</code> — <code>Raise</code> for an error, which the top level reports and halts on, and <code>Return</code>
+for a value, which a function boundary in
+<a href="#first-class-functions">Part V</a><!-- xref:../functions/functions.md --> catches and turns back
+into the call’s result. At this milestone nothing catches <code>Return</code>, so a bare <code>return</code> surfaces at
+the top; the <a href="#error-handling">error-handling chapter</a> is where the <code>Control</code> channel
+itself is built.</p>
+</details>
+<details>
+<summary>The <code>E-While-True</code> rule names the same <code>while</code> among its premises, and <code>E-Assign</code> threads a store in and a store out; yet your <code>while</code> is a plain host <code>loop</code> and your store is one field mutated in place. What property of the rules lets the implementation drop the recursion and the threading, and where would dropping them go wrong?</summary>
+<p>Both simplifications rest on the rules being <strong>deterministic and single-threaded</strong>: evaluation
+proceeds in one order, each step producing exactly one store that the next step consumes, with no
+branch of the derivation needing a store some other branch also holds. Because the store is never
+shared between two live continuations, one mutable field can stand in for the whole sequence
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span></span></span></span> — writing it in place is indistinguishable from a fresh
+store, since nothing still refers to the old one. And because <code>E-While-True</code>’s self-reference is a
+plain tail repetition against the body’s output store, a host <code>loop</code> that re-tests the condition
+reproduces the finite stack of the rule without the evaluator calling itself. It would go wrong
+anywhere the derivation forks over a shared store and both forks matter — if a form evaluated a
+subexpression, then <em>backtracked</em> and evaluated it again from the original store, the in-place store
+would already carry the first attempt’s writes. Bridger has no such form; the relations of
+<a href="#declarative-thinking-and-datalog">Part VII</a><!-- xref:../relations/datalog.md --> search, but over their own
+database rather than the mutable store, which is why they keep a channel apart from it.</p>
+</details>
+<details>
+<summary>Using <code>ref</code>, <code>for</code>, and the list operators of Part II, write a Bridger program that reverses the list <code>[1, 2, 3]</code>, and explain why the accumulator is a cell.</summary>
+<pre><code class="language-text">let acc = ref [];
+for x in [1, 2, 3] {
+  acc := x :: deref acc
+};
+deref acc                            // [3, 2, 1]
+</code></pre>
+<p>The <code>for</code> binds <code>x</code> to <code>1</code>, then <code>2</code>, then <code>3</code> in turn, and each turn prepends the current element
+onto the front of the list the cell holds: <code>[]</code> becomes <code>[1]</code>, then <code>[2, 1]</code>, then <code>[3, 2, 1]</code>. The
+result comes out reversed because prepending puts the last element seen at the front. The
+accumulator has to be a <strong>cell</strong>, not a plain binding, because it must carry a value <em>across</em> the
+turns of the loop — the binding <code>x</code> is remade each turn and gone by the next, and a <code>let</code>
+inside the body would be scoped to that one turn. Only a store cell, allocated before the loop
+and read and written inside it, survives from one element to the next; the loop supplies the
+repetition and the store supplies the memory.</p>
+</details>
+<details>
+<summary>Bridger has no <code>break</code>. Write a <code>while</code> that scans upward from <code>0</code> and stops as soon as it reaches <code>5</code>, using a second cell as a flag, and say why the flag is needed rather than a bare condition.</summary>
+<pre><code class="language-text">let i = ref 0;
+let running = ref true;
+while deref running {
+  if deref i == 5 {
+    running := false
+  } else {
+    i := deref i + 1
+  }
+};
+deref i                              // 5
+</code></pre>
+<p>The loop’s condition tests the flag cell <code>running</code>; the body either clears the flag, which stops the
+loop on the next test, or steps the counter. A flag is needed because the only way out of a Bridger
+loop short of running its condition false is <code>return</code>, which would leave the whole enclosing
+function, not just the loop — there is no <code>break</code> to leave the loop alone. Folding the stopping
+decision into a cell the condition reads turns “leave early” into “make the condition false early”,
+which is a step the loop’s own machinery already takes. The cost is the extra cell and the <code>if</code>
+inside the body; what it keeps is a loop covered entirely by the two <code>while</code> rules, with no second
+way for control to leave it.</p>
+</details>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="first-class-functions"><a class="header" href="#first-class-functions">First-Class Functions</a></h1>
 <!-- Under-construction banner partial. Add it to the top of an incomplete page
@@ -6821,7 +7506,7 @@ denominations the greedy rule is optimal: take as many quarters as fit, then dim
 then pennies. (That greedy step is not optimal for every possible set of denominations; it is for
 these four, which is the assumption you may rely on.)</li>
 </ul>
-<h2 id="worked-examples-1"><a class="header" href="#worked-examples-1">Worked examples</a></h2>
+<h2 id="worked-examples-3"><a class="header" href="#worked-examples-3">Worked examples</a></h2>
 <pre><code class="language-text">Purse::new().value()                         =  0     // empty
 Purse::new().count()                         =  0
 

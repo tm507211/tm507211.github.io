@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-7b52d823.js";
+            window.path_to_searchindex_js = "../searchindex-d39d5e1b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -182,66 +182,214 @@
 <h1 id="milestone-m2"><a class="header" href="#milestone-m2">Milestone M2</a></h1>
 <p class="chapter-subtitle">Environments and Binding</p>
 
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Closes Part III. Course offering: due Fri Sep 25.
-     Sources: spec §6
-     Status: placeholder — spine authored just-in-time.
-     Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
-     satisfy, worked examples, self-check tests). Grading, deadlines, submission
-     and autograder mechanics stay in the syllabus and never appear here.
+     Closes Part III. SPEC ONLY (plan §9.5): what to build, the checklist, worked
+     examples, self-check; NO grading, deadlines, submission, or autograder text,
+     and no course/institution names in rendered prose.
+     TEMPLATE: M1 is the template-setter (codebase orientation, toolchain, clone,
+     build, cargo mN / fmt / clippy, how to find holes). M2–M8 do NOT re-derive
+     that; they backlink M1 and cover only the new arms. Same CHECKLIST-TABLE shape
+     as M1; DEFER full rules to environments.md — the reader just read E-Var /
+     E-Let / E-Seq / E-Block / E-Empty there.
+     REPO FACTS (bridger-interpreter, verified against the interpreter crate
+     2026-09-20):
+       - Two todo_m2! holes in src/interp/eval.rs: Expr::Var, Expr::Block. The M1
+         `let _ = env;` throwaway is deleted here (env is now read). grep -rn
+         'todo_m2!' src lists the two.
+       - M2 Expr fields: Var(Name, Span); Block(Vec<Stmt>, Option<Box<Expr>>, Span).
+         Stmt = Let(Name, Option<Ty>, Expr, Span) | Expr(Expr). The Option<Ty> on a
+         Let is the optional annotation; the evaluator ignores it (checked at M5).
+       - tools: env.lookup(&str)->Option<Value>; env.extend(Name,Value)->Env, a NEW
+         child scope (original untouched); RuntimeError::UnboundVariable{name,span}.
+         The provided Env is the Rc<Scope> parent chain (appendix table); its
+         internal rep is provided-only and not shown here (representations.md).
+       - Block threads: start scope = env.clone(); a Let evaluates its RHS in the
+         current scope then scope = scope.extend(x, v); an Expr item is evaluated
+         and discarded; the trailing expr (if any) is the value, else Value::Unit.
+       - `cargo m2` = `cargo test --features m2`, cumulative (runs M2 AND M1).
+       - test helpers in tests/common: builders var/block/let_/expr_stmt (+ M1's),
+         assertions value_of/stuck, and env_with(&[(name,Value)])->Env +
+         eval_in(&e,&env)->Result to evaluate under a starting environment; sp(n)
+         builds a one-byte span for the UnboundVariable span check. Tests FROZEN.
+     PROPERTIES (instructor, not rendered): P2.1 VARIABLES, P2.2 LET-SCOPE, P2.3
+     BLOCKS, P2.4 BLOCK-SCOPE. Book stays spec-only; do not print point splits.
+     DESIGN PROBLEMS: Part III cross-chapter; do NOT duplicate environments.md's
+     concept checks (unbound=stuck, shadow block, let-vs-lambda, read-only env,
+     block-ending-in-let=unit). Lean on reasoning across representations.md /
+     lexical-scope.md + one small forward tie to mutation (order needs the store).
+     Course offering (instructor note, not rendered): due Fri Sep 25.
+     Status: draft authored 2026-09-20, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-Everything in Part III has been building toward one thing: an interpreter that actually runs these
-programs. This chapter says what yours should do now, and how to know it works.
+<p>Part III gave the evaluator names. The <a href="../binding/environments.html">environment</a> supplies each
+name’s value, <a href="../binding/environments.html#the-let-operator"><code>let</code></a> binds one over the rest of a
+block, <a href="../binding/lexical-scope.html">lexical scope</a> fixes how far a binding reaches, and the
+<a href="../binding/representations.html">representation</a> makes a lookup through nested scopes work. This
+milestone puts them into the evaluator: two arms of <code>eval_expr</code> that read a variable and evaluate a
+block, and the run of the language grows from single expressions to programs that name their
+intermediate values.</p>
+<p>The codebase, the toolchain, and the build loop are the ones <a href="m1.html">Milestone M1</a> set up; this
+milestone adds two arms to the same <code>eval_expr</code>. If you have not built the starter yet, do that
+first — <a href="m1.html#setting-up">M1</a> is required to be completed and correct before this milestone
+can be completed.</p>
+<h2 id="the-two-arms"><a class="header" href="#the-two-arms">The two arms</a></h2>
+<p><code>grep -rn 'todo_m2!' src</code> lists exactly what this milestone asks for — the two arms left as holes
+after M1:</p>
+<pre><code class="language-rust ignore">// src/interp/eval.rs — the two M2 arms of eval_expr
+Expr::Var(..)   =&gt; todo_m2!("E-Var"),
+Expr::Block(..) =&gt; todo_m2!("E-Block / E-Let / E-Seq"),</code></pre>
+<p>These are the first arms that consult the <code>env</code> parameter. Through M1 it was carried unused, kept
+quiet by a <code>let _ = env;</code> at the top of <code>eval_expr</code>; delete that line once an arm reads from <code>env</code>,
+or the lint will point out that it is now redundant.</p>
+<h2 id="the-specification-you-must-satisfy"><a class="header" href="#the-specification-you-must-satisfy">The specification you must satisfy</a></h2>
+<p>Below each row gives the form, semantic rule, and the value (or error) each new construct this
+milestone adds:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Form</th><th>Rule</th><th>Evaluates to</th></tr>
+</thead>
+<tbody>
+<tr><td><code>x</code></td><td><code>E-Var</code></td><td>the value the environment binds to <code>x</code>; <strong>stuck</strong> if none</td></tr>
+<tr><td><code>let x = e;</code> (block item)</td><td><code>E-Let</code></td><td>binds <code>x</code> over the rest of the block</td></tr>
+<tr><td><code>e;</code> (block item)</td><td><code>E-Seq</code></td><td>runs <code>e</code> and discards its value</td></tr>
+<tr><td><code>{ … e }</code> (trailing)</td><td><code>E-Block</code></td><td>the value of the trailing expression</td></tr>
+<tr><td><code>{ }</code> (empty, or ends in <code>;</code>)</td><td><code>E-Empty</code></td><td><code>()</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>The full rules are in <a href="../binding/environments.html">the Environments chapter</a>; this table is the
+checklist your evaluator is measured against, not a second statement of them.</p>
+<p>Two contracts hold across the block. The environment is <strong>read-only</strong>: a <code>let</code> never rewrites an
+existing binding — it adds one that shadows the old, so the <strong>nearest binding of a name wins</strong> — and
+<code>extend</code> produces a child scope while leaving its parent untouched. That is why a binding reaches
+exactly the rest of its block and no further: the scope a block grows is discarded when the block
+ends, and the caller’s environment is the one it started with. And a block <strong>aborts at a stuck
+item</strong>: if an item gets stuck, the <code>?</code> carries the error straight out with that item’s span, and the
+items after it never run.</p>
+<h2 id="implementing-the-arms"><a class="header" href="#implementing-the-arms">Implementing the arms</a></h2>
+<p>Destructure each arm’s <code>..</code> into the fields you need. The two M2 variants and what they carry:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variant</th><th>Fields</th><th>Covers</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Expr::Var</code></td><td><code>(Name, Span)</code></td><td>a variable reference</td></tr>
+<tr><td><code>Expr::Block</code></td><td><code>(Vec&lt;Stmt&gt;, Option&lt;Box&lt;Expr&gt;&gt;, Span)</code></td><td>items, then an optional tail</td></tr>
+</tbody>
+</table>
+</div>
+<p>A block’s items are <code>Stmt</code> values, of two kinds:</p>
+<pre><code class="language-rust ignore">enum Stmt {
+    Let(Name, Option&lt;Ty&gt;, Expr, Span),   // a binding; the Option&lt;Ty&gt;
+    Expr(Expr),                          // is an annotation, ignored here
+}</code></pre>
+<p>The <code>Option&lt;Ty&gt;</code> on a <code>Let</code> is an optional type annotation; the evaluator ignores it — it is read by
+the type checker we implement in
+<a href="../types/type-checker.html">Part VI</a><!-- xref:../types/type-checker.md -->.</p>
+<p>Two tools do the work of both arms:</p>
+<ul>
+<li><strong>Look a name up</strong> with <code>env.lookup(name)</code>, which returns <code>Some(v)</code> when the name is in scope and
+<code>None</code> when it is not. A miss is the stuck case: return <code>RuntimeError::UnboundVariable { name, span }</code>, carrying the offending variable’s own span.</li>
+<li><strong>Extend a scope</strong> with <code>env.extend(name, value)</code>, which returns a <em>new</em> environment with one more
+binding and leaves the one it was called on unchanged.</li>
+</ul>
+<p>A block threads that second tool through its items. Start from <code>env</code>, and walk the items in order: a
+<code>Stmt::Let</code> evaluates its right-hand side in the current scope and then extends the scope with the
+new binding for the items that follow; a <code>Stmt::Expr</code> evaluates its expression in the current scope
+and drops the value. The trailing expression, if there is one, is evaluated in the scope the items
+built and is the block’s value; a block with no trailing expression is <code>Value::Unit</code>. Because
+<code>extend</code> returns a child rather than mutating in place, the growing scope is local to the block —
+nothing you do to it reaches the environment the block was entered with.</p>
+<p><code>E-Var</code> you have already seen worked in the Environments chapter’s
+<a href="../binding/environments.html#building-it">build section</a>; the block arm is the same environment
+threading that chapter describes, carried out one item at a time.</p>
+<h2 id="worked-examples"><a class="header" href="#worked-examples">Worked examples</a></h2>
+<p>An expression, the environment it needs, and the value it evaluates to:</p>
+<pre><code class="language-text">x            (x bound to 5)          ⇓ 5
+{ let x = 2; x + 3 }                 ⇓ 5
+{ let x = 1; let x = x + 1; x }      ⇓ 2      (shadowing)
+{ 1; 2; 3 }                          ⇓ 3      (the trailing expression)
+{ let x = 5; }                       ⇓ ()     (ends in a binding)
+{ }                                  ⇓ ()
+</code></pre>
+<p>And expressions with no value, which halt the run:</p>
+<pre><code class="language-text">y            (y unbound)             ⇓ stuck  (UnboundVariable)
+{ { let x = 1; x }; x }              ⇓ stuck  (x's scope ended at the inner })
+{ z; 1 }                             ⇓ stuck  (z unbound; the block aborts at z)
+</code></pre>
+<h2 id="how-to-know-it-works"><a class="header" href="#how-to-know-it-works">How to know it works</a></h2>
+<p><code>cargo m2</code> runs the provided milestone M2 tests, and — because the milestones are cumulative — the
+M1 tests along with them, so a change that breaks the expression fragment shows up here too. Each
+test builds an <code>Expr</code> and checks the <code>Value</code> it evaluates to, or, for a stuck test, the error’s
+<strong>variant and the span</strong> it blames. The builders <code>var</code>, <code>block</code>, <code>let_</code>, and <code>expr_stmt</code> join the
+M1 ones, and <code>env_with</code> and <code>eval_in</code> evaluate an expression under a starting environment, so a
+check reads close to the rule it exercises:</p>
+<pre><code class="language-rust ignore">// { let x = 2; x + 3 }  ⇓  5
+let b = block(vec![let_("x", int(2, 1), 0)],
+              Some(binary(Add, var("x", 2), int(3, 3), 4)), 5);
+assert_eq!(value_of(&amp;b), Value::Int(5));
 
-## What you build
+// x, with x bound to 5, reads its binding
+let env = env_with(&amp;[("x", Value::Int(5))]);
+assert_eq!(eval_in(&amp;var("x", 0), &amp;env).unwrap(), Value::Int(5));
 
-Name binding: `let`, variable lookup through the scope chain, shadowing, and unbound-variable errors.
-
-## What is provided
-
-The `Rc<Scope>` parent-chain environment.
-
-## The specification you must satisfy
-
-*To be written: the inference rules from this part, collected — the checklist your evaluator is
-measured against. Sources: spec §6.*
-
-## How to know it works
-
-Shadowing resolves to the innermost binding, an inner scope's bindings are invisible outside it, and an unbound name is an error rather than a panic.
-
-*To be written: worked examples with expected output, and a self-check test set you can run on your
-own machine.*
-
-## Design problems
-
-*To be written (plan §9.5, tier two): exercises that reason across this part's chapters, plus
-programming exercises written in Bridger, where the goal is to think in the paradigm as well as
-implement it. Answers in collapsible blocks.*
--->
+// y is unbound: UnboundVariable at its span
+assert!(matches!(stuck(&amp;var("y", 3)),
+    RuntimeError::UnboundVariable { .. }));</code></pre>
+<p>Fill an arm, run <code>cargo m2</code>, and repeat until every M2 test — and every M1 test — passes.</p>
+<h2 id="design-problems"><a class="header" href="#design-problems">Design problems</a></h2>
+<details>
+<summary>The evaluator takes an environment in but never hands one back, while Part IV's store will be threaded both in and out. Given the <code>Rc</code>-chained representation, why does discarding a block's bindings when it ends cost nothing?</summary>
+<p>Evaluating an expression cannot change what a name is bound to, so the environment is an input the
+evaluator reads and never an output it revises — <code>extend</code> builds a child scope for the code under a
+binding and returns it downward, and nothing propagates a new environment back up. In the
+<a href="../binding/representations.html">representation</a>, a scope is a small node that holds its own bindings
+and an <code>Rc</code> pointer to its parent, and <code>extend</code> allocates one such node in front of the current
+chain. When a block ends, evaluation simply stops using the child node and goes on with the parent
+chain it already held; there is no unwinding to do and nothing to copy back, because the parent was
+never altered. Discarding the block’s bindings is just dropping a reference to the front of the
+chain. The store is threaded out precisely because it <em>is</em> changed by evaluation, and that is the
+distinction <a href="../imperative/mutation.html">Part IV</a><!-- xref:../imperative/mutation.md --> turns on.</p>
+</details>
+<details>
+<summary>A block <code>let x = e_1; rest</code> computes the same value as applying <code>λx. rest</code> to <code>e_1</code>. Since the two agree, why does the milestone still implement a block arm rather than desugaring <code>let</code> to a function call?</summary>
+<p>The equivalence, which is Landin’s, holds because both evaluate <code>e_1</code>, bind the result to <code>x</code>, and
+evaluate the body in the extended environment — the block arm’s <code>extend</code> is exactly the environment
+step a function call will make when
+<a href="../functions/functions.html">Part V</a><!-- xref:../functions/functions.md --> arrives. Bridger keeps
+<code>let</code> a form of its own because binding is available from the first block a program writes, before
+functions exist, so the evaluator needs a rule for it that does not depend on a feature two parts
+away; desugaring <code>let</code> to a call would make the whole binding mechanism wait on closures. It costs
+one arm now and buys blocks that stand on their own. The equivalence pays off: when the closure
+rule lands, it extends the environment as this arm does, so there is one binding mechanism,
+reached by two forms.</p>
+</details>
+<details>
+<summary>Using only the variables and blocks of this milestone — no mutation — can you write a program whose result depends on the <em>order</em> in which two bindings are evaluated? If not, what would you need?</summary>
+<p>You cannot. A <code>let</code>’s right-hand side is evaluated in the environment before the binding is added,
+and the environment is read-only, so evaluating one binding cannot change what a later binding sees
+except by putting a value in scope under a name — and a name, once bound, denotes that one value
+wherever it is read. Two bindings that do not mention each other are independent, and one that
+mentions the other reads a fixed value, not a value the second could have altered. Order becomes
+observable only once a step can <em>change</em> something a later step reads — a cell whose contents one
+binding writes and another reads — which is the mutation of
+<a href="../imperative/mutation.html">Part IV</a><!-- xref:../imperative/mutation.md -->. Until then the language
+is order-insensitive in this sense, which is exactly what a read-only environment buys and what the
+threaded store gives up.</p>
+</details>
+<details>
+<summary>Bridger allows a block to bind a name that is already in scope, shadowing the earlier binding; some languages reject a second binding of the same name in one scope. What does each choice make easy, and what does each rule out?</summary>
+<p>Allowing shadowing lets a block reuse one name across a series of related values —
+<code>let x = read(); let x = trim(x); let x = parse(x)</code> — without inventing <code>x1</code>, <code>x2</code>, <code>x3</code>, and each
+<code>let</code> may define the name in terms of the value it held before, since the right-hand side is
+evaluated before the new binding is added. What it gives up is a check: a name accidentally reused,
+where a fresh one was meant, is silently accepted rather than flagged. A language that rejects the
+second binding turns that accident into a compile error, at the cost of the deliberate reuse, which
+must then be spelled with a new name or an explicit mutation. The trade is a convenience against a
+class of caught mistake; Bridger takes the convenience, and its scope rules make the shadow’s reach
+exactly the rest of the block, so an inner shadow is gone once the block ends.</p>
+</details>
 
                     </main>
 

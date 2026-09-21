@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-7b52d823.js";
+            window.path_to_searchindex_js = "../searchindex-d39d5e1b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -182,66 +182,286 @@
 <h1 id="milestone-m3"><a class="header" href="#milestone-m3">Milestone M3</a></h1>
 <p class="chapter-subtitle">Control Flow and Mutation</p>
 
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Closes Part IV. Course offering: due Fri Oct 2.
-     Sources: spec §2, §7
-     Status: placeholder — spine authored just-in-time.
-     Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
-     satisfy, worked examples, self-check tests). Grading, deadlines, submission
-     and autograder mechanics stay in the syllabus and never appear here.
+     Closes Part IV. SPEC ONLY (plan §9.5): what to build, the checklist, worked
+     examples, self-check; NO grading, deadlines, submission, or autograder text,
+     and no course/institution names in rendered prose.
+     TEMPLATE: M1 is the template-setter (codebase, toolchain, clone, build loop,
+     how to find holes). This chapter backlinks M1 and covers only the new arms.
+     Same CHECKLIST-TABLE shape as M1 (form -> rule -> stuck when); DEFER full rules
+     to the content chapters — the reader just read E-If / E-While / E-For /
+     E-Return in conditionals-loops.md and E-Ref / E-Deref / E-Assign in mutation.md.
+     REPO FACTS (bridger-interpreter, verified against the interpreter crate
+     2026-09-20):
+       - FIVE todo_m3! holes in src/interp/eval.rs: Expr::If, While, For, Assign,
+         Return. `grep -rn 'todo_m3!' src` lists those five. But ref & deref are NOT
+         a sixth hole: they are UnOp variants, so they are TWO NEW CASES added to the
+         match INSIDE the Expr::Unary arm the student already wrote at M1 (the stub
+         labels that arm "E-Neg / E-Not (ref & deref join at M3)"). Flag this — grep
+         under-counts M3 by the Unary cases.
+       - M3 fields: If(Box<Expr>, Box<Expr>, Option<Box<Expr>>, Span);
+         While(Box<Expr>, Box<Expr>, Span); For(Name, Box<Expr>, Box<Expr>, Span);
+         Assign(Box<Expr>, Box<Expr>, Span) [lhs=cell, rhs=value];
+         Return(Box<Expr>, Span); Unary(UnOp, Box<Expr>, Span) with UnOp::Ref|Deref.
+       - PROVIDED (first used at M3): the store. store.rs Store with
+         alloc(&mut, Value)->Loc, read(&self, Loc)->Value (clones out),
+         write(&mut, Loc, Value); Loc a small Copy handle; Value::Ref(Loc). Store
+         lives on the interpreter (self.store) and is MUTATED IN PLACE — the σ->σ'
+         threading made physical; monotonic (alloc never reuses/frees).
+       - tools: E-If/While match a Value::Bool cond (else non-Bool -> TypeError via
+         Ty::bool()); E-For matches Value::List, iterates items, env.extend(x,item)
+         fresh per element, body value discarded (non-list -> TypeError via
+         Ty::list(..)); E-Assign / E-Deref want Value::Ref (else TypeError via
+         Ty::reference(..)). While is a host `loop`; `?` in body carries a Return out.
+       - RETURN uses a SECOND Control variant: Err(Control::Return(v)), distinct from
+         Control::Raise(err). enter_call/leave_call and the catching boundary are M4;
+         at M3 a bare return has no function to catch it, so the test helper
+         `returned` unwraps Control::Return at top level. ReturnOutsideFunction is a
+         STATIC (checker) error, not the evaluator's concern here.
+       - `cargo m3` = `cargo test --features m3`, cumulative (M3 + M2 + M1).
+       - test helpers in tests/common: builders if_/if_else/while_/for_/assign/
+         return_ (+ M1/M2's; ref & deref built as unary(UnOp::Ref/Deref, ..)),
+         assertions value_of/stuck/returned. Tests FROZEN.
+     PROPERTIES (instructor, not rendered): P3.1 CONDITIONALS, P3.2 REFERENCES, P3.3
+     WHILE, P3.4 FOR, P3.5 RETURN. Book stays spec-only; do not print point splits.
+     DESIGN PROBLEMS: Part IV cross-chapter; do NOT duplicate the content chapters'
+     concept checks (else-less-if type, E-While-True derivation, only-taken-branch,
+     for-accumulate, no-break tradeoff, aliasing, assign order, store in/out, ref
+     sugar). Fresh: the two Control channels (return vs raise), host-loop/in-place
+     realization, a Bridger writing task (reverse via for+ref+cons), early exit
+     without break (flag cell).
+     Course offering (instructor note, not rendered): due Fri Oct 2.
+     Status: draft authored 2026-09-20, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-Everything in Part IV has been building toward one thing: an interpreter that actually runs these
-programs. This chapter says what yours should do now, and how to know it works.
+<p>Part IV let the language <em>do</em> things. A <a href="../imperative/mutation.html">cell</a> in the store holds a value
+that changes, <a href="../imperative/conditionals-loops.html#choosing-a-branch-if"><code>if</code></a> chooses a course of
+action, <a href="../imperative/conditionals-loops.html#repeating-an-action-while"><code>while</code> and <code>for</code></a> repeat
+one, and <a href="../imperative/conditionals-loops.html#leaving-early-return"><code>return</code></a> carries a value out
+past the code around it. This milestone puts them into the evaluator, and the run of the language
+grows from computing a value to changing state and controlling the order in which it changes.</p>
+<p>The codebase, the toolchain, and the build loop are the ones <a href="m1.html">Milestone M1</a> set up. What is
+new here on the provided side is the <strong>store</strong>: a <code>Store</code> that lives on the interpreter, with three
+operations — allocate a cell, read one, write one — and a <code>Value::Ref</code> that carries a cell’s
+location. It is the state the mutation forms act on, described in full in the Mutation chapter’s
+<a href="../imperative/mutation.html#building-it">build section</a>.</p>
+<h2 id="the-arms"><a class="header" href="#the-arms">The arms</a></h2>
+<p><code>grep -rn 'todo_m3!' src</code> lists five arms left as holes after M2:</p>
+<pre><code class="language-rust ignore">// src/interp/eval.rs — the five M3 arms of eval_expr
+Expr::If(..)     =&gt; todo_m3!("E-If"),
+Expr::While(..)  =&gt; todo_m3!("E-While"),
+Expr::For(..)    =&gt; todo_m3!("E-For"),
+Expr::Assign(..) =&gt; todo_m3!("E-Assign"),
+Expr::Return(..) =&gt; todo_m3!("E-Return"),</code></pre>
+<p>Two more cases are not on that list. <code>ref</code> and <code>deref</code> are <code>UnOp</code> variants, so they are two new arms
+of the <code>match</code> <strong>inside</strong> <code>Expr::Unary</code> — the arm you filled at M1 for <code>-e</code> and <code>not e</code>, whose stub
+was labelled “ref &amp; deref join at M3”. The grep under-counts M3 by exactly those two: seven forms in
+all, five of them their own <code>Expr</code> variant and two of them cases of an existing one.</p>
+<h2 id="the-specification-you-must-satisfy"><a class="header" href="#the-specification-you-must-satisfy">The specification you must satisfy</a></h2>
+<p>Each form this milestone adds, the rule that gives it meaning, and the case that leaves it
+<a href="../eval/values.html#expressions-that-do-not-evaluate-to-a-value">stuck</a>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Form</th><th>Rule</th><th>Stuck when</th></tr>
+</thead>
+<tbody>
+<tr><td><code>if c { … } else { … }</code></td><td><code>E-If</code></td><td><code>c</code> is not a <code>Bool</code></td></tr>
+<tr><td><code>ref e</code></td><td><code>E-Ref</code></td><td>—</td></tr>
+<tr><td><code>deref e</code></td><td><code>E-Deref</code></td><td><code>e</code> is not a reference</td></tr>
+<tr><td><code>e1 := e2</code></td><td><code>E-Assign</code></td><td><code>e1</code> is not a reference</td></tr>
+<tr><td><code>while c { … }</code></td><td><code>E-While</code></td><td><code>c</code> is not a <code>Bool</code></td></tr>
+<tr><td><code>for x in e { … }</code></td><td><code>E-For</code></td><td><code>e</code> is not a list</td></tr>
+<tr><td><code>return e</code></td><td><code>E-Return</code></td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<p>The full rules are in <a href="../imperative/mutation.html">Mutation and References</a> and
+<a href="../imperative/conditionals-loops.html">Conditionals and Loops</a>; this table is the checklist your
+evaluator is measured against, not a second statement of them. What each form <em>evaluates to</em> — the
+branch’s value for <code>if</code>, a fresh reference for <code>ref</code>, <code>()</code> for the effectful forms — is the subject
+of the contracts below.</p>
+<p>Three contracts hold across these arms. The effectful forms yield <strong>unit</strong>: <code>:=</code>, <code>while</code>, and <code>for</code>
+each evaluate to <code>()</code>, and an else-less <code>if</code> does too when its condition is false. A loop <strong>discards
+its body’s value</strong> each turn — a <code>while</code> body runs for its effect on the store, a <code>for</code> body for its
+effect once per element, and the loop’s own value is <code>()</code>. And a <strong><code>return</code> leaves on a channel of
+its own</strong>: it is not an ordinary value the arms combine but a control transfer that travels straight
+out through the loops and blocks in its way, abandoning the iterations that would have followed.</p>
+<h2 id="implementing-the-arms"><a class="header" href="#implementing-the-arms">Implementing the arms</a></h2>
+<p>Destructure each arm’s <code>..</code> into the fields you need:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variant</th><th>Fields</th><th>Covers</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Expr::If</code></td><td><code>(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Option&lt;Box&lt;Expr&gt;&gt;, Span)</code></td><td>cond, then, optional else</td></tr>
+<tr><td><code>Expr::While</code></td><td><code>(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td><td>condition, body</td></tr>
+<tr><td><code>Expr::For</code></td><td><code>(Name, Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td><td>bound name, iterable, body</td></tr>
+<tr><td><code>Expr::Assign</code></td><td><code>(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td><td>the cell (left), the value (right)</td></tr>
+<tr><td><code>Expr::Return</code></td><td><code>(Box&lt;Expr&gt;, Span)</code></td><td>the returned expression</td></tr>
+<tr><td><code>Expr::Unary</code></td><td><code>(UnOp, Box&lt;Expr&gt;, Span)</code></td><td>now also <code>UnOp::Ref</code>, <code>UnOp::Deref</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>The store is reached through the interpreter, <code>self.store</code>, and its three operations are the three
+mutation forms:</p>
+<ul>
+<li><strong><code>ref e</code></strong> evaluates <code>e</code> and calls <code>self.store.alloc(v)</code>, which makes a fresh cell and returns
+its <code>Loc</code>; the value the form returns is <code>Value::Ref(loc)</code>.</li>
+<li><strong><code>deref e</code></strong> evaluates <code>e</code> to a <code>Value::Ref(loc)</code> and returns <code>self.store.read(loc)</code>.</li>
+<li><strong><code>e1 := e2</code></strong> evaluates <code>e1</code> to a <code>Value::Ref(loc)</code>, then <code>e2</code> to a value, calls
+<code>self.store.write(loc, v)</code>, and returns <code>Value::Unit</code>.</li>
+</ul>
+<p>A <code>deref</code> or <code>:=</code> whose operand is not a <code>Value::Ref</code> is stuck — a <code>RuntimeError::TypeError</code>
+built with <code>Ty::reference(..)</code> for the expected type. The rules of
+<a href="../imperative/mutation.html">the Mutation chapter</a> thread a store in and a store out; the interpreter
+keeps the store on itself and mutates it in place, so <code>alloc</code> and <code>write</code> <em>are</em> the step from one
+store to the next.</p>
+<p>The control forms match the value they branch on:</p>
+<ul>
+<li><strong><code>if</code></strong> evaluates its condition; on <code>Value::Bool(true)</code> it evaluates the then-branch, on
+<code>Value::Bool(false)</code> the else-branch — or <code>Value::Unit</code> when there is none. Only the branch taken
+is evaluated. A non-boolean condition is stuck.</li>
+<li><strong><code>while</code></strong> is a host <code>loop</code>: re-evaluate the condition each turn, run the body while it is
+<code>Value::Bool(true)</code> (the body’s value taken with <code>?</code> and dropped), and stop with <code>Value::Unit</code>
+when it is <code>false</code>. A non-boolean condition is stuck.</li>
+<li><strong><code>for</code></strong> evaluates its iterable to a <code>Value::List</code>, then walks it, evaluating the body once
+per element in <code>env.extend(x, item)</code> — a fresh binding of <code>x</code> each turn, discarded after — and
+yields <code>Value::Unit</code>. An iterable that is not a list is stuck.</li>
+<li><strong><code>return e</code></strong> evaluates <code>e</code> and leaves through the return channel: <code>Err(Control::Return(v))</code>.
+This is the <em>second</em> variant of <code>Control</code>, beside the <code>Control::Raise</code> an error rides
+(<a href="../eval/error-handling.html">error handling</a>). Because a loop body runs with <code>?</code>, a <code>return</code> in
+the body carries straight out of the host <code>loop</code>, which is what abandons the remaining iterations.</li>
+</ul>
+<p>At this milestone a <code>return</code> has no enclosing function to catch it — that boundary arrives with
+<a href="../functions/functions.html">functions in Part V</a><!-- xref:../functions/functions.md -->. Reaching a
+<code>return</code> where none is allowed is ruled out before the program runs, so the evaluator’s job is only
+to raise the channel; nothing in this milestone catches it.</p>
+<h2 id="worked-examples"><a class="header" href="#worked-examples">Worked examples</a></h2>
+<p>A program, and the value it evaluates to:</p>
+<pre><code class="language-text">if true { 1 } else { 2 }             ⇓ 1
+if false { 9 }                       ⇓ ()   (else-less, condition false)
+deref (ref 5)                        ⇓ 5
 
-## What you build
+let r = ref 0;
+r := 7;
+deref r                              ⇓ 7    (write, then read it back)
 
-The imperative core: blocks that return their last expression, conditionals, `while`, references and assignment.
+let a = ref 1;
+let b = a;                           // b holds the same cell as a
+b := 9;
+deref a                              ⇓ 9    (aliasing)
 
-## What is provided
+let i = ref 0;
+while deref i &lt; 3 { i := deref i + 1 };
+deref i                              ⇓ 3
 
-—
+let acc = ref 0;
+for x in [1, 2, 3] { acc := deref acc + x };
+deref acc                            ⇓ 6
+</code></pre>
+<p>Programs that leave through the return channel rather than with a value:</p>
+<pre><code class="language-text">return 5                             → returns 5
+while true { return 7 }              → returns 7   (the loop is abandoned)
+</code></pre>
+<p>And programs with no value, which halt the run:</p>
+<pre><code class="language-text">if 3 { 1 } else { 2 }                ⇓ stuck  (condition is not a Bool)
+while 1 { }                          ⇓ stuck  (condition is not a Bool)
+for x in 5 { }                       ⇓ stuck  (iterable is not a list)
+deref 5                              ⇓ stuck  (deref of a non-reference)
+5 := 6                               ⇓ stuck  (assign to a non-reference)
+</code></pre>
+<h2 id="how-to-know-it-works"><a class="header" href="#how-to-know-it-works">How to know it works</a></h2>
+<p><code>cargo m3</code> runs the provided milestone M3 tests and, because the milestones are cumulative, the M2
+and M1 tests with them. Each test builds an <code>Expr</code> and checks the <code>Value</code> it evaluates to, the error
+a stuck test blames (its <strong>variant and span</strong>), or — for a <code>return</code> — the value it carries out. The
+builders <code>if_</code>, <code>if_else</code>, <code>while_</code>, <code>for_</code>, <code>assign</code>, and <code>return_</code> join the earlier ones, <code>ref</code>
+and <code>deref</code> are written as <code>unary(UnOp::Ref, …)</code> and <code>unary(UnOp::Deref, …)</code>, and the assertion
+<code>returned</code> unwraps the return channel where <code>value_of</code> and <code>stuck</code> unwrap a value or an error:</p>
+<pre><code class="language-rust ignore">// if true { 1 } else { 2 }  ⇓  1
+let e = if_else(boolean(true, 1), int(1, 2), int(2, 3), 0);
+assert_eq!(value_of(&amp;e), Value::Int(1));
 
-## The specification you must satisfy
+// deref (ref 5)  ⇓  5   (ref / deref are UnOp::Ref / UnOp::Deref)
+let e = unary(UnOp::Deref, unary(UnOp::Ref, int(5, 2), 1), 0);
+assert_eq!(value_of(&amp;e), Value::Int(5));
 
-*To be written: the inference rules from this part, collected — the checklist your evaluator is
-measured against. Sources: spec §2, §7.*
-
-## How to know it works
-
-A `while` loop that mutates a reference terminates with the expected value, and every construct in this part evaluates *as an expression* (spec §2).
-
-*To be written: worked examples with expected output, and a self-check test set you can run on your
-own machine.*
-
-## Design problems
-
-*To be written (plan §9.5, tier two): exercises that reason across this part's chapters, plus
-programming exercises written in Bridger, where the goal is to think in the paradigm as well as
-implement it. Answers in collapsible blocks.*
--->
+// while true { return 7 }  returns 7 through the return channel
+let e = while_(boolean(true, 1), return_(int(7, 3), 2), 0);
+assert_eq!(returned(&amp;e), Value::Int(7));</code></pre>
+<p>Fill an arm, run <code>cargo m3</code>, and repeat until every M3 test — and every M2 and M1 test — passes.</p>
+<h2 id="design-problems"><a class="header" href="#design-problems">Design problems</a></h2>
+<details>
+<summary>Your <code>eval_expr</code> returns <code>Result&lt;Value, Control&gt;</code>, and a <code>return</code> travels as <code>Err(Control::Return(v))</code> — the same <code>Err</code> side an error uses. Why carry a <code>return</code> as an <code>Err</code> at all, rather than as an ordinary <code>Value</code>, and how do the two channels stay distinct?</summary>
+<p>A <code>return</code> has to leave the code around it <em>without</em> that code folding it into a larger value — the
+<code>1 +</code> in <code>1 + return 2</code> must not add anything, the rest of a block after <code>return</code> must not run, the
+turns of a loop still to come must not happen. An ordinary <code>Value</code> cannot do that: the arm that
+receives it would go on and use it. Travelling on the <code>Err</code> side is what gives it that reach — every
+<code>?</code> in the evaluator passes an <code>Err</code> straight out untouched, so a <code>return</code> threads out through
+arithmetic, blocks, and loops alike with no arm having to check for it. It rides the same channel as
+an error for exactly that shared behaviour: both are non-local exits. They stay distinct as two
+variants of <code>Control</code> — <code>Raise</code> for an error, which the top level reports and halts on, and <code>Return</code>
+for a value, which a function boundary in
+<a href="../functions/functions.html">Part V</a><!-- xref:../functions/functions.md --> catches and turns back
+into the call’s result. At this milestone nothing catches <code>Return</code>, so a bare <code>return</code> surfaces at
+the top; the <a href="../eval/error-handling.html">error-handling chapter</a> is where the <code>Control</code> channel
+itself is built.</p>
+</details>
+<details>
+<summary>The <code>E-While-True</code> rule names the same <code>while</code> among its premises, and <code>E-Assign</code> threads a store in and a store out; yet your <code>while</code> is a plain host <code>loop</code> and your store is one field mutated in place. What property of the rules lets the implementation drop the recursion and the threading, and where would dropping them go wrong?</summary>
+<p>Both simplifications rest on the rules being <strong>deterministic and single-threaded</strong>: evaluation
+proceeds in one order, each step producing exactly one store that the next step consumes, with no
+branch of the derivation needing a store some other branch also holds. Because the store is never
+shared between two live continuations, one mutable field can stand in for the whole sequence
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span></span></span></span> — writing it in place is indistinguishable from a fresh
+store, since nothing still refers to the old one. And because <code>E-While-True</code>’s self-reference is a
+plain tail repetition against the body’s output store, a host <code>loop</code> that re-tests the condition
+reproduces the finite stack of the rule without the evaluator calling itself. It would go wrong
+anywhere the derivation forks over a shared store and both forks matter — if a form evaluated a
+subexpression, then <em>backtracked</em> and evaluated it again from the original store, the in-place store
+would already carry the first attempt’s writes. Bridger has no such form; the relations of
+<a href="../relations/datalog.html">Part VII</a><!-- xref:../relations/datalog.md --> search, but over their own
+database rather than the mutable store, which is why they keep a channel apart from it.</p>
+</details>
+<details>
+<summary>Using <code>ref</code>, <code>for</code>, and the list operators of Part II, write a Bridger program that reverses the list <code>[1, 2, 3]</code>, and explain why the accumulator is a cell.</summary>
+<pre><code class="language-text">let acc = ref [];
+for x in [1, 2, 3] {
+  acc := x :: deref acc
+};
+deref acc                            // [3, 2, 1]
+</code></pre>
+<p>The <code>for</code> binds <code>x</code> to <code>1</code>, then <code>2</code>, then <code>3</code> in turn, and each turn prepends the current element
+onto the front of the list the cell holds: <code>[]</code> becomes <code>[1]</code>, then <code>[2, 1]</code>, then <code>[3, 2, 1]</code>. The
+result comes out reversed because prepending puts the last element seen at the front. The
+accumulator has to be a <strong>cell</strong>, not a plain binding, because it must carry a value <em>across</em> the
+turns of the loop — the binding <code>x</code> is remade each turn and gone by the next, and a <code>let</code>
+inside the body would be scoped to that one turn. Only a store cell, allocated before the loop
+and read and written inside it, survives from one element to the next; the loop supplies the
+repetition and the store supplies the memory.</p>
+</details>
+<details>
+<summary>Bridger has no <code>break</code>. Write a <code>while</code> that scans upward from <code>0</code> and stops as soon as it reaches <code>5</code>, using a second cell as a flag, and say why the flag is needed rather than a bare condition.</summary>
+<pre><code class="language-text">let i = ref 0;
+let running = ref true;
+while deref running {
+  if deref i == 5 {
+    running := false
+  } else {
+    i := deref i + 1
+  }
+};
+deref i                              // 5
+</code></pre>
+<p>The loop’s condition tests the flag cell <code>running</code>; the body either clears the flag, which stops the
+loop on the next test, or steps the counter. A flag is needed because the only way out of a Bridger
+loop short of running its condition false is <code>return</code>, which would leave the whole enclosing
+function, not just the loop — there is no <code>break</code> to leave the loop alone. Folding the stopping
+decision into a cell the condition reads turns “leave early” into “make the condition false early”,
+which is a step the loop’s own machinery already takes. The cost is the extra cell and the <code>if</code>
+inside the body; what it keeps is a loop covered entirely by the two <code>while</code> rules, with no second
+way for control to leave it.</p>
+</details>
 
                     </main>
 
