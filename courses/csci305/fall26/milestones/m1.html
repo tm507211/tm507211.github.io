@@ -44,9 +44,9 @@
           <dt>Submit</dt><dd>Through Gradescope, linked from the course Canvas page.</dd>
           <dt>Attempts</dt><dd><strong>Unlimited.</strong> Resubmit as many times as you like before
             the deadline; only your last submission is graded.</dd>
-          <dt>Deliverables</dt><dd>A single <code>.zip</code> of your entire project &mdash; the whole
-            repository, including your completed <code>src/interp/eval.rs</code> and a
-            <code>Description.md</code> at its root.</dd>
+          <dt>Deliverables</dt><dd>A single <code>.zip</code> containing your <code>src/</code>
+            folder and the <code>.md</code> files from the project root, including your
+            <code>Description.md</code>.</dd>
           <dt>Reading</dt><dd>The textbook's
             <a href="../../../../books/pl-design/milestones/m1.html">Milestone M1</a> chapter is the
             full specification. This page adds the course-specific rules: how to submit and how it is
@@ -169,8 +169,8 @@ false and (1 / 0)  &rArr; false      (right operand never evaluated)</code></pre
           </tr>
           <tr class="danger">
             <td>Does not compile</td>
-            <td><strong>0</strong> for the entire milestone. Make sure a fresh clone of exactly what
-              you submit runs <code>cargo build</code>.</td>
+            <td><strong>0</strong> for the entire milestone. The autograder builds your files against its own copies of
+              the frozen files, so make sure your code builds with those files unmodified.</td>
           </tr>
           <tr class="danger">
             <td>Fails any provided test</td>
@@ -288,39 +288,39 @@ false and (1 / 0)  &rArr; false      (right operand never evaluated)</code></pre
     <h2>Submitting</h2>
     <p>
       First write your <code>Description.md</code> at the root of the repository. Then, from inside the
-      project folder, check the code and package the <strong>entire project</strong> into a
-      <code>.zip</code>:
+      project folder, check the code:
     </p>
     <pre><code>cd bridger-interpreter                       # the project root
 
 cargo m1                                     # all Milestone-1 tests pass?
 cargo fmt                                    # format your code
-cargo clippy --all-targets -- -D warnings    # lint — fix any warnings
-
-zip -r ../m1-submission.zip . -x '.git/*' 'target/*'</code></pre>
+cargo clippy --all-targets -- -D warnings    # lint — fix any warnings</code></pre>
     <p>
-      That writes <code>m1-submission.zip</code> in the folder just above the project. The
-      <code>-x</code> flags leave out the <code>.git/</code> history and the <code>target/</code> build
-      directory, which you do not need to submit. Submitting the whole project (rather than just
-      <code>eval.rs</code>) keeps things uniform with later milestones, which touch several source
-      files.
+      Then package <code>src/</code> and the root <code>.md</code> files into a <code>.zip</code>.
+      Run the command for your system from the project root.
+    </p>
+    <p><strong>macOS / Linux</strong> (Terminal):</p>
+    <pre><code>zip -r ../m1-submission.zip src *.md</code></pre>
+    <p><strong>Windows</strong> (PowerShell):</p>
+    <pre><code>Compress-Archive -Path src, *.md -DestinationPath ..\m1-submission.zip -Force</code></pre>
+    <p>
+      Either one writes <code>m1-submission.zip</code> in the folder just above the project, with
+      <code>src/</code> and <code>Description.md</code> at the top of the archive. The autograder
+      replaces <code>Cargo.toml</code>, <code>tests/</code>, and the frozen <code>src/</code> files with its
+      own copies, so any changes you make to them are discarded.
     </p>
     <p>
-      Then upload <code>m1-submission.zip</code> to the <strong>Milestone M1</strong> assignment on
+      Upload <code>m1-submission.zip</code> to the <strong>Milestone M1</strong> assignment on
       Gradescope (linked from Canvas). Some tests are visible, so you will get results back shortly and
       can resubmit before the deadline; other tests are hidden, so passing every visible test does not
       guarantee full credit.
     </p>
     <p class="text-muted" style="font-size:.92em">
-      No <code>zip</code> command? The simplest route on any system is the GUI: select the project
-      folder in Finder (macOS) or File Explorer (Windows) and choose <strong>Compress</strong> /
-      <strong>Send to &rarr; Compressed (zipped) folder</strong>. Just make sure the files sit at the
-      top of the archive (with <code>src/</code> and <code>Cargo.toml</code> at its root), not nested
-      inside an extra folder. If you would rather have the command line: macOS and most Linux systems
-      already include <code>zip</code> (on Debian/Ubuntu, install it with
-      <code>sudo apt install zip</code>); on Windows, install a zip tool such as
-      <a href="https://www.7-zip.org/">7-Zip</a>, or use the built-in PowerShell command
-      <a href="https://learn.microsoft.com/powershell/module/microsoft.powershell.archive/compress-archive"><code>Compress-Archive</code></a>.
+      No <code>zip</code> command on Linux? Install it (on Debian/Ubuntu,
+      <code>sudo apt install zip</code>). Alternatively, in Finder (macOS) or File Explorer (Windows),
+      select the <code>src</code> folder and the <code>.md</code> files inside the project folder (not
+      the project folder itself) and choose <strong>Compress</strong> /
+      <strong>Send to &rarr; Compressed (zipped) folder</strong>.
     </p>
     <p>
       See the <strong>Course Project Policies</strong> on the
