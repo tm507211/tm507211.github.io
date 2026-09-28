@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d39d5e1b.js";
+            window.path_to_searchindex_js = "../searchindex-e343aec1.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -204,6 +204,12 @@
 <!-- AUTHORING NOTE (not rendered)
      Milestone M4 · lecture: Evaluating Function Calls · spec §8.
      Split out of functions.md so each lecture owns whole chapters.
+     SEAM (2026-09-28): functions.md gave E-Lam as App. D writes it — a lambda captures
+     its defining environment — and said only WHY (the body runs where it is not
+     written). This chapter owns E-App as App. D writes it: the body runs in the
+     CAPTURED environment extended with the parameters. No "naive rule to repair" and
+     no dynamic-scope-first stage; static scope is Bridger's stated semantics
+     (lexical-scope.md). The contrast with the caller's environment is scope.md's.
      Status: placeholder — spine authored just-in-time.
 -->
 <!-- Stubbed content, hidden while this page is under construction.
@@ -212,8 +218,9 @@ This chapter will cover:
 
 - What actually happens at a call: evaluate the callee, evaluate the arguments, bind parameters,
   evaluate the body — and the rule that says so.
-- **Which environment the body runs in.** This is the question the next two chapters are about, and
-  the naive answer given here is the one we will have to repair.
+- **Which environment the body runs in**: the one the closure captured, extended with the
+  parameters — the caller's environment plays no part. What that makes possible is the next
+  chapter; how it differs from running the body where it is called is the chapter after.
 - Arity errors and calling a non-function, as runtime errors for now.
 
 *Design-space (woven):* evaluation order (left-to-right, right-to-left, unspecified — and the bugs

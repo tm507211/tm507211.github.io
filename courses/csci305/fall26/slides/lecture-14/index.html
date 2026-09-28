@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First-Class Functions - Slidev</title>
+<link rel="icon" href="https://cdn.jsdelivr.net/gh/slidevjs/slidev/assets/favicon.png">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta property="slidev:version" content="52.19.1">
+<meta name="description" content="&quot;Lecture 14 (First-Class Functions). Part V opens; Ch. 19 / functions/functions.md,\non the road to M4. The problem: two loops that differ in one line (squares vs.\ncubes) — writing the loop once needs the differing line to be HANDED OVER like a\nlist is. History, visual: subroutines (Goldstine–von Neumann; the Wheeler jump\nanimated on a store diagram; Wheeler 1952&#039;s integration routine that needs f(x));\nfunctions vs. procedures (FORTRAN II FUNCTION vs SUBROUTINE, Algol 58 → 60&#039;s\nfunction designator, &quot;function&quot; names a POSITION, not a promise of no effects —\nf()*10 + f() is 12 or 21 by order; Pascal and Fortran 77 made the promise a rule;\nC one kind + void); second-class citizens (Algol 60 checklist, Strachey), and the\nλ line (Church, McCarthy). Bridger: functions pass the checklist (== and printing\nexcepted); `fn` and lambda make the same value; E-Lam evaluates nothing and\nRECORDS the environment, because a function body is the first code that runs\nwhere it was not written; build = provided Closure types, no arm printed. Design\nspace: one routine or two; how first-class (Algol/Pascal pass-down, C pointers\nwith no nesting, full closures) and why pass-down is cheaper (stack picture).\nStatic scope is Bridger&#039;s stated semantics — no &quot;naive rule to repair&quot; framing.\nTarget 40 min, example- and picture-led.\n&quot;">
+<meta property="og:title" content="First-Class Functions - Slidev">
+<meta property="og:description" content="&quot;Lecture 14 (First-Class Functions). Part V opens; Ch. 19 / functions/functions.md,\non the road to M4. The problem: two loops that differ in one line (squares vs.\ncubes) — writing the loop once needs the differing line to be HANDED OVER like a\nlist is. History, visual: subroutines (Goldstine–von Neumann; the Wheeler jump\nanimated on a store diagram; Wheeler 1952&#039;s integration routine that needs f(x));\nfunctions vs. procedures (FORTRAN II FUNCTION vs SUBROUTINE, Algol 58 → 60&#039;s\nfunction designator, &quot;function&quot; names a POSITION, not a promise of no effects —\nf()*10 + f() is 12 or 21 by order; Pascal and Fortran 77 made the promise a rule;\nC one kind + void); second-class citizens (Algol 60 checklist, Strachey), and the\nλ line (Church, McCarthy). Bridger: functions pass the checklist (== and printing\nexcepted); `fn` and lambda make the same value; E-Lam evaluates nothing and\nRECORDS the environment, because a function body is the first code that runs\nwhere it was not written; build = provided Closure types, no arm printed. Design\nspace: one routine or two; how first-class (Algol/Pascal pass-down, C pointers\nwith no nesting, full closures) and why pass-down is cheaper (stack picture).\nStatic scope is Bridger&#039;s stated semantics — no &quot;naive rule to repair&quot; framing.\nTarget 40 min, example- and picture-led.\n&quot;">  <script type="module" crossorigin src="./assets/index-BvBlCzAQ.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-hePW80VL.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/shiki-BDOa5D_m.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-QKqV1Vbb.js">
+  <link rel="modulepreload" crossorigin href="./assets/slidev/env-cuOuNaw2.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/vue-CTLAYFu5.js">
+  <link rel="stylesheet" crossorigin href="./assets/modules/shiki-BrmBd2_v.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-BRO9mueD.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="mermaid-rendering-container"></div>
+  
+</body>
+</html>

@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d39d5e1b.js";
+            window.path_to_searchindex_js = "../searchindex-e343aec1.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -180,46 +180,436 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="first-class-functions"><a class="header" href="#first-class-functions">First-Class Functions</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Milestone M4 · lecture: First-Class Functions · spec §8.
-     Call-evaluation material split out into calls.md so each lecture owns
-     whole chapters.
-     Status: placeholder — spine authored just-in-time.
+     Milestone M4 · lecture: First-Class Functions · spec §8. Opens Part V.
+     SEAM: lexical-scope.md committed Bridger to lexical scope and said the choice becomes
+     observable only once code can run where it was not written (a function), deferring the
+     demonstration to Part V. This chapter gives function VALUES: how they are made (top-level
+     `fn`, lambda) and what may be done with them. It gives E-Lam as App. D writes it — the
+     closure records its defining environment — and says only WHY the record exists (the body
+     runs elsewhere). calls.md owns E-App and what happens at a call; closures.md owns what the
+     capture makes possible (returned functions outliving their defining call, adder/counter,
+     Rc sharing of the scope chain); scope.md owns the Lisp dynamic-scope / Scheme history,
+     McCarthy's FUNARG passage, and the type-checker argument. Do not pre-empt any of them.
+     DECISION (2026-09-27, with instructor): no "naive rule to repair" framing — static scope
+     is already Bridger's stated semantics; Part V makes the distinction concrete.
+     JUDGMENT SLICE: env+store, as mutation.md. E-Lam evaluates nothing, so Val/Ret and Δ
+     play no part; say nothing about them.
+     THROUGHLINE: a routine began as code at a fixed place that a program jumped to; the
+     step to first-class is letting the routine be a VALUE — produced by an expression,
+     bound, passed, returned, stored — like an integer.
+     PROCEDURE VS FUNCTION: the historical "function" meant a call that sits in an expression
+     and yields one value; "procedure"/"subroutine" a call that is a statement. The stronger,
+     mathematical reading (no effects) was enforced by some languages (Pascal, Fortran 77).
+     Bridger: one construct; a procedure is a function whose result is (). Omitted result
+     type = () (App. B), so `fn log(msg: String) { … }` is the procedure form.
+     EXAMPLES were run through the reference interpreter (--features m8): twice(inc,5)=7,
+     twice(square,3)=81, sum_of(square, range(1,4))=14, map over [inc,square,pick(true)]
+     applied to 10 = [11, 100, 20], `(deref cell)(7)` = 49 after cell := square.
+     VERIFIED WORDINGS (page image or text layer; the circulating forms differ — keep these):
+       - Goldstine & von Neumann, Planning and Coding, Part II vol. III (1948), §12.3 p. 2,
+         page image, archive.org planningcodingof0103inst (IAS, not in copyright).
+       - Wheeler 1952, pp. 235–236, page images of the proceedings pages. "writing a
+         description", NOT "the preparation of the description" (the circulating form). The
+         closing sentence is printed "should-if possible -be buried"; the prose normalizes the
+         typesetting to em-dashes, wording unchanged. The artifact's "to be born in mind" (sic)
+         is outside the quoted span. Link the DOI only (the scan used is on a personal site).
+       - Wheeler jump: Campbell-Kelly, Tutorial Guide to the EDSAC Simulator, p. 23 (generic
+         `A m F`, `G n F`; `A 3 F` uses "a constant permanently kept in location 3"; return to
+         m+2). The prose uses the guide's Cubes program instead (Fig. 10, p. 24), in θ form to
+         match history.md: master at 88 calls P6 at 56 with "A7@ G56F" (the simulator writes θ
+         as @), so A 7 θ loads as A 95 F and the return is to 97; P6's tape begins "A3F T25@",
+         so the link goes to P6's position 25. Call it the EXIT order: P6 is 32 long and later
+         positions were not checked. The constant in location 3 is NOT named in the prose —
+         believed to be U 2 F (A 95 F + U 2 F = E 97 F with the verified codes A=28, E=3, U=7),
+         unverified against an Initial Orders 2 listing (Wilkes–Wheeler–Gill 1951 prints one).
+         Vocabulary (instructor): "build/update the return jump", never "plant".
+         history.md deliberately omitted the jump; it is introduced here.
+       - FORTRAN II Reference Manual C28-6000-2 (1958), CHM 102653989, p. 38 page image: "A
+         FUNCTION subprogram always produces a single result. A subroutine may produce as many
+         results as are specified as arguments in the CALL statement." Arguments reach the
+         subprogram as LOCATIONS (pp. 37–38); the manual does not say "call by reference", so
+         the prose doesn't either. Fortran I's one-line definitions: period terms are
+         "function statement" (Backus p. 173; described in the 1957 addenda) and "function
+         definition" (FII manual p. 10); "arithmetic statement function" is later and unused
+         here. FORTRAN II distributed spring 1958 (Backus p. 177).
+       - Algol 58 (Perlis & Samelson, CACM 1958; CHM copy), function declarations §4 and
+         procedure declarations §6, p. 19, page images; quoted fragment "in the sense of a
+         generalized function".
+       - Algol 60: verified against the REVISED report (1964 Regnecentralen corrected reprint
+         of the 1963 text), so the prose cites the Revised Report DOI, not the 1960 one used in
+         history.md. §3.2.3 "Not every procedure declaration defines the value of a function
+         designator." §5.4.4 value delivered by assignment to the procedure identifier.
+         §4.7.5.4: procedure identifiers "do not possess values".
+       - Strachey, HOSC 2000, §3.5.1 p. 32, page image. "either may appear" (Wikipedia has
+         "either of them may appear"). The text says "second class citizens" and "first class
+         objects" — never "first class citizen". ATTRIBUTION IS WEAKER: say the distinction is
+         usually traced to these lectures; do not say he coined "first-class".
+       - McCarthy, History of Lisp, §2 item c, author's 12 Feb 1979 draft (jmc.stanford.edu)
+         and the www-formal HTML agree; not compared with the HOPL typeset printing.
+       - Pascal quotation from Wirth's Nov 1970 ETH report, p. 9, page image; the 1971 Acta
+         Informatica text was NOT checked, so the quote is attributed to the 1970 report, cited
+         without a link (the only scan online is a community upload). The Acta DOI appears in
+         Further reading as a pointer, not as the quoted source.
+       - Fortran 77 (§6.6) is PARAPHRASED, never quoted: checked only against the X3J3/90.4
+         electronic transcription, not the printed X3.9-1978.
+       - C: Ritchie, Development of the C Language: first-edition K&R "mentioned neither the
+         void or enum types". No source dates void's first appearance in a compiler; the prose
+         gives none.
+     HEDGES: no "first subroutine" claim — Goldstine–von Neumann is a planning document;
+     EDSAC's library is "among the earliest in routine use". Fortran III passed function names
+     as arguments but was never generally distributed; omitted. The Algol stack/downward-only
+     observation in the design space is a technical fact, NOT a claimed historical motive.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p>A program from Part IV that adds up the squares of a list and a second program that adds up the
+cubes are the same loop with one line changed. Writing the loop once and handing it the line that
+differs requires two things. The loop has to be written somewhere that both programs can reach and
+given a name; and the line that differs — <em>square this</em>, <em>cube this</em> — has to become something that
+can be passed as a value, the same way a list is passed. Passing data between parts of a program is
+as old as stored-program computing; however, for years the code a program calls was treated as
+separate from the numbers it computed with—even if early machines stored data and code the same way.
+This chapter covers how programs started passing around code blocks (functions) as “first-class”
+values the same way as any other data a program computes with.</p>
+<h2 id="subroutines"><a class="header" href="#subroutines">Subroutines</a></h2>
+<p>Herman Goldstine and John von Neumann’s <em><a href="https://archive.org/details/planningcodingof0103inst">Planning and Coding of Problems for an Electronic
+Computing Instrument</a></em> (1948) wrote:</p>
+<blockquote>
+<p>We call the coded sequence of a problem a <em>routine</em>, and one which is formed with the purpose of
+possible substitution into other routines, a <em>subroutine</em>.</p>
+</blockquote>
+<p>and envisaged “an extensive collection of such subroutines” kept as a library on wire or tape. On
+the EDSAC the library was real: the relocation of Initial Orders 2, described in the
+<a href="../foundations/history.html">history chapter</a>, existed so that a library routine could be loaded
+wherever the store had room for it. What relocation did not solve is how a routine gets <em>back</em>. A
+routine reached by a jump has to finish by jumping to the order after the one that called it, and
+that order is in a different place for every caller.</p>
+<p>The EDSAC’s answer, the <strong>Wheeler jump</strong>, used the fact that an order is a number. The addresses
+below come from a small program in Campbell-Kelly’s guide to the EDSAC, and they use the <code>θ</code>
+relocation of the <a href="../foundations/history.html">history chapter</a>: an address tagged <code>θ</code> counts from
+the start of the routine it appears in, and the loader adds that routine’s origin as the tape is
+read. The program’s master routine, loaded at 88, calls the library print routine P6, loaded at
+56, with two orders:</p>
+<pre><code class="language-text"> θ+7    A 7 θ      add the order at θ+7 — this order — into the accumulator
+ θ+8    G 56 F     jump to the subroutine at 56
+</code></pre>
+<p>and the subroutine begins with two of its own:</p>
+<pre><code class="language-text"> θ+0    A 3 F      add a constant kept in location 3: build the return jump
+ θ+1    T 25 θ     store it at θ+25, the subroutine's exit: update the return jump
+</code></pre>
+<p><code>A 7 θ</code> names its own position without the programmer knowing where that will be: loaded at 88, it
+arrives in the store as <code>A 95 F</code>, and reading location 95 reads the order itself. The subroutine’s
+address is written absolutely, <code>G 56 F</code>, because the programmer drew up a table placing each
+routine before the tape was punched, and location 3 lies inside the initial orders, which never
+move. Adding the fixed constant turns the copy of the calling order into a jump back to 97, the
+master routine’s <code>θ+9</code>, and the subroutine writes that jump into its own exit order. When the
+subroutine finishes it runs the updated return jump and lands after the call. The return address
+exists only while the call is in progress, as an order the routine wrote into itself — the
+self-modifying technique the history chapter showed loops using for arrays, applied to control.</p>
+<p>David Wheeler’s two-page “<a href="https://doi.org/10.1145/609784.609816">The use of sub-routines in programmes</a>”
+(1952) describes a sub-routine as “a self-contained part of a programme, which is capable of being
+used in different programmes,” and locates the hard part somewhere other than the coding: once a
+routine is written and tested, “there still remains the considerable task of writing a description
+so that people not acquainted with the interior coding can nevertheless use it easily. This last
+task may be the most difficult.” Its closing advice for building a library is “All complexities
+should—if possible—be buried out of sight.” The same paper describes an integration routine that is
+given “access to an auxiliary sub-routine which is capable of evaluating f(x)”: a routine whose job
+is only defined once it is handed another routine. That is the squares-and-cubes problem again, in
+1952.</p>
+<h2 id="functions-and-procedures"><a class="header" href="#functions-and-procedures">Functions and procedures</a></h2>
+<p>Fortran made routines part of its language, in two forms. Fortran I had functions in the sense that
+formulas already used — a sine or a square root, supplied by the system, written inside an
+arithmetic expression — and, documented in the 1957 addenda to its manual, a one-line <strong>function
+statement</strong> that let a program define its own, of the form <code>FIRSTF(X) = A*X+B</code>. A function was
+anything that could appear inside a formula and stand for one number. FORTRAN II, distributed in the
+spring of 1958, added separately compiled subprograms and a second kind of routine beside the
+function. A <code>FUNCTION</code> subprogram is used by writing its name in an expression; a <code>SUBROUTINE</code> is
+run by a <code>CALL</code> statement and produces its results by storing into its arguments, which it receives
+as locations. The <a href="https://archive.computerhistory.org/resources/text/Fortran/102653989.05.01.acc.pdf">FORTRAN II
+manual</a> states
+the difference in two sentences:</p>
+<blockquote>
+<p>A FUNCTION subprogram always produces a single result. A subroutine may produce as many results as
+are specified as arguments in the CALL statement.</p>
+</blockquote>
+<p>The <a href="https://softwarepreservation.computerhistory.org/ALGOL/report/Algol58_preliminary_report_CACM.pdf">Algol 58 report</a>
+drew the same line under different names: a <em>function declaration</em> declares an expression “to be a
+function of certain of its variables,” and a <em>procedure declaration</em> declares “a closed unit,” with
+input parameters, output parameters, and possible exits, “which may be regarded as a single
+compound operation (in the sense of a generalized function).” The
+<a href="https://doi.org/10.1145/366193.366201">Algol 60 report</a> folded the two into the procedure. A
+procedure is called by a <em>procedure statement</em>; a procedure whose declaration carries a type, and
+whose body assigns to the procedure’s own name, may also be called inside an expression, where the
+call is a <em>function designator</em> and the last value assigned is its value. “Not every procedure
+declaration defines the value of a function designator.”</p>
+<p>In all three languages, “function” names a position in the program — a call inside an expression,
+yielding one value — and “procedure” or “subroutine” names a call that stands as a statement.
+Neither word says whether the routine has effects. A Fortran function could change the variables it
+was handed, and an Algol function designator could assign to anything in scope, so evaluating
+<code>f(x) + g(x)</code> could give different answers depending on which call ran first. Some languages took
+the mathematical reading of the word and made it a rule. Niklaus Wirth’s 1970 report on Pascal,
+which kept <code>procedure</code> and <code>function</code> as separate declarations, put it plainly: “In order to
+eliminate side-effects, assignments to non-local variables are not allowed to occur within the
+function.” The Fortran 77 standard forbade a function reference from changing any other entity in
+the statement in which it appears, and required that its value not depend on the order in which the
+processor chose to evaluate the statement. Both rules protect the same freedom that <a href="../eval/big-step.html">Part
+II</a> left open for <code>+</code>: an implementation may evaluate operands in any order
+only if no operand can see another’s effects.</p>
+<p>C collapsed the two kinds into one. Every C routine is a function, and a routine called for its
+effect is a function whose result the caller ignores. The first edition of <em>The C Programming
+Language</em> (1978) had no word for “no result”; by Dennis Ritchie’s account it “mentioned neither the
+void or enum types,” both of which were in use well before the language was standardized. <code>void</code>
+gave the procedure a spelling of its own as a return type, without a second kind of declaration.</p>
+<h2 id="second-class-citizens"><a class="header" href="#second-class-citizens">Second-class citizens</a></h2>
+<p>Being able to call a routine, from a statement or from an expression, still leaves open what else a
+program can do with it. In Algol 60 a procedure’s name could be passed as an argument to another
+procedure, so Wheeler’s integration routine could be written with its integrand as a parameter. It
+could do nothing else. A procedure could not be assigned to a variable, placed in an array, or
+returned as a result, and the report says why a procedure could not even be passed by value:
+procedure identifiers “do not possess values.”</p>
+<p>Christopher Strachey’s 1967 lecture notes, <em><a href="https://doi.org/10.1023/A:1010000313106">Fundamental Concepts in Programming
+Languages</a></em>, describe the asymmetry in a section titled
+“First and second class objects”:</p>
+<blockquote>
+<p>In ALGOL a real number may appear in an expression or be assigned to a variable, and either may
+appear as an actual parameter in a procedure call. A procedure, on the other hand, may only appear
+in another procedure call either as the operator (the most common case) or as one of the actual
+parameters. There are no other expressions involving procedures or whose results are procedures.
+Thus in a sense procedures in ALGOL are second class citizens—they always have to appear in person
+and can never be represented by a variable or expression (except in the case of a formal
+parameter)…</p>
+</blockquote>
+<p>The distinction between first- and second-class values is usually traced to these lectures. The
+test it sets is about the language rather than about any one program: is there anything a program
+may do with a number that it may not do with a function?</p>
+<p>By 1967 a language that answered “no” had been running for years, on a notation older than any
+computer. Alonzo Church’s λ-calculus (<a href="../foundations/paradigms.html">introduced previously</a>) has only
+functions, and writes one without naming it: <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span> is the function that adds one, an
+expression like any other that can be an argument to another function or the result of one. John
+McCarthy borrowed the notation for Lisp, and in his <a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">history of the
+language</a>, written for the first History of
+Programming Languages conference, gives the reason:</p>
+<blockquote>
+<p>To use functions as arguments, one needs a notation for functions, and it seemed natural to use
+the λ-notation of Church (1941). I didn’t understand the rest of his book, so I wasn’t tempted to
+try to implement his more general mechanism for defining functions.</p>
+</blockquote>
+<p>Lisp’s <code>maplist</code> applied a function given as an argument to each element of a list — the
+squares-and-cubes loop, written once. What a Lisp function value had to carry with it, and what
+Lisp at first got wrong about it, is the subject of a later chapter
+(cf. <a href="scope.html">static and dynamic scope</a><!-- xref:scope.md -->).</p>
+<h2 id="functions-as-values-in-bridger"><a class="header" href="#functions-as-values-in-bridger">Functions as values in Bridger</a></h2>
+<p>In Bridger a function is a value. It can be bound by <code>let</code>, passed to another function, returned
+from one, and stored in a tuple, a list, or a cell, exactly as an integer can:</p>
+<pre><code class="language-text">fn square(x: Int) -&gt; Int = x * x;
 
-- Function definitions, and what it means for a function to be **first-class**: passed as an
-  argument, returned from another function, stored in a data structure — a value like any other.
-- Adding functions to the `Value` type, and what that does to the runtime errors of Part II.
-- Why "first-class" is a design decision rather than an obvious default, and what a language gives
-  up without it.
+fn twice(f: fn(Int) -&gt; Int, x: Int) -&gt; Int = f(f(x));
 
-*History (woven):* Church's λ-calculus as the origin of the idea that functions are values; Lisp as
-the first language to take it seriously.
--->
+fn pick(double: Bool) -&gt; fn(Int) -&gt; Int {
+    if double { |x: Int| x * 2 } else { |x: Int| x + 1 }
+}
+
+fn main() {
+    let inc = |x: Int| x + 1;
+    println(twice(inc, 5));                        // 7
+    println(twice(square, 3));                     // 81
+    let ops = [inc, square, pick(true)];
+    println(map(ops, |g: fn(Int) -&gt; Int| g(10)));  // [11, 100, 20]
+    let cell = ref inc;
+    cell := square;
+    println((deref cell)(7));                      // 49
+}
+</code></pre>
+<p>There are two ways to make a function value. A top-level <code>fn</code> declaration binds a name to one:
+<code>square</code> on its own, without an argument list, is an expression whose value is the function, and it
+is passed to <code>twice</code> in the same way <code>inc</code> is. A <strong>lambda</strong>, written <code>|x: Int| x + 1</code>, is an
+expression that produces a function without naming it — Church’s <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span> in Rust’s
+notation — and can appear anywhere an expression can: as a <code>let</code>’s right-hand side, as an argument,
+as a branch of an <code>if</code>. The parameter annotations and the type <code>fn(Int) -&gt; Int</code> are read by the type
+checker of <a href="../types/type-checker.html">Part VI</a><!-- xref:../types/type-checker.md -->; the evaluator
+ignores them.</p>
+<p>The prelude’s <code>map</code>, <code>filter</code>, and <code>fold</code> take a function argument, and the functions they are
+handed are ordinary values; so is <code>map</code> itself. The squares-and-cubes problem needs nothing more:</p>
+<pre><code class="language-text">fn sum_of(f: fn(Int) -&gt; Int, xs: [Int]) -&gt; Int =
+    fold(xs, 0, |acc: Int, x: Int| acc + f(x));
+
+sum_of(square, range(1, 4))                        // 1 + 4 + 9 = 14
+</code></pre>
+<p>A Bridger function called for its effect is a function like any other. Bridger is
+<a href="../imperative/control-flow.html">expression-oriented</a>: a form evaluated for its effect produces
+<code>()</code>, the value that reports only that the effect happened. A procedure is therefore a function
+whose result is <code>()</code>, and a declaration that omits its result type has result type <code>()</code>:</p>
+<pre><code class="language-text">fn log(msg: String) {
+    println("log: " ++ msg);
+}
+</code></pre>
+<p>There is one kind of declaration; the Fortran II distinction survives as a type, <code>()</code> against
+everything else, and a procedure can be passed wherever a function is expected.</p>
+<p>There are two things a program can do with an integer and cannot do with a function. Comparing two
+functions with <code>==</code> is stuck, for the reason <a href="../eval/values.html">Part II</a> gave — no interpreter can
+decide in general whether two functions agree on every input — and a function has no printed form.
+Strachey’s test is about expressions and variables, and Bridger’s functions pass it; they are values
+without being data that can be inspected.</p>
+<h3 id="what-a-lambda-evaluates-to"><a class="header" href="#what-a-lambda-evaluates-to">What a lambda evaluates to</a></h3>
+<p>Evaluating a lambda runs nothing. Its body is code to be run later, when the function is called,
+and until then it is not evaluated at all:</p>
+<pre><code class="language-text">let never = |x: Int| x / 0;        // fine: nothing is divided
+</code></pre>
+<p>The division would be stuck, but no rule reaches it until <code>never</code> is applied to something.</p>
+<p>What a lambda does record is the place it was evaluated. Its body may mention names that it does
+not bind — <code>f</code> in <code>sum_of</code>’s <code>|acc: Int, x: Int| acc + f(x)</code> is bound by <code>sum_of</code>’s parameter list,
+outside the lambda. These are the <a href="../binding/lexical-scope.html">free occurrences</a> of Part III, and
+Bridger’s lexical scope resolves each in the environment where the code is written. Until now,
+code always ran where it was written: a block’s body is evaluated in the environment the block
+extends, and nowhere else. A function body is the first code that runs somewhere else — wherever
+the function is called, which may be inside <code>fold</code>, or long after the block that built the function
+has finished. For the body’s free names to keep meaning what they meant where it was written, the
+function value has to take that environment with it. It does:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.686em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">λ</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">e</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨⟨</span><span class="mord mathnormal">λ</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">e</span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">ρ</span><span class="mclose">⟩</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Lam</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The rule has no premises, since nothing is evaluated, and the store is handed back unchanged. The
+value <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">λ</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">e</span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">ρ</span><span class="mclose">⟩</span></span></span></span> is a <strong>closure</strong>: the parameters, the body,
+and the environment in force when the lambda was evaluated. A top-level <code>fn</code> evaluates by
+<a href="../binding/environments.html">E-Var</a>: the program’s environment binds its name to a closure whose
+environment is the program’s environment, which is how top-level functions can call one another
+(cf. <a href="functional.html">recursion</a><!-- xref:functional.md -->).</p>
+<p>How a call uses the captured environment is the rule for application, in the
+<a href="calls.html">next chapter</a><!-- xref:calls.md -->. What the capture makes possible — a function that
+outlives the call that created it — is the subject of <a href="closures.html">closures</a><!-- xref:closures.md -->.</p>
+<h3 id="building-it"><a class="header" href="#building-it">Building it</a></h3>
+<p>The AST node and the value it produces are both provided. A lambda is <code>Expr::Lambda</code>, whose
+parameters carry an optional type annotation; its value is the <code>Closure</code> variant of
+<a href="../eval/values.html"><code>Value</code></a>, which holds a shared pointer to one of two kinds of function:</p>
+<pre><code class="language-rust ignore">Expr::Lambda(Vec&lt;LambdaParam&gt;, Box&lt;Expr&gt;, Span)
+
+pub struct LambdaParam { pub name: Name, pub ty: Option&lt;Ty&gt;, pub span: Span }
+
+Value::Closure(Rc&lt;Closure&gt;)
+
+pub enum Closure {
+    Bridger { params: Vec&lt;Name&gt;, body: Expr, env: Env },  // a lambda or a `fn`
+    Native(BuiltinId),                                    // a prelude primitive
+}</code></pre>
+<p>The <code>Lambda</code> arm of <code>eval_expr</code> is E-Lam: it builds a <code>Closure::Bridger</code> from the parameter names
+(the annotations are Part VI’s business and are dropped), a copy of the body, and the environment
+the arm was handed, and returns it as a <code>Value::Closure</code>. It evaluates nothing and cannot fail.
+Holding the environment is cheap: an <code>Env</code> is the shared chain of scopes chosen in
+<a href="../binding/representations.html">Part III</a> so that it could be captured without being copied.</p>
+<p>Top-level functions need no arm of their own. The provided <code>eval_program</code> binds every <code>fn</code> to a
+<code>Closure::Bridger</code> whose <code>env</code> is the program environment before <code>main</code> runs, and the prelude’s
+built-in primitives — <code>println</code>, the readers — arrive as <code>Closure::Native</code>, so <code>map(xs, println)</code>
+passes a primitive exactly as it passes a lambda.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<p>Whether a language has one kind of routine or two is a choice about what a call is allowed to
+mean. Fortran II and Pascal keep functions and procedures apart, and a reader who sees a call in an
+expression knows it yields one value; Pascal’s rule on non-local assignment goes further and tells
+the reader the call cannot disturb the expression around it. The cost is a second declaration form
+and, in Pascal’s case, a restriction that forbids a function from updating a counter or caching a
+result. C, ML, Rust, and Bridger have one kind of routine and mark a procedure by its result type —
+<code>void</code> in C, a unit type in the others — so a procedure can be passed wherever a function is
+expected, and <code>map</code> over a list with a printing function needs no special case. What they give up
+is the guarantee: a call in an expression may have any effect a statement could. Bridger answers
+the evaluation-order question by fixing the order, left to right, through the threaded
+<a href="../imperative/mutation.html">store</a>, rather than by restricting what a function may do. Languages
+that record effects in a function’s type, so that “this call does nothing but compute a value” is
+checked, are among the alternatives taken up with
+<a href="functional-programming.html">programming functionally</a><!-- xref:functional-programming.md -->.</p>
+<p>How far a routine is a value is a second axis. Algol 60 and Pascal let a procedure be passed as an
+argument and nothing more. C lets a function be named by a pointer, and a pointer can be stored,
+passed, and returned — but C has no nested functions, so every name a function body mentions is
+either its own local or global to the whole program, and the pointer needs to carry nothing but the
+code’s address. The Lisp line, and then Scheme, ML, and Haskell, made functions values with no
+restrictions and a captured environment, and most languages in wide use now do the same — Python,
+JavaScript, C#, Rust, and Java since version 8. The restricted designs are simpler to implement for
+a concrete reason. A procedure passed <em>down</em> to a routine it calls is used while the procedure’s
+defining environment still exists, so a pointer to that environment on the call stack stays valid; a
+procedure returned <em>up</em> past its defining call, or stored somewhere that outlives it, carries a
+pointer to an environment that the stack has already discarded. Allowing that requires environments
+that live as long as any function refers to them, which is what Bridger’s shared <code>Env</code> provides and
+what <a href="closures.html">closures</a><!-- xref:closures.md --> examines.</p>
+<p>Bridger takes the unrestricted end of both axes: one kind of routine, with <code>()</code> for procedures, and
+function values that are passed, returned, and stored with their environments. It stops short of
+treating functions as data — no equality and no printing — because neither has an answer that
+describes the function rather than its representation.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Subroutines</strong>: Goldstine and von Neumann’s <em><a href="https://archive.org/details/planningcodingof0103inst">Planning and Coding of Problems for an Electronic
+Computing Instrument</a></em>, Part II, Volume III
+(1948), sets out the subroutine and the library of them in §12 before any machine to run them had
+been built. Wheeler’s “<a href="https://doi.org/10.1145/609784.609816">The use of sub-routines in
+programmes</a>” (1952) is two pages long and covers the EDSAC’s
+closed sub-routines, the library, interpretive routines, and the problem of describing a routine to
+the people who will use it. The calling sequence of the Wheeler jump is laid out order by order in
+Martin Campbell-Kelly’s <em><a href="https://www.dcs.warwick.ac.uk/~edsac/Software/EdsacTG.pdf">Tutorial Guide to the EDSAC
+Simulator</a></em>, where it can be run.</p>
+<p><strong>Functions and procedures in the first languages</strong>: Backus’s “<a href="https://doi.org/10.1145/800025.808380">The History of Fortran I, II, and
+III</a>” (1978) records how function statements, and then
+separately compiled <code>SUBROUTINE</code> and <code>FUNCTION</code> subprograms, came into Fortran, and the <a href="https://archive.computerhistory.org/resources/text/Fortran/102653989.05.01.acc.pdf">FORTRAN II
+Reference Manual</a>
+(IBM, 1958) gives the calling conventions down to where each argument’s address is found. The
+<a href="https://softwarepreservation.computerhistory.org/ALGOL/report/Algol58_preliminary_report_CACM.pdf">Algol 58 report</a>
+and the <a href="https://doi.org/10.1145/366193.366201">Revised Report on Algol 60</a> (1963) show the function
+and the procedure as separate declarations and then as one; §4.7 and §5.4 of the latter define
+procedure statements, function designators, and the call-by-name rule taken up in the
+<a href="calls.html">next chapter</a><!-- xref:calls.md -->. Wirth’s “<a href="https://doi.org/10.1007/BF00264291">The Programming Language
+Pascal</a>” (<em>Acta Informatica</em>, 1971) is the published form of
+the Pascal report, with procedure and function declarations in separate sections.</p>
+<p><strong>First-class functions</strong>: Strachey’s <em><a href="https://doi.org/10.1023/A:1010000313106">Fundamental Concepts in Programming
+Languages</a></em>, lecture notes from 1967 first published in
+2000, covers first- and second-class objects in §3.5.1 alongside l-values and r-values, parametric
+polymorphism, and the other terms it put into circulation. McCarthy’s
+“<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">History of Lisp</a>” (1979) describes borrowing
+Church’s notation and the first programs that passed functions as arguments. Church’s own account is
+<em>The Calculi of Lambda-Conversion</em> (Annals of Mathematics Studies 6, Princeton University Press,
+1941).</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>What does <code>let never = |x: Int| x / 0;</code> evaluate to, and why is there no division-by-zero error?</summary>
+<p>It binds <code>never</code> to a closure: the parameter <code>x</code>, the body <code>x / 0</code>, and the environment in force at
+that point. E-Lam has no premises — evaluating a lambda evaluates nothing inside it — so the body is
+not run and the division is never reached. The error would occur only if <code>never</code> were applied to an
+argument, at which point the body would be evaluated and <code>x / 0</code> would be stuck.</p>
+</details>
+<details>
+<summary>Which lines of the Bridger program in this chapter could not be written in Algol 60, and which could?</summary>
+<p>Passing a function as an argument is allowed in Algol 60: <code>twice(square, 3)</code> corresponds to a
+procedure call with a procedure identifier as an actual parameter. Everything else is not. <code>let inc = |x: Int| x + 1</code> produces a procedure from an expression and binds it to a variable; <code>pick</code>
+returns a procedure as its result; <code>[inc, square, pick(true)]</code> stores procedures in a data
+structure; <code>cell := square</code> assigns one to a variable. In Strachey’s terms, Algol procedures
+“always have to appear in person” — named directly in a call — while each of these lines represents
+a function by a variable or an expression.</p>
+</details>
+<details>
+<summary>A function value records the environment in which it was created. Why does it need to, when a block's body never did?</summary>
+<p>A block’s body is evaluated where it is written, in the environment the block extends, so its free
+names are resolved in the only environment it ever runs in. A function body is evaluated when the
+function is called, which can be inside another function (<code>fold</code> calling the lambda in <code>sum_of</code>) or
+after the block that created the function has finished. Under lexical scope its free names must
+resolve where the body was written, and that environment is not the one in force at the call, so
+the value has to take it along. A lambda with no free names would not need the record, which is
+the situation C arranges by having no nested functions.</p>
+</details>
+<details>
+<summary>FORTRAN II distinguishes <code>FUNCTION</code> from <code>SUBROUTINE</code>; Bridger has one form and writes a procedure as a function returning <code>()</code>. What does each design make easy, and what does each give up?</summary>
+<p>With two forms, a call’s role is visible from its syntax: a <code>FUNCTION</code> sits in an expression and
+yields one value, a <code>SUBROUTINE</code> is a statement that produces results through its arguments. A
+language can then attach rules to the function form — Pascal forbids assignment to non-locals in a
+function, Fortran 77 forbids a function reference from changing anything else in its statement —
+so a reader and a compiler know an expression’s calls cannot interfere with one another. The cost
+is two declaration forms and routines that cannot stand in for each other. With one form, a
+procedure is just a function whose result is <code>()</code>, so anything that accepts a function accepts a
+procedure (<code>map</code> with a printing function), and there is one rule for calls. What is given up is
+any guarantee from the syntax: a call inside an expression can have effects, and Bridger has to fix
+the evaluation order instead of leaving it to the implementation.</p>
+</details>
+<details>
+<summary>The Wheeler jump stored its return address by writing into the subroutine's own exit order. What goes wrong if the subroutine calls itself?</summary>
+<p>The inner call writes its return jump into the same location as the outer call, overwriting it.
+When the inner call finishes, it returns correctly to its caller — the subroutine itself — but when
+the outer call finishes, the order at its end now jumps back into the subroutine rather than to the
+original caller, whose return address has been lost. The scheme stores one return address per
+routine, so it supports one active call per routine at a time. Supporting recursion requires a
+fresh place for the return address, and for the locals, on each call — the stack of activations
+that the <a href="functional.html">recursion</a><!-- xref:functional.md --> chapter makes visible in the
+evaluator.</p>
+</details>
 
                     </main>
 

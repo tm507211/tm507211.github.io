@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d39d5e1b.js";
+            window.path_to_searchindex_js = "../searchindex-e343aec1.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -205,11 +205,13 @@
      Milestone M4 · lecture: Static vs. Dynamic Scope · spec §14.
      DECISION (2026-07-31): no toggle. Bridger's final semantics is static
      scope, full stop — no runtime flag, no dual discipline in the finished
-     interpreter. The M4 pt 1 → pt 2 progression (implement dynamic scope, then
-     repair to static) may still be kept as the EXERCISE through which the
-     contrast is seen; it terminates in static scope permanently because a
-     dynamically scoped variable's type depends on its call site, which the M5
-     checker cannot handle. See plan §4, spec §14.
+     interpreter. DECISION (2026-09-28): no implement-dynamic-then-repair stage
+     either; functions.md/calls.md present static scope as Bridger's semantics
+     from the start. The contrast is shown here, and at most as an optional
+     EXPERIMENT on a finished evaluator (run a call's body in the caller's env,
+     watch the examples diverge, change it back). Static scope is permanent
+     because a dynamically scoped variable's type depends on its call site,
+     which the M5 checker cannot handle. See plan §4, spec §14.
      Status: placeholder — spine authored just-in-time.
 -->
 <!-- Stubbed content, hidden while this page is under construction.
@@ -245,10 +247,10 @@ and later understood as a bug; Scheme's lexical repair and what it enabled; the 
 survive deliberately (Emacs Lisp's `defvar`, exception handlers, thread-locals, and dynamic extent
 generally) because "resolve at the call site" is genuinely the right semantics for *some* things.
 
-*The exercise:* implement dynamic scope in your own evaluator — evaluate a call's body in the
-caller's environment instead of the captured one — and run the closure examples from the previous
+*An experiment (optional):* in a copy of your finished evaluator, run a call's body in the
+caller's environment instead of the captured one, and run the closure examples from the previous
 chapter under both rules. Watch them diverge, then try to write down what type the free variable has
-and find that you cannot. Then repair it: static scope is where the language stays.
+and find that you cannot. Then change it back: static scope is Bridger's semantics throughout.
 -->
 
                     </main>

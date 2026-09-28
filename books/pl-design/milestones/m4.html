@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d39d5e1b.js";
+            window.path_to_searchindex_js = "../searchindex-e343aec1.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -206,6 +206,9 @@
 <!-- AUTHORING NOTE (not rendered)
      Closes Part V. Course offering: due Fri Oct 16.
      Sources: spec §8, §14
+     DECISION (2026-09-28): no dynamic-scope-first stage; students build static scope
+     directly (functions.md E-Lam, calls.md E-App). The contrast is scope.md's optional
+     experiment, not a milestone step.
      Status: placeholder — spine authored just-in-time.
      Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
      satisfy, worked examples, self-check tests). Grading, deadlines, submission
@@ -218,9 +221,9 @@ programs. This chapter says what yours should do now, and how to know it works.
 
 ## What you build
 
-First-class functions and calls, then closures that capture their defining environment. Bridger is
-**statically scoped**: a function body's free variables resolve where the function was *defined*,
-not where it was called.
+Function values — a lambda evaluates to a closure capturing its defining environment — and calls
+that run the body in that captured environment. Bridger is **statically scoped**: a function body's
+free variables resolve where the function was *defined*, not where it was called.
 
 ## What is provided
 
@@ -241,19 +244,10 @@ own machine.*
 
 ## Seeing the contrast
 
-*Tentative — see plan §4.* This milestone is where the scope question becomes concrete, by building
-both answers in order:
-
-1. Evaluate a call's body in the **caller's** environment — dynamic scope, and the simpler
-   evaluator, since a function value is then just code.
-2. Run the closure examples and watch a returned function resolve its free variable at the *call*
-   site. That is the surprise.
-3. **Repair it:** make the function value capture its defining environment. That capture *is* the
-   closure, and static scope is where the language stays.
-
-Then try to write down the type of that free variable under rule 1 and notice that you cannot — it
-depends on who called. That is why step 3 is permanent, and why the type checker in Part VI is
-possible at all.
+The milestone asks for static scope only. To see what the other discipline would do, the
+[static and dynamic scope](../functions/scope.md) chapter describes an optional experiment on a
+finished evaluator: run a call's body in the caller's environment, watch the closure examples
+diverge, try to write down the type of the free variable, and change it back.
 
 ## Design problems
 

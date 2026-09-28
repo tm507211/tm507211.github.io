@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d39d5e1b.js";
+            window.path_to_searchindex_js = "../searchindex-e343aec1.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -203,13 +203,21 @@
 
 <!-- AUTHORING NOTE (not rendered)
      Milestone M4 · lecture: Closures · spec §8.
+     SEAM (2026-09-28): the capture itself is NOT introduced here — functions.md gave
+     E-Lam (closure = params, body, defining env) and calls.md E-App (body runs in the
+     captured env). This chapter owns what the capture makes possible: a function that
+     outlives the call that created it (adder/counter), and the sharing that lets the
+     captured scope outlive its block.
      Status: placeholder — spine authored just-in-time.
 -->
 <!-- Stubbed content, hidden while this page is under construction.
      Remove this opening line and the closing marker below to restore it.
 This chapter will cover:
 
-- Capturing the definition environment; how the provided `Rc<Scope>` chain makes capture natural.
+- What capture makes possible: a function returned from its defining call still sees that call's
+  bindings (the adder and counter programs), and state carried in a captured cell.
+- Why the captured scope must outlive the block that built it, and how the provided `Rc<Scope>`
+  chain lets it.
 
 *Rust (at point of use):* `Rc<RefCell<…>>` — shared, mutable capture without fighting the borrow
 checker (the classic puzzle the scaffolding solves for you; [Appendix A](../appendix/rust-reference.md)).
