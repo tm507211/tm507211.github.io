@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluating Function Calls - Slidev</title>
+<link rel="icon" href="https://cdn.jsdelivr.net/gh/slidevjs/slidev/assets/favicon.png">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta property="slidev:version" content="52.19.1">
+<meta name="description" content="&quot;Lecture 15 (Evaluating Function Calls). Ch. 20 / functions/calls.md, on the road to M4.\nThe problem: sub(trace(&quot;a&quot;, 10), trace(&quot;b&quot;, 3)) — a call hides four decisions (what\nruns first, when an argument is evaluated, where the body runs, what a `return` does).\nHistory, visual: Algol 60&#039;s call by value vs. call by name (§4.7.3, verified page\nimage), name replacement pasted into the body, Jensen&#039;s device, Ingerman&#039;s thunks;\nLisp&#039;s call by value. Bridger: E-App premise by premise — operator, arguments left to\nright through the store, body in the CAPTURED env extended with the parameters, Ret\ncaught by unwrap; when each stuck case is detected; build = provided API + a flow\npicture, no arm printed. Design space: evaluation order (Java fixed, Scheme open, C\nundefined for f(i++, i++)); value / name / need; laziness vs. effects; thunks by hand\nwith `||`; passing locations. Static scope is Bridger&#039;s stated semantics; the dynamic\ncontrast is the scope lecture&#039;s. Target 40–45 min, example- and picture-led.\n&quot;">
+<meta property="og:title" content="Evaluating Function Calls - Slidev">
+<meta property="og:description" content="&quot;Lecture 15 (Evaluating Function Calls). Ch. 20 / functions/calls.md, on the road to M4.\nThe problem: sub(trace(&quot;a&quot;, 10), trace(&quot;b&quot;, 3)) — a call hides four decisions (what\nruns first, when an argument is evaluated, where the body runs, what a `return` does).\nHistory, visual: Algol 60&#039;s call by value vs. call by name (§4.7.3, verified page\nimage), name replacement pasted into the body, Jensen&#039;s device, Ingerman&#039;s thunks;\nLisp&#039;s call by value. Bridger: E-App premise by premise — operator, arguments left to\nright through the store, body in the CAPTURED env extended with the parameters, Ret\ncaught by unwrap; when each stuck case is detected; build = provided API + a flow\npicture, no arm printed. Design space: evaluation order (Java fixed, Scheme open, C\nundefined for f(i++, i++)); value / name / need; laziness vs. effects; thunks by hand\nwith `||`; passing locations. Static scope is Bridger&#039;s stated semantics; the dynamic\ncontrast is the scope lecture&#039;s. Target 40–45 min, example- and picture-led.\n&quot;">  <script type="module" crossorigin src="./assets/index-DysGIJBg.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-hePW80VL.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/shiki-BDOa5D_m.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-QKqV1Vbb.js">
+  <link rel="modulepreload" crossorigin href="./assets/slidev/env-B_GlpOBT.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/vue-CTLAYFu5.js">
+  <link rel="stylesheet" crossorigin href="./assets/modules/shiki-BrmBd2_v.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-dwcN2ynz.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="mermaid-rendering-container"></div>
+  
+</body>
+</html>

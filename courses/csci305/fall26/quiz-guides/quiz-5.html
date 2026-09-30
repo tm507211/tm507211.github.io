@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 5 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 5 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lectures 13&ndash;15 and their textbook
+      chapters: conditionals and loops, first-class functions, and evaluating function calls. One
+      question also looks back at a design decision in your Milestone&nbsp;2 evaluator. Answers are
+      short: a sentence or two, in your own words, earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 15 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions. Most give you a small block of
+            Bridger code to trace by hand &mdash; say what it evaluates to or what it prints, and
+            why. One asks you to compare evaluation strategies (for example, what a call prints under
+            call by value vs.&nbsp;call by name). One question looks back at your Milestone&nbsp;2
+            evaluator &mdash; no Rust to write, just explain a decision in words.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.
+            You may name a rule (<code>E-While-True</code>, <code>E-App</code>) if it helps, but you
+            are never required to.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Conditionals and loops
+      <small class="text-muted">Lecture 13</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/imperative/conditionals-loops.html">Conditionals and loops</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-13/index.html">Lecture 13</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain that <code>if</code> is an <em>expression</em> valued by the branch it takes: the
+        condition is evaluated first, its store is threaded into the <em>chosen</em> branch, and the
+        other branch is never evaluated &mdash; so only the taken branch's effects happen.</li>
+      <li>Say why an <code>if</code> with no <code>else</code> must have a <code>()</code>-valued
+        branch: the form still needs a value when the condition is false, and <code>()</code> is the
+        only one the language can supply without a branch (it reads as
+        <code>if e1 then e2 else ()</code>).</li>
+      <li>Read the two <code>while</code> rules: <code>E-While-False</code> stops and yields
+        <code>()</code>; <code>E-While-True</code> runs the body, discards its value, and then
+        derives <em>the same loop again</em> against the store the body left.</li>
+      <li>Explain what that self-reference means: a terminating loop is a finite stack of
+        <code>E-While-True</code> closed by one <code>E-While-False</code>; a loop that never stops
+        has <em>no</em> finite derivation, and so no value. Say why a <code>while</code> needs the
+        store to do anything (without a cell to change, its condition can never change).</li>
+      <li>Trace a loop over cells by hand, including a one-armed <code>if</code> in the body, and
+        say what the cells hold afterward and what the loop itself evaluates to (<code>()</code>).</li>
+      <li>Describe <code>for x in xs</code>: it walks the list's cons cells, binds <code>x</code>
+        <em>fresh</em> on each turn, yields <code>()</code>, always stops (the list is finite), and
+        accumulates a result only through a cell that outlives the loop &mdash; not by assigning to
+        <code>x</code>.</li>
+      <li>Explain <code>return e</code>: it produces a <em>returning</em> outcome that travels
+        outward, skipping the rest of the block and the remaining turns of any loop, until a
+        function boundary catches it.</li>
+      <li>Recognize the design space: if-as-expression vs.&nbsp;C's <code>if</code> statement plus
+        the <code>?:</code> operator; C's <code>do</code>/<code>while</code> and three-part
+        <code>for</code>, Python's and Rust's iterator <code>for</code>; Bridger's lack of
+        <code>break</code>/<code>continue</code>; and the functional answer that makes none of jump,
+        loop, or branch a primitive (repetition by recursion, selection as an expression).</li>
+    </ul>
+
+    <h2>First-class functions
+      <small class="text-muted">Lecture 14</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/functions/functions.html">First-class functions</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-14/index.html">Lecture 14</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain the problem a subroutine solves, and the <em>return</em> problem it raises: a
+        routine reached by a jump has to get back to a place that differs for every caller. Describe
+        how the Wheeler jump solved it (the routine writes its own return jump into its exit order)
+        and why that allows only one active call per routine &mdash; no recursion.</li>
+      <li>Distinguish the historical <em>function</em> (a call inside an expression, yielding one
+        value) from the <em>procedure</em>/<em>subroutine</em> (a call that stands as a statement),
+        and say why neither word promised &ldquo;no effects&rdquo; &mdash; Pascal and
+        Fortran&nbsp;77 made that promise a rule; C and Bridger have one kind of routine, with
+        <code>void</code>/<code>()</code> marking a procedure.</li>
+      <li>State Strachey's test for a <em>first-class</em> value &mdash; is there anything a program
+        can do with a number that it cannot do with a function? &mdash; and say what Algol&nbsp;60
+        allowed a procedure (called, passed as an argument) and did not (bound to a variable,
+        returned, stored).</li>
+      <li>Show Bridger's functions passing that test: bound by <code>let</code>, passed, returned,
+        stored in a list or a cell. Know the two things a Bridger function cannot do (compare with
+        <code>==</code>, be printed) and why.</li>
+      <li>Explain that a top-level <code>fn</code> and a lambda <code>|x: Int| &hellip;</code> make
+        the same kind of value, and that a procedure is just a function whose result is
+        <code>()</code>.</li>
+      <li>Explain why <em>evaluating a lambda runs nothing</em> (<code>E-Lam</code> has no premises):
+        <code>let never = |x: Int| x / 0;</code> is fine until <code>never</code> is called.</li>
+      <li>Say what a <em>closure</em> is &mdash; parameters, body, and the environment in force where
+        the lambda was evaluated &mdash; and <em>why</em> it must record that environment: a function
+        body is the first code that runs somewhere other than where it was written, and lexical scope
+        says its free names mean what they meant where it was written.</li>
+      <li>Explain why &ldquo;pass down only&rdquo; (Algol, Pascal) and &ldquo;pointers with no nested
+        functions&rdquo; (C) are cheaper designs than full closures: a function passed down is used
+        while its defining environment still exists; one returned up or stored needs that
+        environment to outlive the call that made it.</li>
+    </ul>
+
+    <h2>Evaluating function calls
+      <small class="text-muted">Lecture 15</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/functions/calls.html">Evaluating function calls</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-15/index.html">Lecture 15</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Name the decisions a call makes: what is evaluated first, when an argument is evaluated,
+        which environment the body runs in, and what happens when the body leaves early.</li>
+      <li>Read <code>E-App</code> premise by premise: evaluate the operator to a closure; evaluate
+        the arguments <em>left to right</em>, threading the store (so a call whose arguments print
+        prints them in order); run the body in the closure's <em>captured</em> environment extended
+        with the parameters.</li>
+      <li>Explain that the caller's environment is used only for the operator and the arguments &mdash;
+        never for the body. Trace a program in which the caller and the function's definition site
+        bind the same name differently, and say which value the body sees.</li>
+      <li>Explain why each call builds a <em>fresh</em> frame on top of the captured environment
+        rather than writing into it: two calls, or the levels of a recursion, would otherwise
+        overwrite one another's parameters.</li>
+      <li>Explain how a <code>return</code> is <em>caught</em> by the call (<code>unwrap</code>: a
+        returned value and an ordinary one both become the call's value), so the expression around
+        the call carries on normally &mdash; and that a <code>return</code> inside a lambda leaves
+        only that lambda, however deep inside another function's work it runs.</li>
+      <li>Say when each stuck call is detected: a non-function operator before any argument runs
+        (<code>NotAFunction</code>); a wrong number of arguments only after they have all run
+        (<code>ArityMismatch</code>).</li>
+      <li>Describe Algol&nbsp;60's two parameter kinds: <em>call by value</em> (evaluate once into a
+        local) and <em>call by name</em> (the argument's text replaces the parameter throughout the
+        body, and runs each time the body reaches it). Know what Jensen's device does with that, and
+        what a <em>thunk</em> is.</li>
+      <li>Compare <em>call by value</em>, <em>call by name</em>, and <em>call by need</em>: how many
+        times an argument runs if the body uses it zero, one, or two times, and what a function that
+        ignores a stuck or printing argument does under each.</li>
+      <li>Explain why a language with effects in ordinary expressions (Bridger) keeps call by value,
+        and how a <code>||</code> lambda writes a by-name argument by hand.</li>
+      <li>Compare approaches to <em>evaluation order</em>: fixed left to right (Bridger, Java),
+        unspecified (Scheme), and C, where two arguments that modify the same variable make the
+        program undefined &mdash; and what each choice gives the compiler or the programmer.</li>
+    </ul>
+
+    <h2>Looking back at Milestone 2
+      <small class="text-muted">Reflection</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/milestones/m2.html">Milestone M2</a>
+      &nbsp;and
+      <a href="../../../../books/pl-design/binding/environments.html">Environments and <code>let</code></a>.
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain why your <code>Block</code> arm evaluates a <code>let</code>'s right-hand side
+        <em>before</em> extending the scope: <code>let</code> binds its name over the <em>rest of
+        the block</em>, not over its own right-hand side, so <code>let x = x + 1</code> reads the
+        enclosing <code>x</code>. Trace nested blocks that shadow a name.</li>
+      <li>Explain why leaving a block needs no undo: <code>Env::extend</code> returns a
+        <em>new</em> child scope and leaves the original untouched, so the outer block still holds
+        its own environment.</li>
+      <li>Connect that property to closures: because an existing environment is never changed, a
+        closure's captured environment keeps meaning what it meant where the function was written,
+        and every call can extend it into a fresh frame without disturbing it.</li>
+      <li>Say why a block whose last item ends in <code>;</code> (or is a <code>let</code>) has the
+        value <code>()</code>, and why an unbound name is stuck (<code>UnboundVariable</code>) rather
+        than given a default value.</li>
+    </ul>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Beyond that: write a
+        small <code>while</code> over two cells and trace the store turn by turn; put a
+        <code>return</code> inside a loop inside a function, and another inside a lambda handed to
+        <code>fold</code>, and say where each one stops; write a function whose body mentions a
+        global that the caller shadows, and say which value the body reads; and take a function that
+        uses a parameter zero, one, and two times and say how often its argument runs under call by
+        value, by name, and by need. If you have the interpreter built, run your programs and check
+        yourself.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>conditional expression</li>
+        <li>else-less <code>if</code></li>
+        <li>structured loop</li>
+        <li>a rule that names its own conclusion</li>
+        <li>divergence (no derivation, no value)</li>
+        <li>fresh loop variable</li>
+        <li>returning outcome (<code>Ret</code>)</li>
+        <li>subroutine</li>
+        <li>Wheeler jump / return address</li>
+        <li>function vs. procedure</li>
+        <li>first-class vs. second-class value</li>
+        <li>lambda</li>
+        <li>closure</li>
+        <li>captured (defining) environment</li>
+        <li>free occurrence</li>
+        <li>application (<code>E-App</code>)</li>
+        <li>evaluation order</li>
+        <li>fresh frame per call</li>
+        <li><code>unwrap</code> / catching a <code>return</code></li>
+        <li><code>NotAFunction</code> / <code>ArityMismatch</code></li>
+        <li>call by value</li>
+        <li>call by name</li>
+        <li>call by need</li>
+        <li>thunk</li>
+        <li>Jensen's device</li>
+        <li>non-strict (lazy) evaluation</li>
+        <li><code>Env::extend</code> (child scope, original untouched)</li>
+        <li>shadowing</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>
