@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-33f2f5d1.js";
+            window.path_to_searchindex_js = "../searchindex-3047e2a2.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -180,48 +180,444 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="closures"><a class="header" href="#closures">Closures</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
      Milestone M4 · lecture: Closures · spec §8.
-     SEAM (2026-09-28): the capture itself is NOT introduced here — functions.md gave
-     E-Lam (closure = params, body, defining env) and calls.md E-App (body runs in the
-     captured env). This chapter owns what the capture makes possible: a function that
-     outlives the call that created it (adder/counter), and the sharing that lets the
-     captured scope outlive its block.
-     Status: placeholder — spine authored just-in-time.
+     SEAM: functions.md gave E-Lam (closure = params, body, defining env); calls.md gave E-App
+     (body runs in the captured env extended with the parameters). NO new rule and NO new
+     evaluator arm here. This chapter owns what the capture makes possible: a binding that
+     outlives the call or block that made it (adder, block-escaping lambda), state in a
+     captured cell (counter, account), and why the provided Rc<Scope> chain lets the scope
+     survive. scope.md owns the Lisp/Scheme history, McCarthy's FUNARG passage, and the
+     type-checker argument — do not pre-empt. functional.md owns recursion and the call stack.
+     THROUGHLINE: scope is a region of text; EXTENT is how long a binding exists at run time.
+     A stack ties extent to the activation; a closure lets a binding's extent run as long as
+     any closure can reach it. The rules already say so (no rule discards an environment);
+     the implementation has to keep up.
+     "Extent" is introduced here because scope.md reuses it (dynamic extent). "Indefinite
+     extent" is used once, attributed to Common Lisp's vocabulary.
+     RUST: the stub's `Rc<RefCell<…>>` capture is NOT how the interpreter works. Capture is
+     `Rc<Scope>` alone (interpreter/src/interp/env.rs); bindings are immutable and cells live
+     in the monotonic `Store` behind `Loc` handles, so a captured scope is never mutated.
+     The only RefCell is the root's back-patch for mutual recursion (provided; left out, as
+     in representations.md). The root holds closures that hold the root: an Rc cycle, never
+     freed, harmless because the root lives for the whole run.
+     rustc 1.94.0 E0373 text below was produced by compiling the three-line make_adder.
+     EXAMPLES run through the reference interpreter (--features m8): add5(10)=15,
+     add1(10)=11; c1 thrice = 3, c2 = 1; block-escaping f(4)=7; account 100+25+5 = 130;
+     for-loop thunks [2, 1, 0]; while-loop thunks over `deref j` [3, 3, 3]; with `let v =
+     deref m` [2, 1, 0].
+     VERIFIED WORDINGS: Landin 1964, pp. 316–317, page images (the sentence breaks across the
+       page after "comprising"): double quotes, comma inside — "closure," — keep it. "a
+       list-structure made up of name/value pairs"; "would be unnecessary if λ-expressions
+       containing free variables were prohibited" (p. 317). No free publisher copy: DOI only;
+       the course-site PDFs are unauthorized. "SECD" is not Landin's term — "often called".
+       CLtL2 ch. 3 (CMU HTML, authorized by Butterworth-Heinemann per cltl2.html): "The entity
+       continues to exist as long as the possibility of reference remains."
+       GCC Nested-Functions (live page): "works only so long as the containing function (hack,
+       in this example) does not exit" — elided with "…"; "all hell breaks loose" sentence.
+       Python FAQ: "accessed when the lambda is called — not when it is defined" (NOT "looked
+       up"). JLS SE 21 §15.27.2: "lambda expression" (not "body") in the effectively-final
+       sentence; rationale sentence quoted. cppreference (live wiki), "Dangling references".
+       Go 1.22 notes quoted; date Feb 2024 from go.dev/doc/devel/release (1.22.0 2024-02-06).
+       C# 5: the UPDATE header of Lippert's 2009 posts (update itself undated, after 2012-03)
+       — foreach changes, for does not. ES2015 §13.7.4.9 CreatePerIterationEnvironment.
+       SICP §3.2.3 "Frames as the Repository of Local State", make-withdraw; MIT Press HTML,
+       CC BY-SA 4.0.
+     UNATTRIBUTED ON PURPOSE: flat closures / assignment conversion described, no first-user.
+     Status: draft authored 2026-09-30, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p>A function in the <a href="calls.html">previous chapter</a> ran its body in the environment it captured, and
+the examples called functions that were defined at the top of the program, whose environment lasts
+as long as the program does. A function can also be made inside another call and handed back as
+its result:</p>
+<pre><code class="language-text">fn make_adder(k: Int) -&gt; fn(Int) -&gt; Int = |x: Int| x + k;
 
-- What capture makes possible: a function returned from its defining call still sees that call's
-  bindings (the adder and counter programs), and state carried in a captured cell.
-- Why the captured scope must outlive the block that built it, and how the provided `Rc<Scope>`
-  chain lets it.
+fn make_counter() -&gt; fn() -&gt; Int {
+    ref n = 0;
+    || { n := deref n + 1; deref n }
+}
 
-*Rust (at point of use):* `Rc<RefCell<…>>` — shared, mutable capture without fighting the borrow
-checker (the classic puzzle the scaffolding solves for you; [Appendix A](../appendix/rust-reference.md)).
--->
+fn main() {
+    let add5 = make_adder(5);
+    println(add5(10));                  // 15
+
+    let c1 = make_counter();
+    let c2 = make_counter();
+    c1(); c1();
+    println(c1());                      // 3
+    println(c2());                      // 1
+}
+</code></pre>
+<p>By the time <code>add5(10)</code> runs, the call <code>make_adder(5)</code> is over. Its parameter <code>k</code> was bound when the
+call began, and nothing in <code>main</code> can name it; yet the body <code>x + k</code> finds <code>k</code> and finds it bound to
+<code>5</code>. <code>make_counter</code> goes further. Each call makes a cell and returns a function that updates it,
+and the cell goes on counting across calls of that function, long after the call that made it has
+returned. <code>c1</code> and <code>c2</code> each have a count of their own.</p>
+<p>Both programs depend on a binding lasting longer than the call that created it. In most early
+compiled languages, a call’s bindings ended when the call did.</p>
+<h2 id="bindings-on-a-stack"><a class="header" href="#bindings-on-a-stack">Bindings on a stack</a></h2>
+<p>Algol 60 let procedures be declared inside blocks and inside other procedures, and let a body refer
+to the variables of the blocks around it. The usual implementation keeps each call’s variables in
+an <em>activation record</em> on a stack: entering a block or procedure pushes a record, and leaving it
+pops the record, so the storage for a call’s bindings is reclaimed the moment the call returns. The
+Wheeler jump of the <a href="functions.html">first chapter of this part</a> kept one return address per
+routine; a stack keeps one record per active call, which is what lets a procedure call itself.</p>
+<p>A stack makes a binding’s lifetime and its scope line up. A name declared in a block can be read
+only from the text inside that block, and while that text runs the block’s record is on the stack.
+As <a href="functions.html">first-class functions</a> observed, the one kind of function value Algol 60 allowed,
+a procedure passed down as an argument, fits the stack: the procedure is called while the routine
+that received it is running, which is while its defining block’s record is still in place.
+<code>make_adder</code> does not fit. It returns <code>|x: Int| x + k</code> upward, past the end of its own call, and a
+stack would pop <code>k</code> at exactly that moment.</p>
+<p>Peter Landin’s “<a href="https://doi.org/10.1093/comjnl/6.4.308">The mechanical evaluation of expressions</a>”
+(1964) described a machine for evaluating expressions written in Church’s λ-notation, where
+functions are produced by expressions and returned like any other value. Its state has four
+components — a stack, an environment, a control, and a dump — and it is often called the SECD
+machine after them. The environment is “a list-structure made up of name/value pairs”, the same
+kind of object the machine computes with, so a value can hold one:</p>
+<blockquote>
+<p>Also we represent the value of a λ-expression by a bundle of information called a “closure,”
+comprising the λ-expression and the environment relative to which it was evaluated.</p>
+</blockquote>
+<p>Landin gives the closure an <em>environment part</em> and a <em>control part</em>, and notes that the
+environment part “would be unnecessary if λ-expressions containing free variables were
+prohibited.” The word <em>closure</em> in this book, and E-Lam’s pair of a lambda and an environment, come
+from this paper.</p>
+<h2 id="scope-and-extent"><a class="header" href="#scope-and-extent">Scope and extent</a></h2>
+<p>The <strong>scope</strong> of a binding, as <a href="../binding/lexical-scope.html">Part III</a> defined it, is a region of
+program text: the part of the program where the name refers to that binding. The <strong>extent</strong> of a
+binding is a span of time: how long, while the program runs, the binding exists. Scope is settled
+by reading the program; extent is a fact about one run.</p>
+<p>On a stack, a binding’s extent is the activation of its block — from the moment the block is
+entered until it is left — and since a block’s text runs only while it is active, extent and scope
+never disagree. A closure separates them. The body of <code>|x: Int| x + k</code> lies inside <code>make_adder</code>, so
+<code>k</code> is in scope there; but it runs when <code>add5</code> is called, after <code>make_adder</code>’s activation has
+ended. For that body to find <code>k</code>, the binding’s extent has to reach as far as <code>add5</code> can be called,
+and a function value can be kept, passed along, and called at any later time. <em><a href="https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node43.html">Common Lisp the
+Language</a></em> calls this <em>indefinite
+extent</em>: “The entity continues to exist as long as the possibility of reference remains.” It calls
+the other kind, a binding that exists from when it is established until it is explicitly
+disestablished, <em>dynamic extent</em>.</p>
+<p>The rules of Part V already give bindings that extent, because no rule ever discards an
+environment. In the judgment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">e</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0019em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span>, an environment is a mathematical map, and <a href="functions.html">E-Lam</a> puts one inside a value.
+Follow <code>make_adder(5)</code> and then <code>add5(10)</code> through the rules:</p>
+<ul>
+<li><code>make_adder</code> evaluates by E-Var to its closure <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03148em;">λk</span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathit mtight">add</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span>, where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is the program environment and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathit mtight">add</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is the lambda
+<code>|x: Int| x + k</code>.</li>
+<li><a href="calls.html">E-App</a> evaluates the body <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathit mtight">add</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mclose">]</span></span></span></span>. The body is a
+lambda, and E-Lam turns it into the closure <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mclose">]⟩</span></span></span></span> without evaluating anything. That closure is the call’s value, and <code>let</code> binds <code>add5</code> to
+it.</li>
+<li><code>add5(10)</code> is E-App again. The operator’s closure carries <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mclose">]</span></span></span></span>, so the body
+<code>x + k</code> runs in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mclose">]</span><span class="mopen">[</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">10</span><span class="mclose">]</span></span></span></span>, where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span>, and the result is <code>15</code>.</li>
+</ul>
+<p>The binding <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7054em;vertical-align:-0.011em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span> was made by the first call and used by the second. Between them it lived
+in a value — the closure bound to <code>add5</code> — and the rules have no step at which a value’s contents
+go away. Nothing in the semantics corresponds to popping a stack. An interpreter that reclaims a
+scope when its block or call ends departs from the rules whenever a closure made inside that block
+or call is still reachable.</p>
+<p>A call is not needed to see this. A block’s value can be a lambda that mentions the block’s own
+bindings:</p>
+<pre><code class="language-text">let f = {
+    let k = 3;
+    |x: Int| x + k
+};
+f(4)                                // 7
+</code></pre>
+<p><code>k</code>’s scope is the block, and the block has ended by the time <code>f(4)</code> runs; <code>k</code>’s extent is as long
+as <code>f</code>’s.</p>
+<h2 id="state-in-a-captured-cell"><a class="header" href="#state-in-a-captured-cell">State in a captured cell</a></h2>
+<p><code>make_counter</code> adds <a href="../imperative/mutation.html">mutation</a>. Its first line, <code>ref n = 0;</code>, is <code>let n = ref 0;</code>: <a href="../imperative/mutation.html">E-Ref</a> picks a fresh location <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">ℓ</span></span></span></span>, puts <code>0</code> in it, and
+<code>let</code> binds <code>n</code> to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">ℓ</span></span></span></span>. The lambda on the next line captures an environment in which <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.522em;vertical-align:-0.011em;"></span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">ℓ</span></span></span></span>. Each call of that lambda looks <code>n</code> up, finds <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">ℓ</span></span></span></span>, reads the cell with
+<a href="../imperative/mutation.html">E-Deref</a>, and writes it with <a href="../imperative/mutation.html">E-Assign</a>.</p>
+<p>The binding <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.522em;vertical-align:-0.011em;"></span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">ℓ</span></span></span></span> never changes; the store’s entry for <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">ℓ</span></span></span></span> does. The closure keeps the
+location, and the location’s contents persist in the store between calls, so the count survives.
+Each call to <code>make_counter</code> runs <code>ref 0</code> again, and E-Ref’s side condition <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">ℓ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mord"><span class="mrel">∈</span></span><span class="mord vbox"><span class="thinbox"><span class="llap"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="inner"><span class="mord"><span class="mord">/</span><span class="mspace" style="margin-right:0.0556em;"></span></span></span><span class="fix"></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">dom</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mclose">)</span></span></span></span> makes every run allocate a location no other cell uses. <code>c1</code> and <code>c2</code> are two
+closures over two scopes, each binding <code>n</code> to a different location:</p>
+<figure style="margin:1em 0">
+<svg viewbox="0 0 672 212" role="img" style="max-width:672px;width:100%;height:auto;font-variant-ligatures:none" xmlns="http://www.w3.org/2000/svg" aria-label="Two closures, c1 and c2, each point to a scope of its own: c1&#39;s scope
+     binds n to location l0 and c2&#39;s binds n to location l1. Both scopes have the same
+     parent, the root scope. Dashed arrows lead from each location to its cell in the
+     store, where l0 holds 3 and l1 holds 1.">
+<defs>
+  <marker id="cl-ah" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="7" markerheight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+  </marker>
+  <marker id="cl-ahs" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="7" markerheight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#C2410C"></path>
+  </marker>
+</defs>
+<style>
+  .cl-b{font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .cl-l{font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .cl-box{fill:none;stroke:currentColor;stroke-width:1.5}
+</style>
+<text class="cl-l" x="114" y="20" fill="currentColor" text-anchor="middle" opacity="0.55">closures</text>
+<text class="cl-l" x="375" y="20" fill="currentColor" text-anchor="middle" opacity="0.55">environment</text>
+<text class="cl-l" x="610" y="20" fill="#C2410C" text-anchor="middle" opacity="0.8">store</text>
+<text class="cl-b" x="14" y="63" fill="currentColor">c1</text>
+<text class="cl-b" x="14" y="167" fill="currentColor">c2</text>
+<rect class="cl-box" x="44" y="36" width="140" height="44" rx="6"></rect>
+<rect class="cl-box" x="44" y="140" width="140" height="44" rx="6"></rect>
+<text class="cl-b" x="114" y="63" fill="currentColor" text-anchor="middle">⟨ || …, • ⟩</text>
+<text class="cl-b" x="114" y="167" fill="currentColor" text-anchor="middle">⟨ || …, • ⟩</text>
+<line x1="184" y1="58" x2="226" y2="58" stroke="currentColor" marker-end="url(#cl-ah)"></line>
+<line x1="184" y1="162" x2="226" y2="162" stroke="currentColor" marker-end="url(#cl-ah)"></line>
+<rect class="cl-box" x="230" y="36" width="120" height="44" rx="6"></rect>
+<rect class="cl-box" x="230" y="140" width="120" height="44" rx="6"></rect>
+<text class="cl-b" x="290" y="63" fill="currentColor" text-anchor="middle">n = ℓ₀</text>
+<text class="cl-b" x="290" y="167" fill="currentColor" text-anchor="middle">n = ℓ₁</text>
+<rect class="cl-box" x="400" y="88" width="120" height="44" rx="6"></rect>
+<text class="cl-b" x="460" y="115" fill="currentColor" text-anchor="middle">root</text>
+<line x1="350" y1="72" x2="397" y2="98" stroke="currentColor" marker-end="url(#cl-ah)"></line>
+<line x1="350" y1="148" x2="397" y2="122" stroke="currentColor" marker-end="url(#cl-ah)"></line>
+<rect x="560" y="36" width="100" height="44" rx="6" fill="none" stroke="#C2410C" stroke-width="1.5"></rect>
+<rect x="560" y="140" width="100" height="44" rx="6" fill="none" stroke="#C2410C" stroke-width="1.5"></rect>
+<text class="cl-b" x="610" y="63" fill="#C2410C" text-anchor="middle">ℓ₀ : 3</text>
+<text class="cl-b" x="610" y="167" fill="#C2410C" text-anchor="middle">ℓ₁ : 1</text>
+<line x1="350" y1="46" x2="556" y2="46" stroke="#C2410C" stroke-dasharray="4 3" marker-end="url(#cl-ahs)"></line>
+<line x1="350" y1="176" x2="556" y2="176" stroke="#C2410C" stroke-dasharray="4 3" marker-end="url(#cl-ahs)"></line>
+</svg>
+</figure>
+<p>The environment side of the figure is never written after it is built; every change happens in the
+store. Several closures can capture the same scope, and then they share its cells:</p>
+<pre><code class="language-text">fn make_account(start: Int) -&gt; (fn(Int) -&gt; (), fn() -&gt; Int) {
+    ref balance = start;
+    let deposit = |amt: Int| { balance := deref balance + amt; };
+    let current = || deref balance;
+    (deposit, current)
+}
+</code></pre>
+<p>Both lambdas are evaluated in environments that bind <code>balance</code> to one location, so a <code>deposit</code> is
+visible to the <code>current</code> returned beside it: after <code>deposit(25)</code> and <code>deposit(5)</code> on an account
+opened with <code>100</code>, <code>current()</code> is <code>130</code>. No other code can reach that cell. <code>balance</code> is out of
+scope everywhere except the two lambda bodies, and the location travels only inside the two
+closures; whatever reads or changes the balance goes through one of them. A cell whose only access
+is through a fixed set of functions is the arrangement the <a href="../objects/dispatch.html">objects</a><!-- xref:../objects/dispatch.md -->
+of Part IX give a name and a syntax.</p>
+<h3 id="what-the-capture-holds"><a class="header" href="#what-the-capture-holds">What the capture holds</a></h3>
+<p>A closure holds the bindings of its environment, and a binding may hold a location. Which of those
+the closure’s body reads at its call decides what it sees. These two loops each build a list of
+three functions that take no arguments:</p>
+<pre><code class="language-text">ref fs: [fn() -&gt; Int] = [];
+for i in range(0, 3) {
+    fs := (|| i) :: deref fs;
+}
+map(deref fs, |g: fn() -&gt; Int| g())         // [2, 1, 0]
+
+ref gs: [fn() -&gt; Int] = [];
+ref j = 0;
+while deref j &lt; 3 {
+    gs := (|| deref j) :: deref gs;
+    j := deref j + 1;
+}
+map(deref gs, |g: fn() -&gt; Int| g())         // [3, 3, 3]
+</code></pre>
+<p>The <code>for</code> loop’s rule, <a href="../appendix/language-reference.html#loops">E-For-Cons</a>, evaluates the body
+once per element in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ρ</span><span class="mopen">[</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">h</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">]</span></span></span></span>: a fresh binding of <code>i</code> for each element. Each <code>|| i</code>
+captures a different binding, holding <code>0</code>, <code>1</code>, or <code>2</code>, and calling it later returns that number.
+The list comes out in reverse because each new function is consed on the front.</p>
+<p>The <code>while</code> loop has one binding, <code>j</code> bound to one location, and all three <code>|| deref j</code> capture
+it. None of them reads the cell until it is called, and by then the loop has left <code>3</code> there. To
+keep the value the cell held on a given turn, the body has to read it on that turn and bind the
+result:</p>
+<pre><code class="language-text">    let v = deref j;
+    gs := (|| v) :: deref gs;
+</code></pre>
+<p>and the list becomes <code>[2, 1, 0]</code>. In both loops the closure captured exactly its environment. The
+difference is whether the name it reads is bound to a number or to a cell.</p>
+<h2 id="building-it"><a class="header" href="#building-it">Building it</a></h2>
+<p>There is no new arm. The <code>Lambda</code> arm from <a href="functions.html">first-class functions</a> stores the
+environment it was handed in a <code>Closure::Bridger</code>, and the <code>Call</code> arm from the
+<a href="calls.html">previous chapter</a> extends that environment with the parameters. Those two arms already
+run every program in this chapter. What remains is why the environment they share survives the
+call that built it.</p>
+<p>An <code>Env</code> is a handle to a scope chain, and cloning one clones an
+<a href="../appendix/rust-reference.html#shared-ownership-with-rc"><code>Rc</code></a>:</p>
+<pre><code class="language-rust ignore">pub struct Env(Rc&lt;Scope&gt;);   // cheap to clone: one more holder
+
+enum Scope {
+    Frame { name: Name, val: Value, parent: Env },
+    // … the root scope, built by provided setup
+}</code></pre>
+<p>Trace <code>make_adder(5)</code> through the arms. The <code>Call</code> arm calls <code>extend</code> to bind <code>k</code> to <code>5</code>, building a
+new scope <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> whose parent is the root, and holds it in a local variable while the body runs: one
+holder. The body is a lambda, so the <code>Lambda</code> arm builds a closure whose <code>env</code> is a clone of that
+handle: two holders. The body’s value goes back to the <code>Call</code> arm, which returns it and drops its
+local: one holder, the closure. <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> stays alive because the closure still points to it, and <code>let add5</code> keeps the closure. When <code>add5</code> is no longer reachable, the closure is dropped, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span>’s count
+reaches zero, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> is freed, which in turn drops one holder of the root. A scope lives as long as
+the last closure or evaluation that can reach it, which is the extent the rules require.</p>
+<p>Rust’s own closures meet the same problem, and the compiler reports it. The adder, written in Rust
+with a closure that borrows its free variable:</p>
+<pre><code class="language-rust ignore">fn make_adder(k: i32) -&gt; impl Fn(i32) -&gt; i32 {
+    |x| x + k
+}</code></pre>
+<p>is rejected:</p>
+<pre><code class="language-text">error[E0373]: closure may outlive the current function, but it borrows `k`,
+              which is owned by the current function
+ --&gt; r1.rs:2:5
+  |
+2 |     |x| x + k
+  |     ^^^     - `k` is borrowed here
+  |     |
+  |     may outlive borrowed value `k`
+  …
+help: to force the closure to take ownership of `k` (and any other referenced
+      variables), use the `move` keyword
+</code></pre>
+<p>A borrow of <code>k</code> is a pointer into <code>make_adder</code>’s activation, and the activation ends at the return.
+Writing <code>move |x| x + k</code> copies <code>k</code> into the closure, and the program compiles. An interpreter whose
+<code>Closure</code> held a borrowed <code>&amp;Env</code> would run into the same kind of error for the same reason, at the
+first lambda returned from a call. Holding an <code>Rc</code> gives the closure a share in the scope’s
+ownership, so the scope’s lifetime is set by the count of its holders.</p>
+<p>The scope chain needs no <code>RefCell</code> for this. Bindings are immutable, and cells live in the
+<a href="../imperative/mutation.html">store</a>, whose <code>Loc</code> handles are plain indices; a captured scope is
+read, never written, so a shared read-only <code>Rc</code> is enough. (The root is the exception, and provided
+setup handles it: every top-level <code>fn</code> is a closure that captures the root, and the root holds every
+top-level <code>fn</code>, which is how they can call one another. That circle of <code>Rc</code>s is never freed, and
+does not need to be, since the root is in use for the whole run.)</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<p>Every language with closures decides what a closure captures when a captured variable can change,
+and where captured environments are kept.</p>
+<h3 id="capturing-variables-and-capturing-values"><a class="header" href="#capturing-variables-and-capturing-values">Capturing variables and capturing values</a></h3>
+<p>In Scheme and JavaScript a closure captures the variable itself. An assignment made to the
+variable after the closure is created is seen by the closure, and an assignment made by the closure
+is seen outside it. Python closures capture the variable too, though an assignment inside a closure
+makes a new local unless the name is declared <code>nonlocal</code>. The bank account of <em><a href="https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-21.html#%_sec_3.2.3">Structure and
+Interpretation of Computer Programs</a></em>
+(§3.2.3) is <code>make-withdraw</code>, a procedure whose returned lambda assigns to its own parameter
+<code>balance</code> with <code>set!</code>; the parameter is the account’s state, with no separate cell.</p>
+<p>C++ asks the programmer to decide, one variable at a time. A lambda’s capture list takes a variable
+by copy (<code>[=]</code>, or the bare name) or by reference (<code>[&amp;]</code>, or <code>&amp;name</code>). A copy is made when the
+lambda is created and is unaffected by later assignments. A reference follows the variable, and
+<a href="https://en.cppreference.com/w/cpp/language/lambda">cppreference</a> states what happens when the
+variable is gone: calling the closure after the captured entity’s lifetime has ended is undefined
+behaviour, and “C++ closures do not extend the lifetimes of objects captured by reference.” Rust
+makes the same choice with borrowing and <code>move</code>, and the borrow checker rejects a borrowing closure
+that would outlive what it borrows, as E0373 showed.</p>
+<p>Java removes the question. The <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.27.2">Java Language
+Specification</a>
+(§15.27.2) requires that “any local variable, formal parameter, or exception parameter used but not
+declared in a lambda expression must either be final or effectively final” — never assigned after
+its initialization — and gives the reason: the restriction “prohibits access to dynamically-changing
+local variables, whose capture would likely introduce concurrency problems.” When the variable
+cannot change, a copy and the variable are indistinguishable, and the implementation copies.</p>
+<p>ML and Bridger arrive at Java’s position from the other side. No binding is ever assigned, so every
+capture behaves as a copy, and state that a closure shares with anything else lives in a <code>ref</code>
+cell, created by a visible <code>ref</code> and reached through <code>deref</code> and <code>:=</code>. Scheme’s <code>make-withdraw</code> and
+Bridger’s <code>make_account</code> keep their state the same way; in Bridger the shared state is marked where
+it is made.</p>
+<h3 id="loops"><a class="header" href="#loops">Loops</a></h3>
+<p>Closures made inside a loop show the difference between one variable per loop and one per turn.
+The Python FAQ has an entry, “<a href="https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result">Why do lambdas defined in a loop with different values all return
+the same result?</a>”:
+a loop variable is a single variable, “accessed when the lambda is called — not when it is
+defined,” so every lambda sees its last value. The fix it gives is <code>lambda n=x: n**2</code>, a default
+argument evaluated when the lambda is made — the <code>let v = deref j</code> of the <code>while</code> example above.</p>
+<p>Several languages have changed their loops so that each turn gets a fresh variable. ECMAScript 2015
+gave a <code>for</code> loop whose variable is declared with <code>let</code> a new binding for each iteration, copied
+from the previous one (the abstract operation CreatePerIterationEnvironment, §13.7.4.9 of the <a href="https://262.ecma-international.org/6.0/#sec-createperiterationenvironment">6th
+edition</a>); a loop
+variable declared with the older <code>var</code> is still one variable for the whole loop. C# 5 made the
+variable of a <code>foreach</code> loop fresh on each iteration and left the <code>for</code> loop alone; Eric Lippert’s
+“<a href="https://learn.microsoft.com/en-us/archive/blogs/ericlippert/closing-over-the-loop-variable-considered-harmful">Closing over the loop variable considered
+harmful</a>”
+(2009) set out the case, and an update at its head records the decision. Go 1.22, released in
+February 2024, did the same for the variables declared by every <code>for</code> loop. Its <a href="https://go.dev/doc/go1.22">release
+notes</a> say: “Previously, the variables declared by a ‘for’ loop were
+created once and updated by each iteration. In Go 1.22, each iteration of the loop creates new
+variables, to avoid accidental sharing bugs.”</p>
+<p>The C# and Go changes altered the meaning of existing programs, made after the one-variable loop had
+been in use for years. ECMAScript’s did not: <code>let</code> was new in the same edition, and a <code>var</code> loop
+kept its meaning. Bridger’s <code>for</code> rule binds the loop variable afresh for each element from the
+start, and since no binding can be assigned, a closure that captures a loop variable sees one value.
+The shared behaviour can still be written, with a <code>while</code> loop over a cell, and then the cell is in
+the program text.</p>
+<h3 id="where-environments-live"><a class="header" href="#where-environments-live">Where environments live</a></h3>
+<p>A language can keep environments on a stack only if no closure outlives the activation it captured.
+Algol 60 and Pascal guarantee that by letting a procedure be passed down and nowhere else. GNU C
+allows a function to be defined inside another as an extension, and a pointer to the inner function
+can be stored or returned like any function pointer; the inner function’s free variables are the
+outer function’s locals, which live on the stack. The <a href="https://gcc.gnu.org/onlinedocs/gcc/Nested-Functions.html">GCC
+manual</a> says the technique “works only
+so long as the containing function … does not exit”, and: “If you try to call the nested function
+through its address after the containing function exits, all hell breaks loose.” The language
+leaves the extent of the environment to the stack and the burden of respecting it to the
+programmer.</p>
+<p>Languages with unrestricted closures keep captured environments in the heap and reclaim them when
+nothing refers to them. Bridger’s interpreter counts references with <code>Rc</code>. A tracing garbage
+collector — Scheme’s, ML’s, JavaScript’s, Java’s — instead periodically finds everything reachable
+from the running program and frees the rest. Reference counting frees a scope the moment its last
+holder goes, and cannot free a cycle, like the root’s; tracing collects cycles, and does its work
+in periodic passes over everything still in use.</p>
+<p>A closure also need not hold its whole environment. Bridger’s closure holds a pointer to the scope
+chain, which keeps every binding along the chain alive, including ones the body never mentions. An
+implementation can instead build a <em>flat</em> closure, copying into it the values of just the free
+variables of the body, so the body reads them without a walk and nothing else is kept alive. The
+copy is correct only if the captured variables cannot change afterwards — the condition Java
+imposes, and the one Bridger’s immutable bindings meet everywhere. When a language lets captured
+variables be assigned, its compiler first moves each such variable into a heap cell and copies the
+cell’s location, which is the arrangement a Bridger program writes out by hand with <code>ref</code>.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>The closure and the machine</strong>: Landin’s “<a href="https://doi.org/10.1093/comjnl/6.4.308">The mechanical evaluation of
+expressions</a>” (1964) defines closures and the four-part
+machine that evaluates with them, together with the treatment of expressions in λ-notation that
+the machine runs.</p>
+<p><strong>Scope and extent</strong>: chapter 3 of Guy Steele’s <em><a href="https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node43.html">Common Lisp the Language, 2nd
+edition</a></em> (1990) defines lexical and
+indefinite scope, dynamic and indefinite extent, and shows which Common Lisp constructs have which,
+including a <code>compose</code> whose parameter bindings outlive its call.</p>
+<p><strong>Local state in closures</strong>: §3.2 of Abelson and Sussman’s <em><a href="https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-21.html">Structure and Interpretation of
+Computer Programs</a></em>
+draws environments as linked frames and follows <code>make-withdraw</code> through them, showing where each
+account’s balance lives.</p>
+<p><strong>Loops and captured variables</strong>: Eric Lippert’s two posts, “<a href="https://learn.microsoft.com/en-us/archive/blogs/ericlippert/closing-over-the-loop-variable-considered-harmful">Closing over the loop variable
+considered
+harmful</a>”
+and its <a href="https://learn.microsoft.com/en-us/archive/blogs/ericlippert/closing-over-the-loop-variable-part-two">part two</a>
+(2009), lay out the arguments for and against changing the meaning of C#’s <code>foreach</code>, from a member
+of the team that made the change.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>After <code>let add5 = make_adder(5);</code>, the call <code>make_adder(5)</code> has returned. Where is the binding <code>k ↦ 5</code>, and what keeps it alive?</summary>
+<p>It is in the scope the <code>Call</code> arm built for <code>make_adder</code>’s body, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mclose">]</span></span></span></span>. The body
+was a lambda, so E-Lam put that environment into the closure it returned, and <code>add5</code> holds the
+closure. In the interpreter the closure’s <code>env</code> is an <code>Rc</code> handle to the scope; the call’s own
+handle was dropped when the call returned, and the closure’s handle is the one that remains. The
+scope is freed only when <code>add5</code>, and any other copy of the closure, is gone.</p>
+</details>
+<details>
+<summary>An implementation reclaims each block's scope when the block ends. For which programs is that correct, and what would go wrong in <code>let f = { let k = 3; |x: Int| x + k }; f(4)</code>?</summary>
+<p>It is correct for every block from which no closure escapes: if nothing built inside the block
+outlives it, no later evaluation can reach the block’s bindings, and reclaiming them early changes
+nothing a program can observe. In the example the block’s value is a closure over <code>k</code>, and <code>f(4)</code>
+runs after the block has ended, so the body <code>x + k</code> would look up <code>k</code> in a scope that no longer
+exists. The rules give <code>k</code> as long an extent as <code>f</code>, and the implementation has to as well.</p>
+</details>
+<details>
+<summary><code>c1</code> and <code>c2</code> come from two calls of <code>make_counter</code>. Which rule guarantees that they do not share a count?</summary>
+<p>E-Ref. Each call of <code>make_counter</code> evaluates <code>ref 0</code>, and E-Ref requires the new location to be
+outside the domain of the store, so the two calls allocate two different cells. Each lambda then
+captures an environment binding <code>n</code> to its own call’s location. Nothing in E-Lam or E-App keeps the
+counts apart; the two closures would share a count if they captured one location, as the two
+closures from one call of <code>make_account</code> do.</p>
+</details>
+<details>
+<summary>In the <code>while</code> loop, each <code>|| deref j</code> returns <code>3</code>. Would making the loop variable a fresh binding on each turn, as <code>for</code> does, fix it?</summary>
+<p>Not by itself. The closures return <code>3</code> because each reads the cell when it is called, and there is
+one cell. A fresh binding per turn that still bound <code>j</code> to the same location would leave all three
+reading that location. What changes the result is capturing a binding whose value is the number:
+<code>let v = deref j;</code> reads the cell on that turn, and <code>|| v</code> captures <code>v</code>. <code>for</code> gives the right
+answer because it binds <code>i</code> to each element itself, with no cell involved.</p>
+</details>
+<details>
+<summary>Java requires a local variable captured by a lambda to be final or effectively final. Bridger has no assignment to <code>let</code>-bound names at all. What does each rule make possible, and what does a program that wants a shared, changing count have to do in each language?</summary>
+<p>Both rules make “does the closure see the variable or a copy of its value?” unanswerable by any
+program, because the variable never changes after the closure is made; an implementation is then
+free to copy the value into the closure. A program that wants state shared between a closure and
+its surroundings has to put the state somewhere mutable that both can reach: in Java, a field of an
+object or a one-element array; in Bridger, a <code>ref</code> cell. The shared state then shows up in the
+program text as a cell, visible at the point where it is made.</p>
+</details>
 
                     </main>
 

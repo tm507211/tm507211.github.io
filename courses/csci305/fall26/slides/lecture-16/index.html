@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Closures - Slidev</title>
+<link rel="icon" href="https://cdn.jsdelivr.net/gh/slidevjs/slidev/assets/favicon.png">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta property="slidev:version" content="52.19.1">
+<meta name="description" content="&quot;Lecture 16 (Closures). Ch. 21 / functions/closures.md, on the road to M4.\nThe problem: make_adder and make_counter — a binding that outlives the call that made it.\nHistory: activation records on a stack (Algol 60: procedures passed down only); an upward\nclosure breaks the stack; Landin 1964 names the closure (SECD; quote verified in the\nchapter&#039;s note). Theory: SCOPE is a region of text, EXTENT a span of time; the rules never\ndiscard an environment, traced through E-Lam / E-App. Then state in a captured cell\n(counter, account), what a capture holds (for vs. while thunks), and why the provided\nRc&lt;Scope&gt; chain keeps a scope alive (holder counting; rustc E0373). Design space: capturing\nvariables vs. values (Scheme, Python, C++, Rust, Java, ML/Bridger); loop variables (Python\nFAQ, ES2015, C# 5, Go 1.22); where environments live. No new rule, no new arm.\nTarget 35 min, split across two days — see the cover slide&#039;s note.\n&quot;">
+<meta property="og:title" content="Closures - Slidev">
+<meta property="og:description" content="&quot;Lecture 16 (Closures). Ch. 21 / functions/closures.md, on the road to M4.\nThe problem: make_adder and make_counter — a binding that outlives the call that made it.\nHistory: activation records on a stack (Algol 60: procedures passed down only); an upward\nclosure breaks the stack; Landin 1964 names the closure (SECD; quote verified in the\nchapter&#039;s note). Theory: SCOPE is a region of text, EXTENT a span of time; the rules never\ndiscard an environment, traced through E-Lam / E-App. Then state in a captured cell\n(counter, account), what a capture holds (for vs. while thunks), and why the provided\nRc&lt;Scope&gt; chain keeps a scope alive (holder counting; rustc E0373). Design space: capturing\nvariables vs. values (Scheme, Python, C++, Rust, Java, ML/Bridger); loop variables (Python\nFAQ, ES2015, C# 5, Go 1.22); where environments live. No new rule, no new arm.\nTarget 35 min, split across two days — see the cover slide&#039;s note.\n&quot;">  <script type="module" crossorigin src="./assets/index-BHe84EHp.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-hePW80VL.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/shiki-BDOa5D_m.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-QKqV1Vbb.js">
+  <link rel="modulepreload" crossorigin href="./assets/slidev/env-uSO_weva.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/vue-CTLAYFu5.js">
+  <link rel="stylesheet" crossorigin href="./assets/modules/shiki-BrmBd2_v.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-BacVZhAe.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="mermaid-rendering-container"></div>
+  
+</body>
+</html>
