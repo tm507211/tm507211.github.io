@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-3047e2a2.js";
+            window.path_to_searchindex_js = "../searchindex-f1a3eb2b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -244,10 +244,10 @@ when it falls inside the reach of a binder that binds its name.</p>
 <p>The <strong>scope</strong> of a binding is the region of program text over which its name refers to it. For a
 <code>let</code> binding, the rule <a href="environments.html#the-let-operator">E-Let</a> already fixed that region: a <code>let</code>
 extends its scope over the rest of its block, so the binding’s scope runs from just after the <code>let</code>
-binding to the closing brace of the block that holds it. This notion of lexical scope was introduced
-by Algol 60 in what it named <a href="../foundations/history.html">block structure</a> — a name declared inside a
-region means something there and nowhere else — and it is what gives a block-structured program its
-nesting of scopes, each one the text between a binder and the brace that closes over it.</p>
+binding to the closing brace of the block that holds it. This is the arrangement of Algol 60’s
+<a href="../foundations/history.html">block structure</a> — a name declared inside a region means something there
+and nowhere else — and it is what gives a block-structured program its nesting of scopes, each one
+the text between a binder and the brace that closes over it.</p>
 <p>Scopes nest because blocks nest. An occurrence lies within the scope of a binding when it falls
 inside that binding’s region — the text from the <code>let</code> to the closing brace of its block, nested
 sub-blocks included. An occurrence can lie within the scopes of several bindings of the same name,
@@ -304,13 +304,12 @@ chain of children whose nesting matches the blocks that enclose that point in th
 name up — reading the current environment, then its parent, and outward — visits the same bindings,
 in the same order, as reading outward from the occurrence through the blocks that enclose it. The
 run-time lookup and the reading off the page cannot disagree, because they walk the same nesting.
-How that chain is represented, and what walking it costs as scopes deepen, is the topic of the next
-chapter<!-- xref:representations.md -->.</p>
-<p>Settling a name’s binding before the program runs is what later work builds on. Resolving every
-occurrence to a fixed position in the enclosing scopes — so a name need not be searched for by
-spelling at all — is the subject of the next chapter<!-- xref:representations.md -->. And because a
-name’s binding is fixed by its definition, the type of what it holds can be too, which is what lets
-the checker in Part VI decide a program’s types without running it<!-- xref:../types/type-checker.md -->.</p>
+How that chain is represented, and what walking it costs as scopes deepen, is the topic of the <a href="representations.html">next
+chapter</a>.</p>
+<p>Settling a name’s binding before the program runs is what later work builds on. The same chapter
+resolves every occurrence to a fixed position in the enclosing scopes, so that a name need not be
+searched for by spelling at all. And because a name’s binding is fixed by its definition, the type
+of what it holds can be too, which is what lets the checker in Part VI decide a program’s types without running it<!-- xref:../types/type-checker.md -->.</p>
 <h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
 <p>A name that is free in a fragment must ultimately resolve somewhere, and there are two disciplines
 for where. Under lexical scope (the scoping rules that Bridger uses), a free occurrence resolves
@@ -326,13 +325,13 @@ via a function call from a separate part of the program). A function body mentio
 itself bind, and the two disciplines answer differently once its body runs under a call rather than
 where it was defined. That is where the choice becomes observable, and where Bridger’s commitment to
 lexical scope is made executable and weighed against the alternative (dynamic scoping); it is the
-subject of Part V<!-- xref:../functions/scope.md -->.</p>
+subject of <a href="../functions/scope.html">Part V</a>.</p>
 <h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
 <p><strong>Block structure</strong>: the <em><a href="https://doi.org/10.1145/367236.367262">Report on the Algorithmic Language ALGOL
 60</a></em> (1960) is where a name declared inside a region of a
 program is given a region of validity determined by the program’s own nesting — the arrangement this
 chapter reads scopes off of.</p>
-<p><strong>The environment model of scope</strong>: Abelson and Sussman’s <em><a href="https://mitpress.mit.edu/sites/default/files/sicp/full-text/book/book.html">Structure and Interpretation of Computer
+<p><strong>The environment model of scope</strong>: Abelson and Sussman’s <em><a href="https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book.html">Structure and Interpretation of Computer
 Programs</a></em> (MIT Press,
 free online) develops evaluation as the extension of environments, and works through how a name is
 looked up by searching outward through the enclosing scopes.</p>
@@ -342,9 +341,9 @@ looked up by searching outward through the enclosing scopes.</p>
 <p>The free variables are <code>b</code> and <code>c</code>. The occurrence of <code>b</code> on the right-hand side of the <code>let</code> is
 free: the <code>let a</code> has not taken effect yet where <code>b</code> is read (its scope begins <em>after</em> it), so
 nothing in the fragment binds <code>b</code>. The occurrence of <code>c</code> is free because no <code>let c</code> encloses it. The
-two occurrences of <code>a</code> — none is written on the right; the <code>a</code> in <code>a + c</code> — are bound, by the
-<code>let a = b</code>, whose scope is the rest of the block. Read as a whole program, <code>b</code> and <code>c</code> are still
-free, so evaluating the block raises <code>UnboundVariable</code> on <code>b</code>.</p>
+one use of <code>a</code>, in <code>a + c</code>, is bound by the <code>let a = b</code>, whose scope is the rest of the block. Read
+as a whole program, <code>b</code> and <code>c</code> are still free, so evaluating the block raises <code>UnboundVariable</code> on
+<code>b</code>.</p>
 </details>
 <details>
 <summary>In <code>{ let x = 1; { let x = 2; x }; x }</code>, which binding does each of the two <code>x</code> occurrences refer to, and how did you decide without running it?</summary>
@@ -353,19 +352,18 @@ free, so evaluating the block raises <code>UnboundVariable</code> on <code>b</co
 <code>let</code>s’ scopes and resolves to the smaller, inner one — the inner <code>let x = 2</code> carves a hole in the
 outer binding’s scope over the inner block. The final <code>x</code> sits outside the inner block, where the
 outer binding is again in force. The decision needs only the braces: the binding each occurrence
-refers to is fixed by the
-text, so it is read off the nesting rather than computed by evaluating the program.</p>
+refers to is fixed by the text, so it is read off the nesting rather than computed by evaluating the
+program.</p>
 </details>
 <details>
 <summary>Lexical scope is also called <em>static</em> scope. What does "static" claim, and what does the claim make possible?</summary>
 <p>“Static” claims that the binding each occurrence refers to is settled before, and independently of,
 running the program — it is a function of the program text alone, settled without reference to any
 value, input, or how far execution has progressed. Because the binding is fixed ahead of time, work
-that would otherwise wait
-for the run can be done by reading: the next chapter resolves every name to a fixed position in its
-enclosing scopes, so no name need be searched for by spelling at run time, and the type checker of
-Part VI can fix the type of what a name holds at the name’s definition and certify a program’s types
-without executing it.</p>
+that would otherwise wait for the run can be done by reading: the next chapter resolves every name
+to a fixed position in its enclosing scopes, so no name need be searched for by spelling at run
+time, and the type checker of Part VI can fix the type of what a name holds at the name’s definition
+and certify a program’s types without executing it.</p>
 </details>
 <details>
 <summary>No evaluator code is added in this chapter, yet Bridger is committed to lexical scope. Which rule carries the commitment, and how?</summary>
@@ -373,10 +371,9 @@ without executing it.</p>
 region between the <code>let</code> and the closing brace — so the environment a variable is read in at run
 time is the one the enclosing text placed it in. Because each block is entered from the environment
 of the text around it, the environments built during a run nest the same way the blocks do, and
-<code>E-Var</code> reading
-the current environment and its parents visits the same bindings as reading outward through the
-enclosing blocks. The lexical reading and the run-time lookup agree because the rule already makes a
-binding’s reach follow the text.</p>
+<code>E-Var</code> reading the current environment and its parents visits the same bindings as reading outward
+through the enclosing blocks. The lexical reading and the run-time lookup agree because the rule
+already makes a binding’s reach follow the text.</p>
 </details>
 <details>
 <summary>In a language with blocks but no functions, no program can tell lexical scope from dynamic scope. Why, and what feature changes that?</summary>
@@ -384,12 +381,10 @@ binding’s reach follow the text.</p>
 scope in the environment where it is written. With blocks as the only way to enter a new
 environment, the code that runs in an environment is exactly the code written inside it, so “where
 it runs” and “where it is written” are the same place and the two disciplines choose the same
-binding
-every time. The feature that separates them is the function: a function body can be carried away
-from where it was written and run under a call somewhere else, so its free names have one
+binding every time. The feature that separates them is the function: a function body can be carried
+away from where it was written and run under a call somewhere else, so its free names have one
 environment at the definition and possibly another at the call. Once bodies run away from home the
-two disciplines diverge, which
-is why the question is taken up in Part V rather than here.</p>
+two disciplines diverge, which is why the question is taken up in Part V rather than here.</p>
 </details>
 
                     </main>

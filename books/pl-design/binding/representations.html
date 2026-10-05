@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-3047e2a2.js";
+            window.path_to_searchindex_js = "../searchindex-f1a3eb2b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -346,7 +346,7 @@ would be enough while a scope lives no longer than the block that built it and i
 block ends. It stops being enough once a value can carry a scope away from its block: a function
 value keeps the scope it was defined in so it can read its free names when it later runs, and that
 scope has to stay alive after the block that created it has returned (the subject of
-Part V<!-- xref:../functions/closures.md -->). Shared ownership lets the carried-away scope and the
+<a href="../functions/closures.html">Part V</a>). Shared ownership lets the carried-away scope and the
 chain both hold it, and it lives as long as either does. The reason the chain is refcounted rather
 than owned lands with closures; the representation is chosen here so that it can.</p>
 <p>Each scope holds a single binding because Bridger adds one scope per <code>let</code>, so the chain grows by a
@@ -443,7 +443,7 @@ language deciding bindings while running could not resolve them before it.</p>
 <p><strong>Owned or shared.</strong> A singly owned chain is enough while a scope dies with its block. Sharing —
 Bridger’s <code>Rc</code> — is forced once a value outlives its defining block and has to carry that block’s
 scope with it, which is what a closure does. Bridger shares from the start, so the chain a block
-builds can be captured without copying it (Part V<!-- xref:../functions/closures.md -->).</p>
+builds can be captured without copying it (<a href="../functions/closures.html">Part V</a>).</p>
 <p>The one scope not built by an <code>extend</code> is the root, which holds the prelude and the top-level
 functions. Because those functions may call one another regardless of the order they are written in,
 the root is assembled by the interpreter’s provided setup before any of them runs, rather than grown
@@ -454,7 +454,7 @@ dummies</a></em> (Indagationes Mathematicae, 1972) represents
 each variable by the distance to its binder, so that terms differing only in their choice of names
 coincide and renaming is unnecessary — the representation an interpreter borrows when it resolves
 references to positions.</p>
-<p><strong>Lexical addressing</strong>: Abelson and Sussman’s <em><a href="https://mitpress.mit.edu/sites/default/files/sicp/full-text/book/book.html">Structure and Interpretation of Computer
+<p><strong>Lexical addressing</strong>: Abelson and Sussman’s <em><a href="https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book.html">Structure and Interpretation of Computer
 Programs</a></em> (MIT Press,
 free online) works through resolving a variable reference to a coordinate — which enclosing scope,
 and which binding within it — in its treatment of compilation, so that a name is found by position

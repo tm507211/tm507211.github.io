@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-3047e2a2.js";
+            window.path_to_searchindex_js = "../searchindex-f1a3eb2b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -331,7 +331,7 @@ fn main() {
 is the lexical scope that <a href="../binding/lexical-scope.html">Part III</a> committed Bridger to, now at work
 on code that runs away from where it was written. What the other choice — looking free names up in
 the caller’s environment — would do to programs like this one is the subject of
-<a href="scope.html">static and dynamic scope</a><!-- xref:scope.md -->.</p>
+<a href="scope.html">static and dynamic scope</a>.</p>
 <p>The bindings the body extends are new. A call does not change the closure’s environment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9463em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>;
 it builds a child of it for the length of the body, the same way a
 <a href="../binding/environments.html">block</a> builds a child scope. Two calls of the same function, or a

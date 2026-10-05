@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-3047e2a2.js";
+            window.path_to_searchindex_js = "../searchindex-f1a3eb2b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -180,78 +180,439 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="static-vs-dynamic-scope"><a class="header" href="#static-vs-dynamic-scope">Static vs. Dynamic Scope</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
      Milestone M4 · lecture: Static vs. Dynamic Scope · spec §14.
-     DECISION (2026-07-31): no toggle. Bridger's final semantics is static
-     scope, full stop — no runtime flag, no dual discipline in the finished
-     interpreter. DECISION (2026-09-28): no implement-dynamic-then-repair stage
-     either; functions.md/calls.md present static scope as Bridger's semantics
-     from the start. The contrast is shown here, and at most as an optional
-     EXPERIMENT on a finished evaluator (run a call's body in the caller's env,
-     watch the examples diverge, change it back). Static scope is permanent
-     because a dynamically scoped variable's type depends on its call site,
-     which the M5 checker cannot handle. See plan §4, spec §14.
-     Status: placeholder — spine authored just-in-time.
+     DECISIONS: no toggle — Bridger is statically scoped, no flag, no dual discipline
+     (2026-07-31). No implement-dynamic-then-repair stage (2026-09-28): functions.md and
+     calls.md present static scope from the start; the contrast is shown here, plus an
+     optional EXPERIMENT on a finished evaluator. No new rule, no new arm.
+     SEAM: lexical-scope.md defined dynamic scope (resolve where the code RUNS) and showed the
+     two agree without functions; this chapter points back and does not redefine. calls.md
+     ran `scaled` (40) and deferred "what the other choice would do" here. closures.md
+     introduced extent and Landin's closure; this chapter reuses "dynamic extent".
+     representations.md's flat map with per-name save/restore is the shallow-binding
+     implementation; its "open only because scope is lexical" is picked up in the build.
+     functional.md owns recursion.
+     THROUGHLINE: the two disciplines differ in one premise of E-App (rho' vs rho). Under
+     dynamic scope a free name means whatever binding is active when it is read, so a
+     function's meaning depends on its callers and on the names its callers chose.
+     TYPE ARGUMENT, scoped: incompatible with THE CHECKER PART VI BUILDS (one check per body,
+     against the definition's names). Not "incompatible with static types" — GHC's implicit
+     parameters type dynamic binding by listing the names in the function's type.
+     EXAMPLES run through the reference interpreter (--features m4 and m8) and through a
+     scratch copy whose Call arm extends the CALLER's env instead of the captured one:
+     scaled(4) 40 / 8; twice(add_x, 10) 12 / 30; with twice's parameter renamed n, 12 / 12;
+     make_adder(5)(10) 15 / UnboundVariable k; scaled from a() (scale = 2) and b() (scale =
+     true): static UnboundVariable `scale` (m8 checker rejects before the run), dynamic
+     prints 8 then stuck "expected Int, found Bool".
+     VERIFIED WORDINGS (all checked 2026-10-04; PI = page image, TL = text layer):
+       McCarthy, History of Lisp, jmc.stanford.edu PDF = author's 12 Feb 1979 DRAFT (as
+         functions.md), p. 11, §4 item "d. Free variables.", TL+PI. Both famous sentences
+         match. Fix credited to Russell; Slagle wrote the program; Patrick Fischer "had a
+         hand" (per David Park) — not mentioned. HOPL typeset text NOT compared.
+       LISP 1.5 Manual, CHM softwarepreservation scan ("Posted here by permission of The MIT
+         Press"), 2nd ed. 15th printing: p. 21 §3.1 QUOTE/FUNCTION sentence (PI); App. D p. 78
+         "Other functions cannot find this private cell", "SPECIAL variables cannot be
+         communicated between the interpreter and compiled functions." (PI). No year in prose
+         (edition years not checked). The a-list description of eval is from App. B / Moses's
+         "classical alist implementation", not quoted.
+       Moses, AIM-199, June 1970 (cover), hdl 1721.1/5854; scan, OCR checked vs PI: p. 4
+         shallow/deep "access" (his term, not "binding"); p. 6 "two different environments"
+         sentence, binding/activation environment, passed "downward" = easy case; p. 11 fn. 3
+         "One should also handle returns of functions". He never says "upward funarg".
+       Sussman & Steele, AIM-349, 22 Dec 1975, hdl 1721.1/5794, PI: p. 1 "full-funarg LISP";
+         p. 23 "axioms of lambda calculus … referential transparency is enforced."
+       Steele & Sussman, AIM-453, May 1978, hdl 1721.1/6094, PI p. 20 (printed): referential
+         transparency sentence. Part One = scoping disciplines; Part Two treats dynamic
+         scoping as a state-decomposition discipline (TOC, OCR).
+       Gabriel & Steele, Evolution of Lisp: the "one of the first languages … lexical scoping"
+         sentence is in the UNCUT author copy (dreamsongs HOPL2-Uncut.pdf, p. 23, TL) and NOT
+         in the published HOPL II text — cite the uncut copy only.
+       CLtL2 ch. 3 node43: "convenient to define dynamic scope…", "misnomer". The page uses
+         TeX-style doubled backquote/apostrophe quotes; rendered as plain double quotes. Never paste
+         a doubled backquote anywhere in this file, note included: mdbook-katex reads it as
+         a code span and stops rendering every formula after it.
+       Emacs: Variable-Scoping and Dynamic-Binding-Tips pages (manual edition not confirmed,
+         ≥ 30); NEWS.24 (24.1, 2012-06-10), NEWS.30 (30.1, 2025-02-23, compiler warns),
+         emacs-31 etc/NEWS (31.1, 2026-08-24 per HISTORY: load warns; default unchanged).
+       HyperSpec m_defpar "establish name as a dynamic variable"; SRFI 39 (Feeley, final
+         2003-06-30); R7RS §4.2.6 heading "Dynamic bindings"; Racket Guide §4.13; Clojure
+         vars "^:dynamic" (Clojure version of the change NOT verified — not mentioned).
+       perlsub 5.44 "Temporary Values via local()"; Bash manual §3.3 (version unconfirmed).
+       JLS SE 21 §11.3: "nearest dynamically enclosing catch clause" (NOT "try statement").
+       GHC User's Guide 9.14.1 §6.11.6: "this function uses a dynamically-bound variable ?x
+         of type t'". Lewis, Shields, Meijer, Launchbury, POPL 2000, doi
+         10.1145/325694.325708 (Crossref); paper content not read.
+     NOT SAID ON PURPOSE: "Scheme was the first lexically scoped Lisp" (LISP 1.5 FUNARG
+     already closed over; hedge via Gabriel & Steele). PowerShell resolves through callers
+     but its docs never say "dynamic" — omitted.
+     Status: draft authored 2026-10-04, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-The closure you just built captures the environment where the function was *defined*. That was a
-choice, and for about a decade the other choice was the mainstream one.
+<p><a href="calls.html">Evaluating function calls</a> ran this program and printed <code>40</code>:</p>
+<pre><code class="language-text">let scale = 10;
 
-This chapter will cover:
+fn scaled(x: Int) -&gt; Int = x * scale;
 
-- The question itself: when a function body mentions a variable it did not define, does that name
-  resolve in the environment where the function was **defined** (static, or lexical) or where it was
-  **called** (dynamic)?
-- Why the question is invisible without functions — a program with no closures behaves identically
-  under both rules, which is exactly why the earlier parts of this book never had to take a
-  position.
-- **Bridger's answer: static scope**, and the capture in the previous chapter *is* that answer made
-  executable. There is no flag and no second mode: the language resolves free variables one way.
+fn main() {
+    let scale = 2;
+    println(scaled(4));               // 40
+}
+</code></pre>
+<p><code>scale</code> is <a href="../binding/lexical-scope.html#free-and-bound-occurrences">free</a> in the body of <code>scaled</code>:
+nothing inside the function binds it. Two bindings of <code>scale</code> exist when the call happens. One is at
+the top of the program, where <code>scaled</code> was written, and holds <code>10</code>. The other is in <code>main</code>, where
+<code>scaled</code> is called, and holds <code>2</code>. Bridger’s rule for application runs the body in the environment
+the closure captured, so <code>scale</code> is <code>10</code>. A language that ran the body in the caller’s environment
+instead would print <code>8</code>.</p>
+<p>A second program makes the difference sharper. <code>twice</code> applies a function to an argument two times,
+and <code>add_x</code> is a lambda whose body reads a name <code>x</code> from the block around it:</p>
+<pre><code class="language-text">fn twice(f: fn(Int) -&gt; Int, x: Int) -&gt; Int = f(f(x));
 
-## Why the design space closed
+fn main() {
+    let x = 1;
+    let add_x = |y: Int| y + x;
+    println(twice(add_x, 10));        // 12
+}
+</code></pre>
+<p>Bridger prints <code>12</code>: <code>add_x</code> adds <code>1</code> each time it is called. Run <code>add_x</code>’s body in its caller’s
+environment and its caller is <code>twice</code>, whose parameter happens to be named <code>x</code> too. There <code>x</code> is
+<code>10</code>, <code>add_x(10)</code> is <code>20</code>, <code>add_x(20)</code> is <code>30</code>, and the program prints <code>30</code>. Rename <code>twice</code>’s
+parameter to <code>n</code> and the same rule prints <code>12</code> again.</p>
+<p>The two programs raise these questions:</p>
+<ul>
+<li><strong>Where does a free name in a function body get its value?</strong> From the environment where the
+function was written, or from the one where it is called?</li>
+<li><strong>Is the answer a fact about the program text?</strong> If the caller’s environment decides, can anyone
+reading <code>add_x</code> say what it computes?</li>
+<li><strong>What does each answer cost?</strong> What does it make easy, what does it break, and what does it do to
+a language that checks types before running?</li>
+</ul>
+<p>The first implementation of Lisp gave the second answer to the first question, and its authors
+found out what that answer cost from a bug report.</p>
+<h2 id="lisps-free-variables"><a class="header" href="#lisps-free-variables">Lisp’s free variables</a></h2>
+<p>McCarthy’s <code>eval</code> kept the environment as an <em>association list</em>, the a-list: a list of name/value
+pairs, handed to each evaluation and searched from the front when a variable was read. Applying a
+function paired its parameters with its arguments and put the pairs on the front of the a-list in
+hand, then evaluated the body with the longer list. A function passed as an argument was its
+λ-expression, a piece of list structure like any other, and when it was applied the a-list in hand
+was the one at the point of the call. Its free variables were looked up there.</p>
+<p>In his “<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">History of Lisp</a>” (1979), McCarthy recalls
+the program that exposed this. James Slagle wrote a recursive search function that took, as one of
+its arguments, a function to call if the search failed, and in the recursive case passed a new
+λ-expression that mentioned the current call’s <code>x</code>. When that λ-expression ran, it was inside a
+deeper recursive call, and its <code>x</code> found the deeper call’s binding:</p>
+<blockquote>
+<p>The difficulty was that when an inner recursion occurred, the value of car[x] wanted was the outer
+value, but the inner value was actually used. In modern terminology, lexical scoping was wanted,
+and dynamic scoping was obtained.</p>
+<p>I must confess that I regarded this difficulty as just a bug and expressed confidence that Steve
+Russell would soon fix it. He did fix it but by inventing the so-called FUNARG device that took
+the lexical environment along with the functional argument.</p>
+</blockquote>
+<p>It is the <code>twice</code> program’s failure: a function finds a binding of the right name made by the wrong
+call. Russell’s repair was to make a functional argument carry its environment, a pair of the
+λ-expression and the a-list in force where it was written, which is a closure under another name.
+McCarthy adds that the problem “later showed up in Algol 60”, and that while the FUNARG device
+“worked well in the interpreter, comprehensiveness and speed seem to be opposed in compiled code,
+and this led to a succession of compromises.”</p>
+<p>The repair did not change Lisp’s default. In the <a href="https://softwarepreservation.computerhistory.org/LISP/book/LISP%201.5%20Programmers%20Manual.pdf">LISP 1.5 Programmer’s
+Manual</a>,
+a programmer who wanted the environment kept wrote <code>FUNCTION</code> around the λ-expression, and
+the interpreter built a <code>FUNARG</code> from it; written plainly, under <code>QUOTE</code>, it was a bare λ-expression
+as before. The manual (§3.1) says when the difference does not matter: “QUOTE will work instead of
+FUNCTION, provided that there are no free variables present.” The compiler, described in the same
+manual, made a third arrangement. An ordinary variable of a compiled function got a storage
+location on the stack that “other functions cannot find”, so no other function could use it as a
+free variable at all; a variable meant to be read freely had to be declared <code>SPECIAL</code>, and “SPECIAL
+variables cannot be communicated between the interpreter and compiled functions.”</p>
+<p>Joel Moses’s MIT memo “<a href="http://hdl.handle.net/1721.1/5854">The Function of FUNCTION in
+LISP</a>” (1970) set out the general problem. “An important point
+which must be realized about functional arguments (abbreviated FUNARGs) is that two different
+environments are involved in such cases”: the one where the function was made, which he calls the
+<em>binding environment</em>, and the one where it is applied, the <em>activation environment</em>. He treats a
+function passed down to another function as the easy case and a function returned as a value as
+the hard one, and the memo’s subtitle — <em>Why the FUNARG Problem Should be Called the Environment
+Problem</em> — gives his reason in a footnote: “One should also handle returns of functions”.</p>
+<h2 id="two-rules-for-a-call"><a class="header" href="#two-rules-for-a-call">Two rules for a call</a></h2>
+<p>Bridger’s rule for application, <a href="calls.html">E-App</a>, evaluates the operator to a closure <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0019em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">λ</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span> and runs the body <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0019em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mclose">]</span></span></span></span>: the captured environment, extended with the parameters. The caller’s environment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span></span></span></span>
+is used to evaluate the operator and the arguments, and then set aside. Dynamic scope changes the
+third premise and nothing else:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:5.8319em;vertical-align:-0.9419em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:4.89em;"><span style="top:-3.8081em;"><span class="pstrut" style="height:4.5em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathsf">Val</span></span><span class="mspace"> </span><span class="mopen">(</span><span class="mord"><span class="mord mathrm">unwrap</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-4.73em;"><span class="pstrut" style="height:4.5em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-6.89em;"><span class="pstrut" style="height:4.5em;"></span><span class="mord"><span class="mord"><span class="mtable"><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.5em;"><span style="top:-4.66em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">λ</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-3.16em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3053em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:1em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">i</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span><span style="top:-1.66em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mopen">[</span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:2em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9419em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-App-Dyn</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The body runs in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ρ</span><span class="mopen">[</span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mclose">]</span></span></span></span>, the environment of the call site with the
+parameters added. The operator’s value is a bare lambda, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.864em;vertical-align:-0.15em;"></span><span class="mord mathnormal">λ</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, with no
+environment beside it, because the rule would have no use for one. Under this rule E-Lam need not
+capture anything, and a function value is just its code. Landin’s remark that a closure’s
+environment part “would be unnecessary if λ-expressions containing free variables were
+prohibited” (<a href="closures.html">closures</a>) has a second case: the environment part is also unnecessary
+if free variables are looked up where the function is called.</p>
+<p><a href="../binding/lexical-scope.html">Lexical scope</a> described the alternative as resolving a free name “in
+the environment present where the code <em>runs</em>”. E-App-Dyn says exactly which environment that is.
+Each call extends its caller’s environment, which extends its own caller’s, back to <code>main</code>, so the
+environment a body runs in is a record of the calls that are in progress: the chain of active calls,
+each adding its parameters and its <code>let</code>s. A free name in a body finds the most recent binding of
+that name made by any call that has not yet returned.</p>
+<h3 id="scope-as-a-span-of-time"><a class="header" href="#scope-as-a-span-of-time">Scope as a span of time</a></h3>
+<p>Under static scope, a binding’s scope is a region of text, as <a href="../binding/lexical-scope.html">Part
+III</a> defined it. Under dynamic scope, a binding made by <code>let scale = 2</code>
+in <code>main</code> can be read by the body of <code>scaled</code>, which is nowhere inside <code>main</code>’s text, and by any
+other function that runs while <code>main</code>’s block is active and mentions <code>scale</code>. Where it can be read
+is no longer a region of text. When it can be read is fixed: from the <code>let</code> until the block that
+holds it ends. That is the <em>dynamic extent</em> that <a href="closures.html">closures</a> described, and a
+dynamically scoped binding is visible to any code, written anywhere, that runs during it. <em><a href="https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node43.html">Common
+Lisp the Language</a></em> builds the name from
+those two parts — “it is convenient to define dynamic scope to mean indefinite scope and dynamic
+extent” — and adds: “The term “dynamic scope” is a misnomer. Nevertheless it is both traditional
+and useful.“</p>
+<p>The examples above show what follows from that.</p>
+<p><strong>A body’s meaning depends on its callers.</strong> Under E-App-Dyn, <code>scaled</code> multiplies by <code>2</code> when called
+from <code>main</code>, and by <code>10</code> when called from a function that binds no <code>scale</code> of its own, where the
+lookup reaches the top-level binding. Without the top-level binding, that second call gets stuck.
+Nothing in the text of <code>scaled</code> says which. Its behaviour is a property of the whole program and of
+the path by which control reaches it.</p>
+<p><strong>Renaming changes meaning.</strong> Under static scope, consistently renaming a bound name — a parameter
+and its uses — never changes what a program does. That is what the renaming clauses of Algol 60’s
+<a href="calls.html#call-by-value-call-by-name">call by name</a> were written to protect, and what <a href="../binding/representations.html#resolving-names-before-the-run">de Bruijn’s
+indices</a> build in by having no names
+to rename. Under E-App-Dyn, renaming <code>twice</code>’s parameter from <code>x</code> to <code>n</code> changed the program’s
+output from <code>30</code> to <code>12</code>. The name a function gives its parameter, invisible from outside under
+static scope, becomes something every function it calls can see. Guy Steele and Gerald Sussman’s
+“<a href="http://hdl.handle.net/1721.1/6094">The Art of the Interpreter</a>” (1978) builds the same failure
+from a <code>SCALE</code> function that passes a lambda mentioning <code>L</code> to a <code>MAPCAR</code> whose own variable is
+named <code>L</code>, and concludes: “That the behavior of the SCALE program depends on the choice of names for
+its local variables is a violation of referential transparency.” A programmer writing <code>twice</code> has
+to know the free names of every function that might be passed to it, and a programmer writing
+<code>add_x</code> has to know the parameter names of every function it might be passed to.</p>
+<p><strong>A returned function loses its free names.</strong> <a href="closures.html"><code>make_adder</code></a> under E-App-Dyn:</p>
+<pre><code class="language-text">fn make_adder(k: Int) -&gt; fn(Int) -&gt; Int = |x: Int| x + k;
 
-Dynamic scope is not merely unfashionable — it is **incompatible with the type checker we build in
-Part VI**. Under dynamic scope, a free variable's type depends on whoever called the function, so
-the same body can see an `Int` from one call site and a `Bool` from another. There is no single type
-to infer, and nothing for a static checker to certify before the program runs. Static scope is what
-makes a free variable's type *fixed by its definition site*, and therefore knowable ahead of time.
+fn main() {
+    let add5 = make_adder(5);
+    println(add5(10));                // static: 15; dynamic: UnboundVariable k
+}
+</code></pre>
+<p><code>k</code> is bound for the dynamic extent of the call <code>make_adder(5)</code>. When <code>add5(10)</code> runs, that call has
+returned, and the chain of active calls is <code>main</code> alone, which binds no <code>k</code>. Under dynamic scope a
+binding’s extent is the activation that made it, exactly as on a stack, and a function cannot carry
+a binding past it. The closures of the previous chapter, the adder, the counters, the account, have
+no dynamically scoped version.</p>
+<p>A function passed <em>down</em>, to be called while its creator is still running, fares better. <code>add_x</code>’s
+creator is <code>main</code>, which is still running when <code>twice</code> calls it, so <code>main</code>’s <code>x</code> is in the chain.
+What goes wrong is that <code>twice</code>’s <code>x</code> is in the chain too, and nearer. The function finds a binding
+of the right name made by the wrong code.</p>
+<h2 id="bridgers-answer"><a class="header" href="#bridgers-answer">Bridger’s answer</a></h2>
+<p>Bridger is statically scoped. There is no switch and no second mode: E-Lam records the defining
+environment, E-App runs the body there, and every free name in every function body is resolved the
+way <a href="../binding/lexical-scope.html">Part III</a> resolved the names in nested blocks. That was settled
+when <a href="functions.html">first-class functions</a> gave E-Lam its environment. There is nothing to build in
+this chapter; the <code>Lambda</code> and <code>Call</code> arms that run the programs of <a href="closures.html">closures</a> already
+implement it.</p>
+<p>The decision is permanent for a reason in Part VI. The type checker built there<!-- xref:../types/type-checker.md -->
+checks a function body once, before the program runs, against the types of the names in scope where
+the body is written. A function’s free names are found in its definition’s environment, so their
+types are found in the definition’s types, and the checker can give <code>scaled</code> the type
+<code>fn(Int) -&gt; Int</code> by reading it. Take away the top-level <code>scale</code> and give the program two callers:</p>
+<pre><code class="language-text">fn scaled(x: Int) -&gt; Int = x * scale;
 
-This is worth dwelling on, because it is a real instance of the book's larger claim: **language
-features are not independent.** A choice made for closures in Part V constrains what is possible for
-types in Part VI. Designers discover these couplings constantly, and usually later than they'd like.
+fn a() -&gt; Int {
+    let scale = 2;
+    scaled(4)
+}
 
-*History (woven):* Lisp's dynamic scope — originally an implementation accident more than a design,
-and later understood as a bug; Scheme's lexical repair and what it enabled; the vestiges that
-survive deliberately (Emacs Lisp's `defvar`, exception handlers, thread-locals, and dynamic extent
-generally) because "resolve at the call site" is genuinely the right semantics for *some* things.
-
-*An experiment (optional):* in a copy of your finished evaluator, run a call's body in the
-caller's environment instead of the captured one, and run the closure examples from the previous
-chapter under both rules. Watch them diverge, then try to write down what type the free variable has
-and find that you cannot. Then change it back: static scope is Bridger's semantics throughout.
--->
+fn b() -&gt; Int {
+    let scale = true;
+    scaled(4)
+}
+</code></pre>
+<p>Under static scope <code>scale</code> is unbound in <code>scaled</code>. The M4 evaluator reports <code>UnboundVariable</code> at the
+first call, and Part VI’s checker rejects the program before anything runs. Under dynamic scope the
+program runs: <code>a()</code> returns <code>8</code>, and <code>b()</code> gets stuck inside <code>scaled</code>’s body, multiplying an <code>Int</code>
+by a <code>Bool</code>. To check <code>scaled</code> before running it, a checker would have to know the type of <code>scale</code>
+in the body, and the body has none of its own: <code>scale</code> is an <code>Int</code> when the call comes through <code>a</code>
+and a <code>Bool</code> when it comes through <code>b</code>. Checking each body at each call site does not suffice
+either. <code>scaled</code> can be passed as a value and called from inside a function that never names it, and
+the chain of calls that reaches it is a fact about one run. Part VI’s checker gives each name one
+type for its whole scope, and under dynamic scope a free name has one type per path through the
+program.</p>
+<p>The same property served Part III. <a href="../binding/representations.html#resolving-names-before-the-run">Resolving names before the
+run</a> replaced each name with the
+distance to its binding, computed from the text. Under dynamic scope the binding a free name finds
+depends on which calls are active, and the distance changes from call to call.</p>
+<h3 id="an-experiment"><a class="header" href="#an-experiment">An experiment</a></h3>
+<p>The difference between the two rules is one environment in one arm of your evaluator. In a copy of
+your finished M4 interpreter, change the <code>Call</code> arm so that it extends the environment it was
+called with, instead of the closure’s captured environment, with the parameters. Then run:</p>
+<ul>
+<li><code>scaled</code> from the start of this chapter, and watch <code>40</code> become <code>8</code>;</li>
+<li><code>twice(add_x, 10)</code>, then rename <code>twice</code>’s parameter, and watch <code>30</code> become <code>12</code>;</li>
+<li>the adder, counter, and account programs from <a href="closures.html">closures</a>, and find which still run;</li>
+<li>the two-caller program above, and try to write down a type for <code>scale</code>.</li>
+</ul>
+<p>Then change it back. Bridger’s semantics is the captured environment, and nothing later in the book
+works under the other one.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<h3 id="lisp-after-funarg"><a class="header" href="#lisp-after-funarg">Lisp after FUNARG</a></h3>
+<p>Gerald Sussman and Guy Steele’s “<a href="http://hdl.handle.net/1721.1/5794">Scheme: An Interpreter for Extended Lambda
+Calculus</a>” (1975) made capture the only behaviour: “SCHEME is
+essentially a full-funarg LISP. LAMBDA expressions need not be QUOTEd, FUNCTIONed, or *FUNCTIONed
+when passed as arguments or returned as values; they will evaluate to closures of themselves.”
+The memo lists what follows from closing every lambda in its “lexical” or “static” environment:
+“First, the axioms of lambda calculus are automatically preserved. Thus, referential transparency is
+enforced.” Richard Gabriel and Guy Steele’s “<a href="https://www.dreamsongs.com/Files/HOPL2-Uncut.pdf">The Evolution of
+Lisp</a>” calls Scheme “one of the first languages
+to have taken seriously the implications of lexical scoping (as opposed to local scoping, which had
+been in use in Lisp compilers for almost a decade) and first-class functions.” The local scoping of
+the compilers is the LISP 1.5 arrangement above: a variable no other function could see, with no
+closure to carry it anywhere.</p>
+<p>Common Lisp (1984) made lexical scope the default and kept dynamic scope for variables declared
+special, an arrangement described <a href="#call-site-resolution-on-purpose">below</a>.
+Emacs Lisp stayed dynamically scoped longer. Emacs 24.1 (2012) added a variable, <code>lexical-binding</code>,
+that a file sets on its first line to choose lexical scope; Emacs 30.1 (2025) made the byte compiler
+warn about a file with no such line, and Emacs 31.1 (2026) warns when one is loaded. A file that
+says nothing still gets the old rule. The <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Variable-Scoping.html">manual’s section on scoping
+rules</a> puts it this
+way: “The old dynamic-only Emacs Lisp dialect is still the default in code loaded or evaluated from
+Lisp files that lack a dialect declaration. Eventually the modern dialect will be made the default.”
+Changing a language’s scope rule changes the meaning of every existing program that relies on the
+old one, and the change has been made one declared file at a time.</p>
+<h3 id="implementing-a-dynamically-scoped-variable"><a class="header" href="#implementing-a-dynamically-scoped-variable">Implementing a dynamically scoped variable</a></h3>
+<p>Under dynamic scope, a variable’s current value is the most recent binding of its name made by an
+active call. Moses’s memo describes two ways to find it, and they are the two representations of
+<a href="../binding/representations.html">environment representations</a>. The <em>deep access</em> approach, “used in
+the classical “alist” implementation of LISP“, keeps the bindings in a chain and searches it: “The
+“deep access” approach forces one to search upward in the stack for the most recent value of the
+free variable.“ That is the chain of scopes, walked at every lookup. The <em>shallow access</em> approach
+keeps one cell per name holding its current value, and pays at the boundaries instead: “On entering
+such a function or block one usually saves the old value which is in the special cell on the stack
+… On leaving such a function or block one must remember to store the value saved in the stack in the
+special cell.” That is the flat map with its stack of shadowed bindings per name. LISP 1.5’s
+<code>SPECIAL</code> variables worked this way, and Moses calls the approach “favored in recent
+implementations of LISP.”</p>
+<p>The costs fall where Part III found them: deep access pays at each lookup, shallow access at each
+call and return. What has no counterpart is resolving names before the run, which needs the binding
+to be fixed by the text. And a closure is hard to add to shallow access: a function that outlives
+its call needs the values its free variables had, and the cells hold only the values they have
+now.</p>
+<h3 id="call-site-resolution-on-purpose"><a class="header" href="#call-site-resolution-on-purpose">Call-site resolution on purpose</a></h3>
+<p>Some names are meant to be read where code runs. Which output port <code>print</code> writes to, whether a
+search ignores case, how many digits a number prints with: each is a setting that a caller wants to
+change for everything it calls, for as long as the call lasts, without passing the setting as an
+argument through every function in between. The <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Dynamic-Binding-Tips.html">Emacs Lisp Reference
+Manual</a> gives
+the case as its example:</p>
+<pre><code class="language-text">(defun search-for-abc ()
+  "Search for the string \"abc\", ignoring case differences."
+  (let ((case-fold-search t))
+    (re-search-forward "abc")))
+</code></pre>
+<p><code>case-fold-search</code> is read deep inside <code>re-search-forward</code>, which <code>search-for-abc</code> did not write
+and cannot pass the setting to. The <code>let</code> changes it for the extent of the call, and when the <code>let</code>
+ends the old setting is back, however the body exited.</p>
+<p>Languages that keep this behaviour mostly keep it as a marked exception to lexical scope. Common
+Lisp’s <code>defvar</code> and <code>defparameter</code> “<a href="http://www.lispworks.com/documentation/HyperSpec/Body/m_defpar.htm">establish name as a dynamic
+variable</a>”, and by convention
+such names are written with asterisks, <code>*print-base*</code>, so a reader can tell them apart. Scheme’s
+parameter objects, introduced as <a href="https://srfi.schemers.org/srfi-39/srfi-39.html">SRFI 39</a> (2003)
+and part of R7RS under the heading “Dynamic bindings” (§4.2.6), are values created with
+<code>make-parameter</code> and rebound with <code>parameterize</code>; the <a href="https://docs.racket-lang.org/guide/parameterize.html">Racket
+Guide</a> says a <code>parameterize</code> “adjusts the
+value of a parameter during the whole time that the parameterize body is evaluated, even for uses of
+the parameter that are textually outside of the parameterize body”. Clojure’s
+<a href="https://clojure.org/reference/vars">vars</a> are static unless tagged <code>^:dynamic</code>. In each, an
+ordinary name is lexically scoped, and a name is dynamically scoped only when its declaration
+says so.</p>
+<p>Perl kept both under two keywords. <code>my</code> declares a lexical variable; <code>local</code>, in the words of
+<a href="https://perldoc.perl.org/perlsub#Temporary-Values-via-local()">perlsub</a>, “just gives temporary
+values to global (meaning package) variables. It does not create a local variable. This is known as
+dynamic scoping.” The Unix shells kept dynamic scope as the only rule for function locals. The
+<a href="https://www.gnu.org/software/bash/manual/html_node/Shell-Functions.html">Bash Reference
+Manual</a> states it
+directly: “The value of a variable that a function sees depends on its value within its caller, if
+any, whether that caller is the global scope or another shell function.”</p>
+<p>Exception handlers are found by the same rule, in languages that would never describe their
+variables that way. When a Java program throws, the <a href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-11.html#jls-11.3">Java Language
+Specification</a> (§11.3)
+transfers control “to the nearest dynamically enclosing catch clause, if any, of a try statement
+that can handle the exception”, where a statement is dynamically enclosed by a <code>catch</code> if it is in
+the <code>try</code> block “or if the caller of the statement or expression is dynamically enclosed by the
+catch clause.” A method that throws does not know, and does not need to know, who will catch: the
+handler is whichever one the chain of active calls has installed most recently. That is E-App-Dyn’s
+lookup applied to handlers. Bridger has no exceptions; its <a href="../eval/error-handling.html"><code>Result</code></a>
+values travel back through each caller as ordinary return values, and every function between the
+error and its handling says so in its type.</p>
+<h3 id="typing-a-dynamically-bound-name"><a class="header" href="#typing-a-dynamically-bound-name">Typing a dynamically bound name</a></h3>
+<p>Part VI’s checker cannot give a dynamically scoped free name a type because the function’s type
+says nothing about it: <code>scaled : fn(Int) -&gt; Int</code> mentions what <code>scaled</code> takes and returns, and the
+<code>scale</code> it reads from its caller is not among them. A type system can record that too. Jeffrey
+Lewis, Mark Shields, Erik Meijer, and John Launchbury’s “<a href="https://doi.org/10.1145/325694.325708">Implicit parameters: dynamic scoping with
+static types</a>” (2000) did so for Haskell, and GHC implements
+it as the <code>ImplicitParams</code> extension. A dynamically bound name is written with a question mark,
+<code>?scale</code>, and every function that reads one, or calls a function that does, carries it in its type.
+The <a href="https://downloads.haskell.org/ghc/latest/docs/users_guide/exts/implicit_parameters.html">GHC User’s
+Guide</a>
+reads a type of the form <code>(?x::t') =&gt; t</code> as “this function uses a dynamically-bound variable ?x of
+type t’”. A caller binds <code>?scale</code> for the duration of a call, and the checker confirms at every call
+that the binding is there and has the right type. Under that arrangement the name <code>scaled</code> reads
+from its caller is part of its interface, written in its type, and renaming it is a change to the
+interface.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>The FUNARG problem</strong>: McCarthy’s “<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">History of Lisp</a>”
+(1979) tells the Slagle story in its section on the move from LISP 1 to LISP 1.5 and points the
+reader to Moses for the rest. Moses’s “<a href="http://hdl.handle.net/1721.1/5854">The Function of FUNCTION in
+LISP</a>” (1970) takes up from there: the binding and activation
+environments, a function passed down against one returned, and the shallow and deep ways of
+finding a free variable’s value, with the stack and the a-list drawn out.</p>
+<p><strong>Dynamic and lexical scoping side by side</strong>: Steele and Sussman’s “<a href="http://hdl.handle.net/1721.1/6094">The Art of the
+Interpreter</a>” (1978) builds a sequence of small Lisp interpreters,
+changing one thing at a time. Part One runs the <code>SCALE</code>/<code>MAPCAR</code> example through a dynamically
+scoped evaluator, then closes each procedure in its environment by changing <code>EVAL</code> and <code>APPLY</code>, with
+the code for both on the page. Part Two returns to dynamic scoping as a way of decomposing a
+program’s state.</p>
+<p><strong>Scope and extent as separate ideas</strong>: chapter 3 of <em><a href="https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node43.html">Common Lisp the
+Language</a></em> defines lexical and
+indefinite scope, dynamic and indefinite extent, and names the constructs of Common Lisp that have
+each combination, including special variables.</p>
+<p><strong>Dynamic binding with static types</strong>: Lewis, Shields, Meijer, and Launchbury’s “<a href="https://doi.org/10.1145/325694.325708">Implicit
+parameters: dynamic scoping with static types</a>” (2000) gives
+the type rules for dynamically bound names in Haskell, the design GHC’s <code>ImplicitParams</code> extension
+implements; the GHC User’s Guide section linked above shows it on a sort function whose comparison
+comes from its caller.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>Under E-App-Dyn, what does <code>twice(add_x, 10)</code> evaluate to, and why does renaming <code>twice</code>'s parameter from <code>x</code> to <code>n</code> change the answer?</summary>
+<p><code>30</code>. <code>twice</code> calls <code>add_x(10)</code> from inside its own body, so <code>add_x</code>’s body <code>y + x</code> runs in
+<code>twice</code>’s environment extended with <code>y ↦ 10</code>. That environment binds <code>x</code> twice: <code>main</code>’s <code>x ↦ 1</code>,
+and, nearer, <code>twice</code>’s parameter <code>x ↦ 10</code>. The nearer one wins, <code>add_x(10)</code> is <code>20</code>, and the second
+call gives <code>30</code>. Once the parameter is <code>n</code>, the only <code>x</code> in the chain of active calls is <code>main</code>’s,
+and the result is <code>12</code>, the same as under static scope. Under static scope the parameter’s name is
+invisible to <code>add_x</code>, so renaming it changes nothing.</p>
+</details>
+<details>
+<summary>A language has functions but allows them to be defined only at the top level of a program, and has no global variables. Can a program tell static scope from dynamic scope?</summary>
+<p>It can. A top-level function’s free names, under static scope, can refer only to other top-level
+functions, since there are no global variables. Under dynamic scope the same free name looks first
+in the chain of active calls, so a function whose body mentions a name <code>f</code> will find a caller’s
+parameter or local named <code>f</code> before the top-level <code>f</code>. A program in which some caller binds a local
+with the same name as a top-level function, and then calls a function that refers to that name,
+behaves differently under the two rules. Removing nested functions narrows the difference to name
+clashes with top-level names; it does not remove it.</p>
+</details>
+<details>
+<summary>Why does <code>make_adder</code> have no dynamically scoped version, while <code>twice(add_x, 10)</code> at least runs?</summary>
+<p>Under dynamic scope a binding exists only for the dynamic extent of the block or call that made it,
+and a body can read only the bindings of calls still in progress. <code>add_x</code> is called while <code>main</code>,
+which bound its <code>x</code>, is still running, so some <code>x</code> is always available — the problem is only which
+one. The lambda returned by <code>make_adder</code> is called after <code>make_adder</code> has returned, when its <code>k</code> no
+longer exists anywhere in the chain, so the lookup fails. Static scope keeps <code>k</code> because the closure
+holds the environment that binds it.</p>
+</details>
+<details>
+<summary>GHC's implicit parameters give a type to a dynamically bound name. What does a function's type have to say for the checker to accept <code>scaled</code> written that way, and what does that make visible?</summary>
+<p>The type has to name the dynamically bound variable and its type, as in <code>(?scale :: Int) =&gt; Int -&gt; Int</code>. The checker then requires every call of <code>scaled</code> to be made where <code>?scale</code> is bound to an
+<code>Int</code>, and a function that calls <code>scaled</code> without binding <code>?scale</code> itself inherits the requirement
+in its own type. What was implicit under untyped dynamic scope — which names a function reads from
+its callers — becomes part of the function’s interface, checked at every call. The program with
+callers <code>a</code> and <code>b</code> would be rejected at <code>b</code>, where <code>?scale</code> is a <code>Bool</code>.</p>
+</details>
 
                     </main>
 

@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-3047e2a2.js";
+            window.path_to_searchindex_js = "../searchindex-f1a3eb2b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -236,8 +236,7 @@ what an environment is and how it came to be.</p>
 answer — a name introduced in a region of a program means something inside that region and not
 outside it — but left open what such a region is made of once the program runs. The environment is
 the answer: a map from the names in scope to the values they currently denote. In Bridger, we use
-<code>let x = e</code> to update the environment to say that the name <code>x</code> now refers to the value <code>e</code>
-evaluates to.</p>
+<code>let x = e</code> to extend the environment with a binding of the name <code>x</code> to the value <code>e</code> evaluates to.</p>
 <h2 id="a-name-has-a-value-only-in-context"><a class="header" href="#a-name-has-a-value-only-in-context">A name has a value only in context</a></h2>
 <p>The <a href="../appendix/language-reference.html#the-evaluation-judgment">evaluation judgment</a> has carried an
 environment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span></span></span></span> since <a href="../foundations/syntax-semantics.html">Part I</a>, and every rule threaded the
@@ -291,14 +290,13 @@ first item is itself a block:</p>
 <p>The outer block evaluates its first item — the inner block — by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord textsf">E-Seq</span></span></span></span></span>, which evaluates it
 in the current environment and discards the result. Inside, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">E-Let</span></span></span></span></span> extends the environment
 with <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.522em;vertical-align:-0.011em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span> for the inner block’s remainder alone, yielding <code>2</code>. <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord textsf">E-Seq</span></span></span></span></span> then
-evaluates the rest of the outer block in the <em>same</em> environment it began with — the one with no
-<code>x</code> — so the final <code>x</code> is unbound. A block produces a value, not an environment: the binding made
-inside the inner block never leaves it.</p>
-<p>Binding a name a second time is <strong>shadowing</strong>: the
-new binding <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ρ</span><span class="mopen">[</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mclose">]</span></span></span></span> answers for <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> from that point on, and the earlier value is
-unreachable through the name for the rest of that region though it is not destroyed. Since the
-right-hand side is evaluated before the binding is added, a <code>let</code> may define a name in terms of the
-value the same name held before it:</p>
+evaluates the rest of the outer block in the <em>same</em> environment it began with — the one with no <code>x</code>
+— so the final <code>x</code> is unbound. A block produces a value, and the binding made inside the inner block
+never leaves it.</p>
+<p>Binding a name a second time is <strong>shadowing</strong>: the new binding <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ρ</span><span class="mopen">[</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mclose">]</span></span></span></span> answers for <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span>
+from that point on, and the earlier value is unreachable through the name for the rest of that
+region though it is not destroyed. Since the right-hand side is evaluated before the binding is
+added, a <code>let</code> may define a name in terms of the value the same name held before it:</p>
 <pre><code class="language-text">let x = 1;
 let x = x + 1;   // the x on the right is the old 1; x is now 2
 x                // 2
@@ -318,29 +316,29 @@ the rest of the block and stops at its closing brace.</p>
 Expr::Var(..)   =&gt; todo_m2!("look up a variable"),
 Expr::Block(..) =&gt; todo_m2!("evaluate a block"),</code></pre>
 <p>That the environment is never rewritten is the rule the whole chapter turns on. <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span></span></span></span> is
-<strong>read-only</strong>: a <code>let</code> adds a binding, and rebinding a name is a new binding that shadows the old,
-not a change to it. Making a name’s value change over time — a counter that counts — is a separate
-mechanism, a mutable cell held in the store, and it arrives in Part IV<!-- xref:../imperative/mutation.md -->.
-How an <code>Env</code> is represented, and what <code>lookup</code> costs as scopes nest, is the next
-chapter<!-- xref:representations.md -->; how a name’s binding is fixed by where it is written rather
-than by where it is used — the property that makes scope decidable before the program
-runs — is the chapter after<!-- xref:lexical-scope.md -->. Reading variables and evaluating blocks
-completes the evaluator’s work for <a href="../milestones/m2.html">Milestone M2</a><!-- xref:../milestones/m2.md -->.</p>
+<strong>read-only</strong>: a <code>let</code> adds a binding, and rebinding a name adds a new binding that shadows the old
+one, which is left as it was. Making a name’s value change over time — a counter that counts — is a
+separate mechanism, a mutable cell held in the store, and it arrives in <a href="../imperative/mutation.html">Part
+IV</a>. How a name’s binding is fixed by where it is written, the property
+that makes scope decidable before the program runs, is the <a href="lexical-scope.html">next chapter</a>; how an
+<code>Env</code> is represented, and what <code>lookup</code> costs as scopes nest, is <a href="representations.html">the chapter
+after</a>. Reading variables and evaluating blocks completes the evaluator’s work
+for <a href="../milestones/m2.html">Milestone M2</a>.</p>
 <h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
 <p><code>let</code> need not be a form of its own. Landin’s observation was that a block beginning
 <code>let x = e_1;</code> computes what applying the function <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">e</span></span></span></span> — whose body <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">e</span></span></span></span> is the rest of
 the block — to the argument <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> computes: both evaluate <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, bind the result to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span>, and
 evaluate that body in the extended environment. A language with functions can treat <code>let</code> as sugar
 for that application and carry one rule instead of two. Bridger keeps <code>let</code> a form in its own
-right — functions arrive in Part V<!-- xref:../functions/functions.md -->, and <code>let</code> is available
+right — functions arrive in <a href="../functions/functions.html">Part V</a>, and <code>let</code> is available
 from the first block a program writes — but the two describe the same binding, and the closure rule
 in Part V will extend the environment the same way <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">E-Let</span></span></span></span></span> does.</p>
 <p>Whether a name is in scope within its own right-hand side is a genuine fork, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">E-Let</span></span></span></span></span>
 takes a side: it evaluates <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> in the environment before the binding is added, so <code>x</code> is bound
-<strong>after</strong> its definition, not during it. A definition may therefore use the earlier meaning of a
-name it rebinds, and a <code>let</code>-bound function cannot call itself, since the name is not in scope while
-the function value is being built. Languages that want a <code>let</code> to bind a recursive function offer a
-separate recursive-binding form — <code>let rec</code>, or a <code>letrec</code> that binds the name over its own
+only <strong>after</strong> its definition has been evaluated. A definition may therefore use the earlier meaning
+of a name it rebinds, and a <code>let</code>-bound function cannot call itself, since the name is not in scope
+while the function value is being built. Languages that want a <code>let</code> to bind a recursive function
+offer a separate recursive-binding form — <code>let rec</code>, or a <code>letrec</code> that binds the name over its own
 right-hand side — that closes exactly this gap. In Bridger, self-reference goes through a top-level
 <code>fn</code>, where every top-level name is in scope in every definition, so functions may call themselves
 and each other regardless of order.</p>
@@ -357,7 +355,7 @@ Next 700 Programming Languages</a></em> (Communications of the ACM,
 1966) introduces ISWIM and its <code>let</code> and <code>where</code> notations for naming a value over a region of an
 expression, together with the reading of a local definition as a function applied to its
 right-hand side.</p>
-<p><strong>The environment model of evaluation</strong>: Abelson and Sussman’s <em><a href="https://mitpress.mit.edu/sites/default/files/sicp/full-text/book/book.html">Structure and Interpretation of
+<p><strong>The environment model of evaluation</strong>: Abelson and Sussman’s <em><a href="https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book.html">Structure and Interpretation of
 Computer Programs</a></em> (MIT
 Press, free online) develops evaluation as the extension of environments in its chapter of that
 name, working through how a binding form adds to the environment and how a name is looked up in it.</p>
@@ -367,10 +365,10 @@ name, working through how a binding form adds to the environment and how a name 
 <p>It is the same kind in that it is <strong>stuck</strong>: <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">E-Var</span></span></span></span></span>’s premise <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ρ</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span> cannot be met,
 so no rule applies and there is no derivation, exactly as no rule applies to adding a boolean to an
 integer. The interpreter returns <code>Err(Control::Raise(RuntimeError::UnboundVariable { … }))</code> and
-halts the run; the missing value is the absence of a result, not a special result. What is new is
-the cause. Every stuck case in Part II came from a value of the wrong shape reaching an operator;
-this one comes from a name that denotes no value at all, so it is caught by looking in the
-environment rather than by inspecting a computed value.</p>
+halts the run; the missing value is the absence of a result, and no special result stands in for it.
+What is new is the cause. Every stuck case in Part II came from a value of the wrong shape reaching
+an operator; this one comes from a name that denotes no value at all, so it is caught by looking in
+the environment rather than by inspecting a computed value.</p>
 </details>
 <details>
 <summary>What does the block <code>{ let x = 1; let x = x + 1; x }</code> evaluate to, and which environment is each <code>x + 1</code> and final <code>x</code> read in?</summary>
@@ -378,7 +376,7 @@ environment rather than by inspecting a computed value.</p>
 <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ρ</span><span class="mopen">[</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">]</span></span></span></span>. The second <code>let</code>’s right-hand side <code>x + 1</code> is evaluated in that environment —
 the one <em>before</em> the second binding is added, by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">E-Let</span></span></span></span></span> — so its <code>x</code> is the <code>1</code> just
 bound, and the block extends to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ρ</span><span class="mopen">[</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">]</span><span class="mopen">[</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">]</span></span></span></span>, in which <code>x</code> now reads <code>2</code>. The
-final <code>x</code> is evaluated there and yields <code>2</code>. The first binding is shadowed, not overwritten: it
+final <code>x</code> is evaluated there and yields <code>2</code>. The first binding is shadowed and left intact: it
 supplied the value the second definition read.</p>
 </details>
 <details>
