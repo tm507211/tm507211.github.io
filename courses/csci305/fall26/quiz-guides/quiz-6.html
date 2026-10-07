@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 6 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 6 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lectures 15&ndash;17 and their textbook
+      chapters: evaluating function calls, closures, and static vs.&nbsp;dynamic scope. Recursion
+      (Lecture 18) is <em>not</em> on this quiz. One question also looks back at a design decision
+      in your Milestone&nbsp;3 evaluator. Answers are short: a sentence or two, in your own words,
+      earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 15 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions. Most give you a small block of
+            Bridger code to trace by hand &mdash; say what it evaluates to or what it prints, and
+            why. One asks you to compare static and dynamic scope on the same program. One question
+            looks back at your Milestone&nbsp;3 evaluator &mdash; no Rust to write, just explain a
+            decision in words.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.
+            You may name a rule (<code>E-App</code>, <code>E-Ref</code>) if it helps, but you are
+            never required to.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Evaluating function calls
+      <small class="text-muted">Lecture 15</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/functions/calls.html">Evaluating function calls</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-15/index.html">Lecture 15</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Read <code>E-App</code> premise by premise: evaluate the operator to a closure; evaluate
+        the arguments <em>left to right</em>, threading the store; run the body in the closure's
+        <em>captured</em> environment extended with the parameters.</li>
+      <li>Trace a call whose arguments change a cell, and say what it evaluates to under Bridger's
+        left-to-right order &mdash; and what a right-to-left order would give instead.</li>
+      <li>Say when each stuck call is detected: a non-function operator before any argument runs
+        (<code>NotAFunction</code>); a wrong number of arguments only after they have all run
+        (<code>ArityMismatch</code>). Predict what a stuck call prints before it stops.</li>
+      <li>Explain how a <code>return</code> is caught by the call (<code>unwrap</code>), so the
+        expression around the call carries on normally.</li>
+      <li>Compare approaches to evaluation order: fixed left to right (Bridger, Java), unspecified
+        (Scheme), and C, where <code>f(i++, i++)</code> is undefined.</li>
+    </ul>
+
+    <h2>Closures
+      <small class="text-muted">Lecture 16</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/functions/closures.html">Closures</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-16/index.html">Lecture 16</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain why <code>make_adder</code> and <code>make_counter</code> need a binding to last
+        longer than the call that created it, and why a stack of activation records, which pops a
+        call's bindings when it returns, cannot provide that.</li>
+      <li>Distinguish a binding's <em>scope</em> (a region of program text) from its
+        <em>extent</em> (a span of time during one run), and say why a closure separates them.</li>
+      <li>Follow <code>make_adder(5)</code> then <code>add5(10)</code> through <code>E-App</code>
+        and <code>E-Lam</code>: the binding <code>k &#8614; 5</code> lives inside the returned
+        closure, and no rule ever discards an environment.</li>
+      <li>Explain state in a captured cell: the binding <code>n &#8614; &#8467;</code> never
+        changes; the store's entry for <code>&#8467;</code> does. Say why two calls of
+        <code>make_counter</code> give independent counters (<code>E-Ref</code> picks a fresh
+        location each time), and when two closures share one cell (both captured from the same
+        call, or one closure value copied by <code>let</code>).</li>
+      <li>Predict what closures built inside a loop return: a <code>for</code> variable is a fresh
+        binding to a value on each turn; a cell is one location, read when the closure is
+        <em>called</em>. Fix a loop so each closure keeps the value a cell held on its own turn
+        (<code>let v = deref j;</code>).</li>
+      <li>Explain why the provided <code>Rc&lt;Scope&gt;</code> chain keeps a captured scope alive
+        exactly as long as something can still reach it, and why Rust rejects a closure that
+        <em>borrows</em> a local and outlives the function (E0373).</li>
+      <li>Recognize the design space: capturing variables (Scheme, JavaScript, Python) vs.&nbsp;values
+        (C++ <code>[=]</code>, Rust <code>move</code>); Java's effectively-final rule and Bridger's
+        immutable bindings; loop variables made fresh per turn (ES2015 <code>let</code>,
+        C#&nbsp;5 <code>foreach</code>, Go&nbsp;1.22); environments on a stack (Algol, GNU C nested
+        functions) vs.&nbsp;in the heap.</li>
+    </ul>
+
+    <h2>Static vs. dynamic scope
+      <small class="text-muted">Lecture 17</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/functions/scope.html">Static vs. dynamic scope</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-17/index.html">Lecture 17</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>State the one premise in which <code>E-App</code> and <code>E-App-Dyn</code> differ: the
+        body runs in the closure's captured environment, or in the <em>caller's</em> environment,
+        extended with the parameters. Say why a function value under dynamic scope needs no
+        environment at all.</li>
+      <li>Trace a short program under both rules: under dynamic scope a free name finds the most
+        recent binding of that name made by any call still in progress.</li>
+      <li>Explain what breaks under dynamic scope: a body's meaning depends on its callers;
+        renaming a parameter can change what another function computes; a returned function loses
+        its free names (<code>make_adder</code> has no dynamically scoped version).</li>
+      <li>Retell the Lisp history in outline: McCarthy's a-list <code>eval</code> looked up free
+        variables where a function was <em>applied</em>; Slagle's program exposed it; Russell's
+        FUNARG device carried the environment along &mdash; a closure under another name.</li>
+      <li>Explain why Bridger stays statically scoped: a checker that checks each body once,
+        against the names where it is written, cannot give a dynamically scoped free name a single
+        type.</li>
+      <li>Recognize where dynamic binding is kept on purpose: Emacs Lisp's default, Common Lisp
+        special variables, Scheme's <code>parameterize</code>, Perl's <code>local</code>, shell
+        function locals, and the way exception handlers are found.</li>
+    </ul>
+
+    <h2>Looking back at Milestone 3
+      <small class="text-muted">Reflection</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/milestones/m3.html">Milestone M3</a>
+      &nbsp;and
+      <a href="../../../../books/pl-design/imperative/conditionals-loops.html">Conditionals and loops</a>.
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain why your <code>Return</code> arm builds <code>Err(Control::Return(v))</code>
+        rather than an ordinary <code>Ok(v)</code>: every <code>?</code> between the
+        <code>return</code> and its boundary passes it straight out, abandoning the rest of a block
+        and the remaining turns of a loop. Say what a program would compute if it were an ordinary
+        value instead.</li>
+      <li>Say what catches a <code>return</code> at M3 (nothing you wrote; it reaches the top) and
+        what will at M4 (the <code>Call</code> arm, which turns it into the call's ordinary
+        value while still passing errors through).</li>
+      <li>Explain aliasing through one store: <code>let b = a</code> copies a <em>location</em>, so
+        <code>b := 9</code> is seen by <code>deref a</code> &mdash; the same reason two closures
+        from one call share a cell.</li>
+      <li>Say why <code>while</code> and <code>for</code> evaluate to <code>()</code> and discard
+        their body's value, and why your <code>for</code> arm extends the environment afresh for
+        each element.</li>
+    </ul>
+
+    <h2>Sample questions
+      <small class="text-muted">Practice</small></h2>
+    <p>
+      These are the same kind and size of question as the quiz, on different programs. No answers
+      are given: work each one by hand first, then, if you have the interpreter built, run the
+      program to check yourself. In every program, <code>trace</code> prints its label and returns
+      its number:
+    </p>
+<pre>fn trace(label: String, v: Int) -&gt; Int { println(label); v }</pre>
+
+    <ol class="objectives">
+      <li>
+        <p><strong>Order of evaluation.</strong> When <code>main</code> is evaluated, what is printed
+          before evaluation gets stuck? Explain why, in terms of the order in which a call evaluates
+          its parts.</p>
+<pre>let c = ref 10;
+fn bump() -&gt; Int { c := deref c * 2; deref c }
+fn pick(f: fn(Int, Int) -&gt; Int) -&gt; fn(Int, Int) -&gt; Int { println("pick"); f }
+fn main() {
+    println(pick(|a: Int, b: Int| b - a)(trace("one", bump()), trace("two", bump())));
+    let g = |a: Int| a;
+    println(g(trace("three", bump()), trace("four", bump())));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Capturing mutable state.</strong> (a)&nbsp;What does the program print?
+          (b)&nbsp;Why does <code>c</code> see the change <code>a</code> made, while <code>b</code>
+          does not?</p>
+<pre>fn make_counter(start: Int) -&gt; fn(Int) -&gt; Int {
+    ref n = start;
+    |k: Int| { n := deref n + k; deref n }
+}
+fn main() {
+    let a = make_counter(5);  let b = make_counter(5);  let c = a;
+    println(a(1) + c(2));
+    println(b(3));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Closures and state.</strong> What list does this produce, and why? Say which
+          part of each closure's result was fixed when the closure was made and which part was read
+          when it was called.</p>
+<pre>ref fs: [fn(Int) -&gt; Int] = [];   ref k = 1;
+for i in [10, 20] {
+    let snap = deref k;
+    fs := (|x: Int| x + i * snap + deref k) :: deref fs;
+    k := deref k + 1;
+}
+map(deref fs, |g: fn(Int) -&gt; Int| g(0))</pre>
+      </li>
+      <li>
+        <p><strong>Static vs dynamic scope.</strong> Each call is made in <code>main</code>, after
+          <code>let x = 5;</code>. Give its value (or <em>stuck</em>) under static scope and under
+          dynamic scope (a body runs in its <em>caller's</em> environment).</p>
+<pre>let x = 2;
+fn show() -&gt; Int = x * 10;
+fn wrap(x: Int) -&gt; Int = show() + x;
+fn make() -&gt; fn() -&gt; Int { let x = 7; || show() + x }</pre>
+        <table class="table table-bordered table-condensed" style="max-width:32rem">
+          <thead><tr><th></th><th>static (Bridger)</th><th>dynamic</th></tr></thead>
+          <tbody>
+            <tr><td><code>show()</code></td><td></td><td></td></tr>
+            <tr><td><code>wrap(1)</code></td><td></td><td></td></tr>
+            <tr><td><code>make()()</code></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </li>
+      <li>
+        <p><strong>Looking back at M3.</strong> Explain how your M3 evaluator evaluates this block,
+          and what it produces. What would it produce if the <code>if</code> line were deleted?</p>
+<pre>{ let i = ref 0;  let s = ref 0;
+  while deref i &lt; 10 {
+      i := deref i + 1;
+      if deref s &gt; 5 { return deref i; }
+      s := deref s + deref i;
+  };
+  deref s }</pre>
+      </li>
+    </ol>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Beyond that: write a
+        function whose two arguments both change one cell and work out its value; make two
+        counters and a copy of one, and say which share a count; build a list of closures inside a
+        <code>for</code> loop and inside a <code>while</code> loop over a cell, and predict what
+        each returns; take a program in which a caller binds the same name as a function's free
+        variable and trace it under both scope rules; and put a <code>return</code> inside a loop
+        inside a block and say where it stops. If you have the interpreter built, run your programs
+        and check yourself.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>application (<code>E-App</code>)</li>
+        <li>evaluation order</li>
+        <li><code>NotAFunction</code> / <code>ArityMismatch</code></li>
+        <li><code>unwrap</code> / catching a <code>return</code></li>
+        <li>closure</li>
+        <li>captured (defining) environment</li>
+        <li>activation record</li>
+        <li>scope vs. extent</li>
+        <li>indefinite extent / dynamic extent</li>
+        <li>upward vs. downward function</li>
+        <li>state in a captured cell</li>
+        <li>fresh loop binding</li>
+        <li>capturing a variable vs. a value</li>
+        <li>reference counting (<code>Rc</code>)</li>
+        <li>flat closure</li>
+        <li>static (lexical) scope</li>
+        <li>dynamic scope</li>
+        <li><code>E-App-Dyn</code></li>
+        <li>chain of active calls</li>
+        <li>FUNARG problem</li>
+        <li>association list (a-list)</li>
+        <li>referential transparency</li>
+        <li>deep vs. shallow access</li>
+        <li>return channel (<code>Control::Return</code>)</li>
+        <li>aliasing</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>
