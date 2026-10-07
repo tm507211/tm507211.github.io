@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-f1a3eb2b.js";
+            window.path_to_searchindex_js = "../searchindex-59d04d34.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -180,47 +180,462 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="recursion-and-higher-order-functions"><a class="header" href="#recursion-and-higher-order-functions">Recursion and Higher-Order Functions</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     lecture: Recursion & Higher-Order Functions.
-     The write-programs-in-the-paradigm material split out into
-     functional-programming.md so each lecture owns whole chapters.
-     Status: placeholder — spine authored just-in-time.
+     Milestone M4 · lecture: Recursion & Higher-Order Functions.
+     SEAM: functions.md gave E-Lam and said top-level fns can call one another (cf. here);
+     calls.md gave E-App and named enter_call/leave_call and StackOverflow; closures.md owns
+     activation records on a stack and the Rc cycle at the root; environments.md owns the
+     E-Let fork (a let-bound lambda cannot call itself; let rec/letrec named there). This
+     chapter picks those up and does not redefine them. functional-programming.md owns
+     pipelines, partial application, purity; its stub's "call-depth question" is answered
+     here — that chapter should point back, not repeat.
+     THROUGHLINE: self-reference is a fixed point. fact = F(fact); Bridger's env0 is a fixed
+     point of "build closures over this env"; the interpreter solves it by allocate-then-
+     patch, a program can solve it through a ref cell, and functions alone can solve it by
+     self-application (Z). Part VI's checker rejects self-application, which is why typed
+     languages make recursion a primitive. The stack beat: each call is a frame, 100 000 max,
+     no tail-call elimination, so tail form does not help in Bridger.
+     NO MATCH: list patterns are M7. All recursive examples are on integers so they run on a
+     reader's M4 evaluator; list recursion is pointed forward to Part VIII.
+     NO NEW ARM: recursion needs nothing in eval_expr. Shown provided material only:
+     Env::add_function (interpreter/src/interp/env.rs) and MAX_DEPTH (interp/mod.rs). The
+     2 GiB worker thread is main.rs (STACK_SIZE = 2 << 30).
+     EXAMPLES run 2026-10-07 through the reference interpreter, release builds --features m4
+     and --features m8 (stdin </dev/null): fact(5)=120; local let-bound fact: UnboundVariable
+     (both); sum_to(10000)=50005000, sum_to(1000000) StackOverflow; fold over
+     range(1,1000001)=500000500000; count/fold_range tail form over 200000 / 1000000
+     StackOverflow (fold_range reported at the lambda call f(z, lo)); fold_range(1,5,0,+)=10,
+     fold_range(1,6,1,*)=120; is_even(10), is_odd(7) true; self-application f(f,5)=120 at
+     M4, m8 "cannot construct the infinite type"; Z fact(5)=120, fib(10)=55 at M4, m8 same
+     infinite-type error; Y under call by value: StackOverflow at x(x); ref-cell knot = 120
+     at M4 AND M8 (accepted by the checker). Z-based sum: 49 990 levels run, 50 010 do not
+     (two frames held per level). A lambda on the right of := needs parentheses.
+     `self` is a keyword: the self-application parameter is `me`.
+     VERIFIED WORDINGS (2026-10-07):
+       McCarthy 1960, jmc.stanford.edu/articles/recursive/recursive.pdf — a 1990s retyping
+         "with minor notational changes from CACM"; text layer vs page image. p. 7 §2f: "The
+         λ-notation is inadequate for naming functions defined recursively." label(a, E)
+         paraphrased, not quoted (notation may differ from CACM). CACM DOI
+         10.1145/367177.367199; CACM page image NOT seen.
+       McCarthy, History of Lisp, jmc draft 12 Feb 1979 (as scope.md): p. 6 "because FLPL
+         allows neither conditional expressions nor recursive use of subroutines."; p. 6 maplist
+         item b (paraphrased); p. 8 SAVE/UNSAVE "single contiguous public stack array"; p. 9
+         LABEL/Rochester/Park sentences quoted in full. HOPL typeset text NOT compared.
+       Dijkstra, Recursive Programming, Numer. Math. 2 (1960) 312–318, DOI
+         10.1007/BF01386232; CWI repository scan ir.cwi.nl/pub/9253, OCR checked against page
+         images. p. 312 "The Aim" sentence quoted.
+       FORTRAN 77: WG5 HTML transcription (ANSI X3J3/90.4), §15.2 "A subprogram must not
+         reference itself, either directly or indirectly." Page match to 1978 printing not
+         checked. Fortran 90: final draft N692 §12.5.2.2, RECURSIVE keyword (paraphrased).
+       Steele AIM-443, Oct 1977, hdl 1721.1/5753, typescript, OCR vs page image: p. 4 "In this
+         way, if the last thing … tail end of the caller." quoted.
+       R7RS small PDF: §1.1 p. 5 "iteration can be expressed using the ordinary
+         procedure-call mechanics, so that special iteration constructs are useful only as
+         syntactic sugar."; §3.5 p. 11 "required to be properly tail-recursive" (italic).
+       van Rossum, neopythonic blog, "Tail Recursion Elimination" 22 Apr 2009 (HTML): stack-
+         traces sentence and "maximally helpful for debugging" quoted.
+       Python sys docs (3.14): "This limit prevents infinite recursion from causing an overflow
+         of the C stack and crashing Python." Docs do NOT state the default (1000 is source,
+         Py_DEFAULT_RECURSION_LIMIT) — do not put 1000 in the book.
+       ES2015 §14.6 "Tail Position Calls" (HTML). WebKit blog, Saboff, 23 May 2016:
+         "ECMAScript 6 mandates that such a call must reuse the stack space of its own frame
+         instead of pushing another frame onto the call stack." V8 blog 29 Apr 2016:
+         "implemented but not yet shipped"; page later notes the flags were removed. Current
+         engine status from compat-table only — kept to "Safari's engine" and V8's post.
+       Rust RFC 3407 explicit tail calls (`become`): NOT accepted (PR open); experiment on
+         nightly behind explicit_tail_calls. Say "proposed", never "accepted".
+       Hutton, JFP 9(4) 1999, 355–372, author PDF people.cs.nott.ac.uk/pszgmh/fold.pdf
+         (title + abstract checked from text layer). Hutton's fold is the RIGHT fold.
+     WEAKER EVIDENCE: "We call Y the paradoxical combinator" seen only as an Internet Archive
+       full-text-search snippet of Curry & Feys vol. I (1958), index pp. 177–179; page not
+       read. Book says only that Curry and Feys call it that; does not claim Curry coined it.
+       The Little Schemer ch. 9 deriving applicative-order Y: from knowledge of the book, not
+       re-checked against a copy.
+     NOT SAID ON PURPOSE: the Algol 60 "Amsterdam plot" story of how recursion got into the
+       report (contested; not needed). No "Y was Curry's"/"Church's" priority claim beyond
+       McCarthy's own words.
+     Status: draft authored 2026-10-07, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p>The functions of this part so far have called other functions. This one calls itself. <code>fact</code>
+computes the factorial of a non-negative integer, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">n</span><span class="mclose">!</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="minner">⋯</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span>,
+with <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">0</span><span class="mclose">!</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span>:</p>
+<pre><code class="language-text">fn fact(n: Int) -&gt; Int = if n == 0 { 1 } else { n * fact(n - 1) };
 
-- Recursive functions, and what the evaluator has to do so a function can refer to itself — the
-  binding must be visible inside its own body.
-- **Higher-order functions**: taking and returning functions, and why that follows immediately from
-  the previous chapters rather than being a new feature.
-- The call stack made visible: what deep recursion costs in a tree-walking evaluator, and where the
-  limit actually is.
+fn main() {
+    println(fact(5));                                   // 120
+}
+</code></pre>
+<p>The body of <code>fact</code> mentions <code>fact</code>. <code>fact(5)</code> evaluates <code>5 * fact(4)</code>, which needs <code>fact(4)</code>, and
+so on down to <code>fact(0)</code>, which is <code>1</code> without another call. The same definition written as a
+lambda inside <code>main</code> does not run:</p>
+<pre><code class="language-text">fn main() {
+    let fact = |n: Int| if n == 0 { 1 } else { n * fact(n - 1) };
+    println(fact(5));                         // UnboundVariable fact
+}
+</code></pre>
+<p>A function that counts its way through a range shows a third behaviour. <code>sum_to(n)</code> adds the
+integers from <code>1</code> to <code>n</code>:</p>
+<pre><code class="language-text">fn sum_to(n: Int) -&gt; Int = if n == 0 { 0 } else { n + sum_to(n - 1) };
 
-*History (woven):* Scheme and the functional lineage; tail calls as the feature that made recursion
-a serious loop replacement rather than a curiosity.
--->
+fn main() {
+    println(sum_to(10000));                             // 50005000
+    println(sum_to(1000000));                           // StackOverflow
+}
+</code></pre>
+<p>Nothing is wrong with the arithmetic of the second call; the prelude’s
+<code>fold(range(1, 1000001), 0, |acc: Int, x: Int| acc + x)</code> computes the same sum, <code>500000500000</code>.</p>
+<p>The three programs raise these questions:</p>
+<ul>
+<li><strong>How does the body of <code>fact</code> find <code>fact</code>?</strong> A body runs in the environment its closure captured.
+For the call <code>fact(n - 1)</code> to work, that environment has to hold the closure that captured it.</li>
+<li><strong>Why does the lambda in <code>main</code> fail, and can it be repaired?</strong> Is self-reference something a
+language has to provide, or can a program build it from functions it already has?</li>
+<li><strong>What does each level of a recursion cost?</strong> What stops <code>sum_to(1000000)</code>, and is there a way to
+write a recursive function that does not pay it?</li>
+</ul>
+<p>The first languages to allow a function to call itself had to answer the first question in their
+notation and the third in their implementation.</p>
+<h2 id="a-function-that-names-itself"><a class="header" href="#a-function-that-names-itself">A function that names itself</a></h2>
+<p>The program John McCarthy wanted to write in 1958 was a symbolic differentiator, and the language
+he first tried to write it in, FLPL, was a set of list-processing subroutines for Fortran. In his
+“<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">History of Lisp</a>” (1979) he recalls that the
+program “was not implemented that summer, because FLPL allows neither conditional expressions nor
+recursive use of subroutines.” Differentiating a sum means differentiating each of its terms, and
+the natural way to write that is a function that calls itself on the parts of an expression. The
+same history credits the differentiator with Lisp’s <code>maplist</code>, the function that applies a
+functional argument to each element of a list.</p>
+<p>Fortran’s restriction held for a long time. The FORTRAN 77 standard (§15.2) still says: “A
+subprogram must not reference itself, either directly or indirectly.” Fortran 90 added a keyword,
+<code>RECURSIVE</code>, that a procedure must carry if it calls itself, so recursion there became something a
+procedure declares.</p>
+<p>McCarthy’s paper “<a href="https://doi.org/10.1145/367177.367199">Recursive Functions of Symbolic Expressions and Their Computation by Machine,
+Part I</a>” (1960) wrote functions in Church’s λ-notation, and
+the notation had a gap. A λ-expression denotes a function without naming it, so a function written
+that way has no name to call itself by. The paper (§2f) says so directly: “The λ-notation is
+inadequate for naming functions defined recursively.” Its repair was a second binder, <code>label</code>:
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathit">label</span></span><span class="mopen">(</span><span class="mord mathnormal">a</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathcal" style="margin-right:0.08944em;">E</span><span class="mclose">)</span></span></span></span> stands for the expression <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal" style="margin-right:0.08944em;">E</span></span></span></span>, with each occurrence of
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> inside <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathcal" style="margin-right:0.08944em;">E</span></span></span></span> referring to the whole expression. In the history, McCarthy credits the
+notation to Nathaniel Rochester, and records that it was not strictly needed:</p>
+<blockquote>
+<p>Logical completeness required that the notation used to express functions used as functional
+arguments be extended to provide for recursive functions, and the LABEL notation was invented by
+Nathaniel Rochester for that purpose. D.M.R. Park pointed out that LABEL was logically
+unnecessary since the result could be achieved using only LAMBDA - by a construction analogous to
+Church’s Y-operator, albeit in a more complicated way.</p>
+</blockquote>
+<p>The implementation needed a place for the variables of each active call. A routine whose locals sit
+in fixed locations can have one call in progress at a time, the limit the Wheeler jump of
+<a href="functions.html">first-class functions</a> ran into with its return address. Lisp’s first implementers,
+McCarthy writes, “decided to use SAVE and UNSAVE routines that use a single contiguous public stack
+array to save the values of variables and subroutine return addresses in the implementation of
+recursive subroutines.” Edsger Dijkstra’s “<a href="https://doi.org/10.1007/BF01386232">Recursive
+Programming</a>” (1960) made the same structure the organizing
+idea of an implementation for Algol 60. A routine that keeps its working storage in fixed places,
+he wrote, cannot be called “while one or more previous activations of the same subroutine have not
+yet come to an end, without losing the possibility of finishing them off properly later on.” A
+stack gives each activation its own storage, and the activation records that
+<a href="closures.html#bindings-on-a-stack">closures</a> described are its entries.</p>
+<p>Park’s remark is the subject of the next section: a language that has λ already has recursion,
+if it is willing to let a function be applied to itself.</p>
+<h2 id="recursion-as-a-fixed-point"><a class="header" href="#recursion-as-a-fixed-point">Recursion as a fixed point</a></h2>
+<p>Start from the failing lambda. Its body needs a function to call for the smaller case, and nothing
+in scope provides one. A parameter can provide one. Give the lambda an extra parameter, <code>me</code>, and
+call <code>me</code> where the body called <code>fact</code>:</p>
+<pre><code class="language-text">let f = |me, n| if n == 0 { 1 } else { n * me(me, n - 1) };
+println(f(f, 5));                                       // 120
+</code></pre>
+<p><code>f(f, 5)</code> runs the body with <code>me</code> bound to <code>f</code> itself and <code>n</code> to <code>5</code>. The recursive case calls
+<code>me(me, 4)</code>, which is <code>f(f, 4)</code>: the same function, handed itself again, so that it can make the
+next call in turn. Each call passes the function down to the next. Nothing in the program refers to
+itself by name; each closure captures <code>main</code>’s environment, which has no <code>f</code> in it while the lambda
+is being built, and the self-reference travels as an argument. (The parameter is <code>me</code> because
+<code>self</code> is a reserved word in Bridger, kept for the methods of <a href="../objects/structs.html">Part IX</a><!-- xref:../objects/structs.md -->.)</p>
+<h3 id="the-equation-fact-solves"><a class="header" href="#the-equation-fact-solves">The equation <code>fact</code> solves</a></h3>
+<p>The extra argument clutters the body. Separate the part that describes one step of factorial from
+the part that ties it to itself. One step, given <em>some</em> function <code>me</code> to use for the smaller case,
+is</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">λ</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathit">me</span></span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal">λn</span><span class="mord">.</span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">if</span></span><span class="mspace"> </span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">0</span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">then</span></span><span class="mspace"> </span><span class="mord">1</span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">else</span></span><span class="mspace"> </span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathit">me</span></span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span></p>
+<p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span></span></span></span> is not recursive. Handed a function, it returns a new function that handles <code>0</code> itself and
+passes every other case to the one it was handed. Handed a function that computes factorial,
+it returns a function that also computes factorial: the two agree on every input. Written as an
+equation,</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathit">fact</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mopen">(</span><span class="mord"><span class="mord mathit">fact</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>A value <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> with <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span> is a <strong>fixed point</strong> of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span></span></span></span>, and factorial is a fixed point of the
+one-step function <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span></span></span></span>. Every recursive definition can be read this way: replace each recursive
+call with a call to a parameter, and the function being defined is the one that the result
+leaves unchanged.</p>
+<p>A <strong>fixed-point combinator</strong> is a function <code>fix</code> that, given any such <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span></span></span></span>, produces a fixed point
+of it, so that <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathit">fix</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mopen">(</span><span class="mord"><span class="mord mathit">fix</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mclose">))</span></span></span></span>. The one usually written <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span></span></span></span> is</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">λ</span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mord">.</span><span class="mspace"> </span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mclose">))</span><span class="mspace"> </span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mclose">))</span></span></span></span></span></p>
+<p>Apply it to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span></span></span></span> and take one step, substituting the second <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span> for <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> in
+the first:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mclose">))</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mclose">))</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="delimsizing size1">(</span></span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mclose">))</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mclose">))</span><span class="mord"><span class="delimsizing size1">)</span></span></span></span></span></span></p>
+<p>The argument handed to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span></span></span></span> on the right is the expression on the left, so <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span></span></span></span> unfolds to
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mclose">)</span></span></span></span> one step at a time. The function is applied to itself, <code>x x</code>, as <code>f</code> was applied to
+itself above; <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span></span></span></span> is that trick with the one-step function factored out. Haskell Curry and Robert
+Feys’s <em>Combinatory Logic</em> (1958) calls <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span></span></span></span> the <em>paradoxical combinator</em>, and McCarthy’s “Church’s
+Y-operator” is the same construction.</p>
+<h3 id="fixed-points-under-call-by-value"><a class="header" href="#fixed-points-under-call-by-value">Fixed points under call by value</a></h3>
+<p>Written in Bridger, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span></span></span></span> does not produce factorial:</p>
+<pre><code class="language-text">let y = |g| (|x| g(x(x)))(|x| g(x(x)));
+let fact = y(|me| |n| if n == 0 { 1 } else { n * me(n - 1) });
+                                                // StackOverflow at x(x)
+</code></pre>
+<p>The reason is the evaluation order that <a href="calls.html">E-App</a> fixes. A call evaluates its arguments
+before it runs the body, so <code>g(x(x))</code> evaluates <code>x(x)</code> before <code>g</code> is ever called; <code>x(x)</code> is a call
+whose body is <code>g(x(x))</code> again, which evaluates <code>x(x)</code> again. The unfolding that the reduction above
+performs one step at a time on demand, call by value performs eagerly and without end, and no call
+of <code>g</code> is ever reached. Under the call by name of <a href="calls.html#call-by-value-call-by-name">Algol 60</a>,
+the argument would be passed unevaluated, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span></span></span></span> would work as written.</p>
+<p>The repair is to hand <code>g</code> something whose evaluation runs nothing. A lambda is such a thing, by
+<a href="functions.html#what-a-lambda-evaluates-to">E-Lam</a>. Wrap <code>x(x)</code> in a lambda that calls it only when
+it is itself called, <code>|v| x(x)(v)</code>, and the result is the fixed-point combinator for call by value,
+often written <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span></span></span></span>:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">λ</span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mord">.</span><span class="mspace"> </span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mclose">))</span><span class="mspace"> </span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">λ</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mord">.</span><span class="mspace"> </span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mclose">))</span></span></span></span></span></p>
+<pre><code class="language-text">let fix = |g| (|x| g(|v| x(x)(v)))(|x| g(|v| x(x)(v)));
+let fact = fix(|me| |n| if n == 0 { 1 } else { n * me(n - 1) });
+let fib = fix(|me| |n| if n &lt; 2 { n } else { me(n - 1) + me(n - 2) });
+println(fact(5));                                       // 120
+println(fib(10));                                       // 55
+</code></pre>
+<p><code>fix</code> takes the step functions and nothing else. Neither <code>fact</code> nor <code>fib</code> mentions its own name,
+and <code>fix</code> mentions no function but its argument; the recursion is built out of λ alone, as Park
+said it could be. It costs something. Each level of <code>fact</code> built this way passes through <code>me</code>, the
+self-application <code>x(x)</code>, and <code>g</code> before it reaches the step’s body, and holds two frames at once
+where the top-level <code>fact</code> holds one: a sum written with <code>fix</code> runs 49 990 levels deep and fails at
+50 010.</p>
+<h3 id="the-programs-environment-is-a-fixed-point"><a class="header" href="#the-programs-environment-is-a-fixed-point">The program’s environment is a fixed point</a></h3>
+<p>The top-level <code>fact</code> is a fixed point too, of a different function. <a href="../appendix/language-reference.html">Appendix
+D</a> defines the program’s environment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> by a condition
+that mentions <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> on both sides:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8304em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊇</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="mord"><span class="delimsizing size1">[</span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">λ</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.10764em;">f</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace"> </span><span class="mord"><span class="delimsizing mult"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.85em;"><span style="top:-2.85em;"><span class="pstrut" style="height:3.2em;"></span><span style="width:0.333em;height:1.200em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.333em" height="1.200em" viewbox="0 0 333 1200"><path d="M145 15 v585 v0 v585 c2.667,10,9.667,15,21,15 c10,0,16.667,-5,20,-15 v-585 v0 v-585 c-2.667,-10,-9.667,-15,-21,-15 c-10,0,-16.667,5,-20,15z M188 15 H145 v585 v0 v585 h43z" /></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.35em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0361em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.10764em;">f</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="mord"><span class="mord mathit">prog</span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="delimsizing size1">]</span></span></span></span></span></span></p>
+<p>Each top-level function is a closure whose captured environment is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> holds
+each of those closures. Read as an equation, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is a fixed point of the function that takes
+an environment and builds a closure over it for every <code>fn</code> in the program. When the body of <code>fact</code>
+reaches <code>fact(n - 1)</code>, <a href="../binding/environments.html">E-Var</a> looks <code>fact</code> up in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> extended with
+<code>n</code>, finds the closure, and <a href="calls.html">E-App</a> runs its body in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> extended again. Nothing
+about the call is special; the environment already contains what the body needs.</p>
+<p>The lambda in <code>main</code> has no such environment. <a href="../binding/environments.html#the-design-space">E-Let</a>
+evaluates its right-hand side in the environment <em>before</em> the binding, so E-Lam captures an
+environment that has no <code>fact</code>, and the binding added afterward is outside the closure’s reach.</p>
+<h2 id="bridgers-recursion"><a class="header" href="#bridgers-recursion">Bridger’s recursion</a></h2>
+<p>Bridger provides recursion through the program’s environment and nowhere else. A top-level <code>fn</code>
+may call itself and every other top-level <code>fn</code>, whichever is written first. A <code>let</code>-bound lambda
+cannot call itself, as the
+<a href="../binding/environments.html#the-design-space">environments</a> chapter decided when it gave E-Let its
+scope. There is no <code>let rec</code>.</p>
+<p>A program that wants a recursive function inside a block has two ways to build one from what the
+language already has. The first is the fixed-point combinator above. The second ties the knot
+through the store, using a <a href="../imperative/mutation.html">reference cell</a>: allocate a cell holding a
+placeholder function, then overwrite it with a function whose body calls whatever the cell holds.</p>
+<pre><code class="language-text">let r = ref (|n: Int| 0);
+r := (|n: Int| if n == 0 { 1 } else { n * (deref r)(n - 1) });
+println((deref r)(5));                                  // 120
+</code></pre>
+<p>The lambda captures <code>r</code>, which is in scope because the cell was bound first. By the time the body
+runs, the cell holds the lambda itself, and <code>(deref r)(n - 1)</code> calls it. (A lambda on the right of
+<code>:=</code> needs parentheses.)</p>
+<h3 id="building-it"><a class="header" href="#building-it">Building it</a></h3>
+<p>There is no new evaluator arm in this chapter. The <code>Var</code> and <code>Call</code> arms of the <a href="calls.html">last two
+chapters</a> already run <code>fact</code>, <code>is_even</code>, and the knot through the store, and
+<code>f(f, 5)</code> and <code>fix</code> are lambdas and calls like any other.</p>
+<p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is provided. It is built the way the knot through the store is: the interpreter makes the
+program’s root scope first, with no functions in it, and then installs each top-level <code>fn</code> as a
+closure that captures that root.</p>
+<pre><code class="language-rust ignore">impl Env {
+    /// Install a top-level `fn` as a Bridger closure that captures *this*
+    /// root environment.
+    pub(crate) fn add_function(&amp;self, name: Name, params: Vec&lt;Name&gt;, body: Expr);
+}</code></pre>
+<p>The root’s bindings sit behind a <code>RefCell</code> so they can be added after the root is shared. When the
+last <code>fn</code> is installed, every closure in the root points to the root, which holds every closure:
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, built by allocating the environment and then filling it in. As
+<a href="closures.html">closures</a> observed, this is the one reference cycle in the environments, and it lasts
+as long as the program does.</p>
+<h3 id="what-a-level-costs"><a class="header" href="#what-a-level-costs">What a level costs</a></h3>
+<p>A call’s body is bracketed by <code>enter_call</code> and <code>leave_call</code> (<a href="calls.html">evaluating function calls</a>),
+and between them it holds a frame: a count of nested Bridger calls in progress. Every application
+of a top-level function, a lambda, or a method opens one, and <code>enter_call</code> refuses to open more
+than 100 000:</p>
+<pre><code class="language-rust ignore">pub const MAX_DEPTH: usize = 100_000;</code></pre>
+<p><code>sum_to(1000000)</code> needs a million frames at once. <code>sum_to(n)</code> cannot finish until <code>sum_to(n - 1)</code>
+has returned a value to add <code>n</code> to, so every level stays open until the bottom is reached. The
+evaluator reports <code>StackOverflow</code> at the
+call that would have opened the 100 001st frame.</p>
+<p>The limit stands in for one the evaluator cannot otherwise control. Your <code>eval_expr</code> is a
+recursive Rust function, and a single Bridger call is several nested Rust calls of it, each with
+a frame on the Rust stack. Running out of that stack aborts the whole interpreter process without a
+Bridger error or a span. The provided <code>main</code> runs the interpreter on a thread with a 2 GiB stack,
+and the frame count stops a Bridger program well before that stack is exhausted, with an error that
+points at the call. The prelude’s <code>map</code>, <code>filter</code>, and <code>fold</code> are native: they iterate over their
+list in Rust and open no frames of their own, which is why the <code>fold</code> over a million elements in the
+opening ran. The function handed to them opens one per call, and returns before the next.</p>
+<h3 id="recursive-higher-order-functions"><a class="header" href="#recursive-higher-order-functions">Recursive higher-order functions</a></h3>
+<p>A higher-order function can be recursive. <code>fold_range</code> folds a function over the integers from
+<code>lo</code> up to <code>hi</code>, as the prelude’s <code>fold</code> would over <code>range(lo, hi)</code>:</p>
+<pre><code class="language-text">fn fold_range(lo: Int, hi: Int, z: Int, f: fn(Int, Int) -&gt; Int) -&gt; Int =
+    if lo &gt;= hi { z } else { fold_range(lo + 1, hi, f(z, lo), f) };
+
+fold_range(1, 5, 0, |acc: Int, x: Int| acc + x)         // 10
+fold_range(1, 6, 1, |acc: Int, x: Int| acc * x)         // 120
+</code></pre>
+<p>Factorial and the sum are each one <code>fold_range</code> with a different step. <code>fold_range</code> names the
+recursion once and takes what varies as an argument: the starting value and the function that
+combines it with each integer. Graham Hutton’s <a href="https://people.cs.nott.ac.uk/pszgmh/fold.pdf">tutorial on
+fold</a> (1999) describes fold as a “standard operator
+that encapsulates a simple pattern of recursion for processing lists”. Recursion over a list itself
+needs a way to take a list apart into its first element and the rest, which is the pattern matching
+of <a href="../adt/pattern-matching.html">Part VIII</a><!-- xref:../adt/pattern-matching.md -->; with it, <code>map</code>,
+<code>filter</code>, and <code>fold</code> can be written in Bridger in a few lines each.</p>
+<p><code>fold_range</code> differs from <code>sum_to</code> in where its recursive call sits. <code>sum_to</code>’s call is an operand
+of <code>+</code>, so the caller still has work to do when it returns. <code>fold_range</code>’s call <em>is</em> the result:
+when it returns, its caller returns the same value and does nothing else. A call in that position
+is a <strong>tail call</strong>. Bridger gives tail calls no special treatment. <code>fold_range(0, 1000000, 0, …)</code>
+would hold a million frames, one per pending call with nothing left to do, and it stops with
+<code>StackOverflow</code> where <code>fold(range(0, 1000000), …)</code> runs.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<h3 id="binding-a-recursive-name"><a class="header" href="#binding-a-recursive-name">Binding a recursive name</a></h3>
+<p>Languages place the recursive binding in different forms. ML and OCaml use <code>let rec</code>, a separate
+form whose name is in scope in its own right-hand side; Scheme’s <code>letrec</code> does the same and
+<a href="../binding/environments.html#the-design-space">environments</a> mentioned both. In Haskell every <code>let</code>
+and <code>where</code> binding is recursive, so the failing lambda in <code>main</code> would work there as written; the
+cost is that <code>let x = x + 1</code> is a definition of <code>x</code> in terms of itself rather than a reference to an
+outer <code>x</code>. Rust lets a function item be declared inside a block, where it can call itself, but such
+an item cannot capture the block’s local variables; a Rust closure can capture them and cannot name
+itself. Bridger’s arrangement is the same split at a larger grain: the top level provides
+recursion, the lambda provides capture.</p>
+<p>A language can also leave the binding alone and provide the fixed point. The step function
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span></span></span></span> above is an ordinary non-recursive function, and a primitive <code>fix</code> with the property
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathit">fix</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mopen">(</span><span class="mord"><span class="mord mathit">fix</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="mclose">))</span></span></span></span> gives every recursive definition in terms of one construct.
+Typed calculi used in the theory of programming languages often take this route, for the reason
+the next subsection gives.</p>
+<h3 id="recursion-and-types"><a class="header" href="#recursion-and-types">Recursion and types</a></h3>
+<p>Part VI’s checker<!-- xref:../types/type-checker.md --> accepts the top-level <code>fact</code>, the
+knot through the store, and <code>fold_range</code>. It rejects <code>f(f, 5)</code>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span></span></span></span>, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span></span></span></span>, each with the same
+error: <code>cannot construct the infinite type</code>. In <code>me(me, n - 1)</code>, <code>me</code> is called with itself as an
+argument. If <code>me</code> had a type <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span>, that type would have to be a function type whose first parameter
+is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span>: <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span></span></span></span>. No type written with finitely many
+<code>fn</code>s satisfies that equation, since substituting the right side into itself never ends. Every
+self-application has the same problem.</p>
+<p>A type system like Part VI’s therefore cannot express recursion with λ alone, and a typed language
+supplies recursion as a construct of its own: recursive top-level declarations, <code>let rec</code>, or a
+primitive <code>fix</code>. In Bridger the top-level <code>fn</code> is that construct. The fixed-point combinators of
+this chapter run on the M4 evaluator, which checks nothing before it runs, and stop running once the
+checker arrives.</p>
+<h3 id="tail-calls"><a class="header" href="#tail-calls">Tail calls</a></h3>
+<p>Guy Steele’s MIT memo “<a href="http://hdl.handle.net/1721.1/5753">Debunking the ‘Expensive Procedure Call’ Myth, or, Procedure Call
+Implementations Considered Harmful, or, Lambda: The Ultimate GOTO</a>”
+(1977) argued that a call with nothing left to do after it needs no frame of its own:</p>
+<blockquote>
+<p>In this way, if the last thing a procedure does is call another (external) procedure, that call
+can be compiled as a GOTO. Such a call is called tail-recursive, because the call appears to be
+recursive, but is not, since it appears at the tail end of the caller.</p>
+</blockquote>
+<p>The caller’s frame is no longer needed, so the callee can reuse it, and a chain of tail calls runs
+in the space of one frame. Scheme made this a requirement of the language. The
+<a href="https://small.r7rs.org/attachment/r7rs.pdf">R7RS</a> report (§3.5) states that “Implementations of
+Scheme are required to be <em>properly tail-recursive</em>”, and gives the consequence in its overview
+(§1.1): “iteration can be expressed using the ordinary procedure-call mechanics, so that special
+iteration constructs are useful only as syntactic sugar.” In Scheme, <code>fold_range</code> is a loop.</p>
+<p>The 2015 edition of ECMAScript specified the same guarantee for JavaScript’s strict mode (§14.6,
+“Tail Position Calls”). WebKit’s announcement of its implementation, “<a href="https://webkit.org/blog/6240/ecmascript-6-proper-tail-calls-in-webkit/">ECMAScript 6 Proper Tail
+Calls in WebKit</a>” (2016),
+described the requirement — “such a call must reuse the stack space of its own frame instead of
+pushing another frame onto the call stack” — and its effect on debugging: “the tail deleted function
+will not show up in a stack trace.” V8’s team <a href="https://v8.dev/blog/modern-javascript">reported</a> the
+same year that proper tail calls had “been implemented but not yet shipped”, and the flags were
+later removed.</p>
+<p>Python’s designer declined it. In “<a href="http://neopythonic.blogspot.com/2009/04/tail-recursion-elimination.html">Tail Recursion
+Elimination</a>” (2009) Guido
+van Rossum gave the stack trace as the first reason: “when a tail recursion is eliminated, there’s
+no stack frame left to use to print a traceback when something goes wrong later”, and “Python’s
+default is and should always be to be maximally helpful for debugging.” Python instead bounds the
+depth, as Bridger does; its documentation says the limit “prevents infinite recursion from causing
+an overflow of the C stack and crashing Python.” Rust makes no guarantee either; an explicit form,
+a <code>become</code> keyword that the programmer writes in place of <code>return</code> to demand a tail call, has been
+proposed and exists as an experiment in the nightly compiler.</p>
+<p>Bridger sides with the stack trace. Every call holds a frame until it returns, and a
+<code>StackOverflow</code> points at the call that would have gone deeper. Eliminating tail calls in a
+tree-walking evaluator is a change to the <code>Call</code> arm. A call in tail position would stop short of
+running its body and pass the closure and its arguments outward, through the control channel that
+already carries <code>return</code>, to the <code>Call</code> arm whose body it ends. That arm would run its body in a
+loop: on receiving a tail call, it would bind the new arguments and go around again, without a
+nested call of <code>eval_expr</code>, so neither the frame count nor the Rust stack would grow. Bridger’s
+semantics would say nothing different about such a program’s value; only the depth at which it
+fails would change.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Recursion in early Lisp</strong>: McCarthy’s “<a href="https://doi.org/10.1145/367177.367199">Recursive Functions of Symbolic Expressions and Their
+Computation by Machine, Part I</a>” (1960) defines its functions
+by conditional expressions and recursion and introduces <code>label</code> in §2f; the author’s retyped copy
+is at <a href="http://jmc.stanford.edu/articles/recursive/recursive.pdf">jmc.stanford.edu</a>. His “<a href="http://jmc.stanford.edu/articles/lisp/lisp.pdf">History of
+Lisp</a>” (1979) describes the differentiation program,
+FLPL’s limits, <code>maplist</code>, LABEL, and the stack the first implementation used.</p>
+<p><strong>The stack</strong>: Dijkstra’s “<a href="https://doi.org/10.1007/BF01386232">Recursive Programming</a>” (1960)
+describes a stack-based implementation of procedure calls, including the treatment of parameters
+and of procedures that call themselves; a scan of the journal printing is in the <a href="https://ir.cwi.nl/pub/9253">CWI
+repository</a>.</p>
+<p><strong>Fixed points</strong>: Daniel Friedman and Matthias Felleisen’s <em>The Little Schemer</em> (4th ed., MIT Press,
+1996), chapter 9, arrives at the call-by-value <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">Y</span></span></span></span> by repeatedly removing the name from a recursive
+length function, in the book’s question-and-answer format.</p>
+<p><strong>Fold</strong>: Hutton’s “<a href="https://people.cs.nott.ac.uk/pszgmh/fold.pdf">A tutorial on the universality and expressiveness of
+fold</a>” (Journal of Functional Programming, 1999) uses
+one property of the right fold over lists to turn recursive functions into folds and to prove
+facts about them, and shows how much a fold can compute once it may return tuples and functions.</p>
+<p><strong>Tail calls</strong>: Steele’s “<a href="http://hdl.handle.net/1721.1/5753">Lambda: The Ultimate GOTO</a>” (1977)
+memo makes the case for compiling a procedure call as a jump with arguments, with examples in Lisp
+and in compiled code. Van Rossum’s <a href="http://neopythonic.blogspot.com/2009/04/tail-recursion-elimination.html">first post</a>
+and his follow-up, “<a href="http://neopythonic.blogspot.com/2009/04/final-words-on-tail-calls.html">Final Words on Tail
+Calls</a>” (2009), give the
+case against, and the comments under each argue it.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>The lambda <code>let fact = |n: Int| … fact(n - 1) …;</code> in <code>main</code> fails with <code>UnboundVariable</code>. Which rule's premise puts <code>fact</code> out of the body's reach?</summary>
+<p>E-Let evaluates the right-hand side in the environment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span></span></span></span> that the block had before the
+binding, and E-Lam captures exactly that environment in the closure. The binding of <code>fact</code> is added
+afterward, to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ρ</span><span class="mopen">[</span><span class="mord"><span class="mord mathit">fact</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mclose">]</span></span></span></span>, which the closure never sees. When the closure is
+called, E-App runs the body in the captured <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span></span></span></span> extended with <code>n</code>, and the lookup of <code>fact</code>
+fails. A top-level <code>fn</code> avoids this because the environment its closure captures is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>,
+which contains the closure.</p>
+</details>
+<details>
+<summary><code>is_even</code> and <code>is_odd</code> call each other. Does it matter which is written first, and how many frames does <code>is_even(10)</code> hold at its deepest?</summary>
+<pre><code class="language-text">fn is_even(n: Int) -&gt; Bool = if n == 0 { true } else { is_odd(n - 1) };
+fn is_odd(n: Int) -&gt; Bool = if n == 0 { false } else { is_even(n - 1) };
+</code></pre>
+<p>Order does not matter: both closures capture <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, which holds both, so each body finds the
+other whichever was declared first. <code>is_even(10)</code> calls <code>is_odd(9)</code>, which calls <code>is_even(8)</code>, and
+so on to <code>is_even(0)</code>: eleven calls, all open at once, since each is in tail position but Bridger
+keeps a frame for every call until it returns. With <code>main</code>’s frame, twelve. The answer is <code>true</code>.</p>
+</details>
+<details>
+<summary>Under call by value, why does <code>|g| (|x| g(x(x)))(|x| g(x(x)))</code> never call <code>g</code>, while the version with <code>|v| x(x)(v)</code> does?</summary>
+<p>E-App evaluates a call’s argument before it runs the body. In <code>g(x(x))</code> the argument is <code>x(x)</code>,
+a call whose body is <code>g(x(x))</code> again, so evaluation enters <code>x(x)</code> without end and <code>g</code>’s body is
+never reached; the evaluator stops it at the frame limit. In <code>g(|v| x(x)(v))</code> the argument is a
+lambda, and by E-Lam evaluating a lambda runs nothing: it yields a closure at once, and <code>g</code> is
+called with it. The self-application happens only when <code>g</code>’s body calls that closure, which it does
+only for a case that needs a smaller answer.</p>
+</details>
+<details>
+<summary>The knot through the store is accepted by Part VI's checker, and <code>f(f, 5)</code> is not. Both build a recursive function inside a block. What does the store version have that the self-application lacks?</summary>
+<p>A type for every name. <code>r</code> has type <code>ref fn(Int) -&gt; Int</code>, the placeholder and the real lambda both
+have type <code>fn(Int) -&gt; Int</code>, and <code>(deref r)(n - 1)</code> is a call of an <code>fn(Int) -&gt; Int</code>; nothing
+mentions its own type. In <code>f(f, 5)</code>, <code>f</code>’s first parameter must accept <code>f</code>, so <code>f</code>’s type would
+have to contain itself, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span></span></span></span>, which no finite type
+satisfies. The store version gets its self-reference from mutation at run time, through a cell
+whose type is fixed in advance; the self-application gets it by passing a value to itself, which
+needs a type that contains itself.</p>
+</details>
+<details>
+<summary>Suppose Bridger eliminated tail calls, so that <code>fold_range(0, 1000000, 0, …)</code> ran. What would a programmer lose, and what would a recursive function have to look like to benefit?</summary>
+<p>The frames of tail calls would no longer exist, so an error raised deep in a tail-recursive loop
+could not be traced back through the calls that led to it, and a <code>StackOverflow</code> report would no
+longer catch a runaway tail recursion: a tail-recursive function with no base case would run
+forever instead of stopping at the limit. Only calls in tail position would benefit. <code>sum_to</code>, whose
+recursive call is an operand of <code>+</code>, would still hold a frame per level; to run in constant frames
+it would have to be rewritten with an accumulator, as <code>fold_range</code> is, so that the call is the
+whole result. Python and Scheme weighed these two consequences and decided in opposite ways.</p>
+</details>
 
                     </main>
 

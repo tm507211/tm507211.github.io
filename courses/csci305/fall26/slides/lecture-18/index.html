@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recursion and Higher-Order Functions - Slidev</title>
+<link rel="icon" href="https://cdn.jsdelivr.net/gh/slidevjs/slidev/assets/favicon.png">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta property="slidev:version" content="52.19.1">
+<meta name="description" content="&quot;Lecture 18 (Recursion &amp; Higher-Order Functions). Ch. 23 / functions/functional.md, on the\nroad to M4. SHORT DECK (~20–25 min) — the schedule is behind; it follows the tail of L17.\nProblem: top-level fact runs, the same lambda in main is UnboundVariable, sum_to(1000000) is\nStackOverflow. Why: env0 holds the closures that capture it; E-Let&#039;s closure can&#039;t see its\nown binding. History: FLPL had no recursion; McCarthy&#039;s &quot;λ-notation is inadequate&quot; and\nlabel; Rochester invented LABEL, Park said LAMBDA suffices (Y); Dijkstra&#039;s stack; FORTRAN 77\nstill forbids it. Theory: self-application f(f, 5); fact = F(fact), a fixed point; F^k(zero)\napproximations; Y loops under call by value, Z works. Bridger: top-level fn only; the\ninterpreter ties env0 by allocate-then-fill, a program can do the same with a ref cell;\nPart VI rejects self-application (infinite type). Cost: one frame per call, 100 000 max,\nnative fold opens none, tail calls get no special treatment. Design space: Scheme requires\nproper tail calls, ES2015 specified them, Python declined, Rust proposes `become`.\nNo new rule, no new arm. Every Bridger example checked on the reference interpreter\n(--features m4 and m8); see the chapter&#039;s authoring note.\n&quot;">
+<meta property="og:title" content="Recursion and Higher-Order Functions - Slidev">
+<meta property="og:description" content="&quot;Lecture 18 (Recursion &amp; Higher-Order Functions). Ch. 23 / functions/functional.md, on the\nroad to M4. SHORT DECK (~20–25 min) — the schedule is behind; it follows the tail of L17.\nProblem: top-level fact runs, the same lambda in main is UnboundVariable, sum_to(1000000) is\nStackOverflow. Why: env0 holds the closures that capture it; E-Let&#039;s closure can&#039;t see its\nown binding. History: FLPL had no recursion; McCarthy&#039;s &quot;λ-notation is inadequate&quot; and\nlabel; Rochester invented LABEL, Park said LAMBDA suffices (Y); Dijkstra&#039;s stack; FORTRAN 77\nstill forbids it. Theory: self-application f(f, 5); fact = F(fact), a fixed point; F^k(zero)\napproximations; Y loops under call by value, Z works. Bridger: top-level fn only; the\ninterpreter ties env0 by allocate-then-fill, a program can do the same with a ref cell;\nPart VI rejects self-application (infinite type). Cost: one frame per call, 100 000 max,\nnative fold opens none, tail calls get no special treatment. Design space: Scheme requires\nproper tail calls, ES2015 specified them, Python declined, Rust proposes `become`.\nNo new rule, no new arm. Every Bridger example checked on the reference interpreter\n(--features m4 and m8); see the chapter&#039;s authoring note.\n&quot;">  <script type="module" crossorigin src="./assets/index-CqjJlDhK.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-hePW80VL.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/shiki-BDOa5D_m.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-QKqV1Vbb.js">
+  <link rel="modulepreload" crossorigin href="./assets/slidev/env-COlajfww.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/vue-CTLAYFu5.js">
+  <link rel="stylesheet" crossorigin href="./assets/modules/shiki-BrmBd2_v.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-mkOkUbXe.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="mermaid-rendering-container"></div>
+  
+</body>
+</html>

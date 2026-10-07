@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-f1a3eb2b.js";
+            window.path_to_searchindex_js = "../searchindex-59d04d34.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -470,7 +470,7 @@ value <span class="katex"><span class="katex-html" aria-hidden="true"><span clas
 and the environment in force when the lambda was evaluated. A top-level <code>fn</code> evaluates by
 <a href="../binding/environments.html">E-Var</a>: the program’s environment binds its name to a closure whose
 environment is the program’s environment, which is how top-level functions can call one another
-(cf. <a href="functional.html">recursion</a><!-- xref:functional.md -->).</p>
+(cf. <a href="functional.html">recursion</a>).</p>
 <p>How a call uses the captured environment is the rule for application, in the
 <a href="calls.html">next chapter</a><!-- xref:calls.md -->. What the capture makes possible — a function that
 outlives the call that created it — is the subject of <a href="closures.html">closures</a><!-- xref:closures.md -->.</p>
@@ -607,7 +607,7 @@ the outer call finishes, the order at its end now jumps back into the subroutine
 original caller, whose return address has been lost. The scheme stores one return address per
 routine, so it supports one active call per routine at a time. Supporting recursion requires a
 fresh place for the return address, and for the locals, on each call — the stack of activations
-that the <a href="functional.html">recursion</a><!-- xref:functional.md --> chapter makes visible in the
+that the <a href="functional.html">recursion</a> chapter makes visible in the
 evaluator.</p>
 </details>
 
