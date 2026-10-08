@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-59d04d34.js";
+            window.path_to_searchindex_js = "../searchindex-37824c41.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -202,38 +202,123 @@
 </div>
 
 <!-- AUTHORING NOTE (not rendered)
-     Per plan §9.5 this appendix is now an INDEX over the part-closing milestone
-     chapters, not the place milestones are described. Each milestone lives at
-     the end of its part; this table is the map.
-     Status: placeholder — spine authored just-in-time.
+     Per plan §9.5 this appendix is an INDEX over the part-closing milestone chapters,
+     not the place milestones are described: chapter -> deliverable, provided vs.
+     implemented. Each milestone lives at the end of its part.
+     SCOPE (user, 2026-10-08): rows for M0–M4 only, the drafted milestones. M5–M8
+     rows are kept in the hidden comment below the table; restore each as its
+     chapter is drafted, and drop the banner once all are in. Verify each new row's
+     holes with `grep -rn 'todo_mN!' src` in the interpreter crate.
+     ROW FACTS (interpreter crate + milestone chapters, verified 2026-10-08):
+       M0 own cargo project; student writes Purse's fields + todo!() method bodies;
+          given: method signatures + tests; check `cargo test`.
+       M1 holes Lit Unary Binary Tuple List Proj; provided AST, parser, Value,
+          type_of, RuntimeError, Control.
+       M2 holes Var Block; provided Env (lookup, extend).
+       M3 holes If While For Assign Return + Ref/Deref cases inside the Unary arm;
+          provided Store (alloc, read, write), Value::Ref.
+       M4 holes Lambda Call; provided Closure (Bridger | Native), enter_call /
+          leave_call, eval_prelude, eval_program + the bridger binary.
+     SPEC ONLY: no grading, deadlines, or submission text.
+     Status: draft authored 2026-10-08, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-From Part II onward, each part of this book closes with its milestone: the point where the concepts
-you have just read become a working piece of your interpreter. This appendix is the map — every
-milestone, the part it closes, and what you are handed versus what you write.
+<p>From Part II onward, each part of this book closes with a milestone: a chapter that specifies the
+piece of the interpreter the part’s concepts call for, with worked examples and tests to check it
+against. This appendix lists them, with the part each one closes, what you write, and what is
+provided.</p>
+<p>The exception is <strong>M0</strong>, which builds none of the language. It is a warm-up for readers new to Rust,
+and it sits with <a href="rust-reference.html">Appendix A</a> instead of closing Part I.</p>
+<table>
+<thead>
+<tr><th>Milestone</th><th>Closes</th><th>You write</th><th>Newly provided</th></tr>
 
-The exception is **M0**, which builds none of the language. It is an optional warm-up for readers
-new to Rust, and so it sits with [Appendix A](rust-reference.md) rather than closing Part I.
+</thead>
 
-| Milestone | Build | Closes | Provided |
-|---|---|---|---|
-| [M0](../milestones/m0.md) | Rust warm-up; starter repo builds | — (with Appendix A) | the whole starter repo |
-| [M1](../milestones/m1.md) | Expression evaluator | Part II | AST, `Value`, error/span types |
-| [M2](../milestones/m2.md) | Environments and binding | Part III | `Rc<Scope>` chain |
-| [M3](../milestones/m3.md) | Control flow and mutation | Part IV | — |
-| [M4](../milestones/m4.md) | Functions, closures, static scope | Part V | — |
-| [M5](../milestones/m5.md) | Static type checker | Part VI | `TypeMap`, a side table by span |
-| [M6](../milestones/m6.md) | Relations (Datalog fragment) | Part VII | — |
-| [M7](../milestones/m7.md) | ADTs and pattern matching | Part VIII | — |
-| [M8](../milestones/m8.md) | Structs, methods, and traits | Part IX | — |
+<tbody>
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m0.html">M0</a>: Rust warm-up</td>
+  <td style="white-space:nowrap">— (with Appendix A)</td>
+  <td>a coin purse: the fields of <code>Purse</code> and the bodies of its methods</td>
+  <td>the method signatures and the tests</td>
+</tr>
 
-Each milestone builds directly on the one before it: by M8 you are extending the same interpreter
-you started in M1, which is the point — the language grows, and so does the thing that runs it.
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m1.html">M1</a>: expressions</td>
+  <td style="white-space:nowrap">Part II</td>
+  <td><code>eval_expr</code> arms for literals, unary and binary operators, tuples, lists, and
+  projection</td>
+  <td>the starter interpreter: the AST, the parser, <code>Value</code> and <code>type_of</code>,
+  <code>RuntimeError</code> and <code>Control</code></td>
+</tr>
 
-*Rust itself is introduced at point of use across the chapters; [Appendix A](rust-reference.md) is
-the one-pass ramp.*
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m2.html">M2</a>: binding</td>
+  <td style="white-space:nowrap">Part III</td>
+  <td>arms for variables and blocks (<code>let</code> and sequencing)</td>
+  <td>the environment, <code>Env</code>, with <code>lookup</code> and <code>extend</code></td>
+</tr>
+
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m3.html">M3</a>: control and state</td>
+  <td style="white-space:nowrap">Part IV</td>
+  <td>arms for <code>if</code>, <code>while</code>, <code>for</code>, <code>:=</code>, and
+  <code>return</code>; <code>ref</code> and <code>deref</code> as new cases of the unary arm</td>
+  <td>the store, <code>Store</code>, with <code>alloc</code>, <code>read</code>, and
+  <code>write</code></td>
+</tr>
+
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m4.html">M4</a>: functions</td>
+  <td style="white-space:nowrap">Part V</td>
+  <td>arms for lambdas and calls</td>
+  <td>closures (<code>Closure</code>), the call-depth counter, the prelude's native primitives,
+  and the driver that runs a whole program from a file</td>
+</tr>
+
+</tbody>
+
+</table>
+
+<!-- Rows for M5–M8, hidden until those chapters are drafted. Each needs its
+     "You write" / "Newly provided" cells checked against the crate first.
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m5.md">M5</a>: types</td>
+  <td style="white-space:nowrap">Part VI</td>
+  <td>the static type checker</td>
+  <td></td>
+</tr>
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m6.md">M6</a>: relations</td>
+  <td style="white-space:nowrap">Part VII</td>
+  <td>the Datalog fragment</td>
+  <td></td>
+</tr>
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m7.md">M7</a>: algebraic data types</td>
+  <td style="white-space:nowrap">Part VIII</td>
+  <td>constructors and pattern matching</td>
+  <td></td>
+</tr>
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m8.md">M8</a>: objects</td>
+  <td style="white-space:nowrap">Part IX</td>
+  <td>structs, methods, and traits</td>
+  <td></td>
+</tr>
 -->
+<h2 id="one-interpreter-grown"><a class="header" href="#one-interpreter-grown">One interpreter, grown</a></h2>
+<p>From M1 on, the milestones extend a single interpreter. The starter repository has an arm in
+<code>eval_expr</code> for every form of the language from the start, and each arm a milestone fills is a
+hole tagged with that milestone (<code>todo_m1!</code>, <code>todo_m2!</code>, and so on), so the crate compiles at every
+stage.
+One command lists a milestone’s holes:</p>
+<pre><code class="language-text">grep -rn 'todo_m3!' src
+</code></pre>
+<p>The tests follow the same plan. <code>cargo mN</code> runs the tests for milestone N together with those of
+every earlier milestone, so an arm written for M1 is still checked at M4, and a later change that
+breaks it shows up as a failing earlier test.</p>
+<p><em>Rust itself is introduced at the point of use across the chapters; <a href="rust-reference.html">Appendix A</a>
+gathers it in one place.</em></p>
 
                     </main>
 
@@ -270,22 +355,6 @@ the one-pass ramp.*
         <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
         <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script>
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
         <script>

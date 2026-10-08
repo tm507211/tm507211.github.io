@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functional Programming - Slidev</title>
+<link rel="icon" href="https://cdn.jsdelivr.net/gh/slidevjs/slidev/assets/favicon.png">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta property="slidev:version" content="52.19.1">
+<meta name="description" content="&quot;Lecture 19 (Functional Programming). Ch. 24 / functions/functional-programming.md, closes the\ncontent of Part V before M4. SHORT DECK (~20 min) — quiz day (Q6).\nProblem: total_withdrawn as a Part IV loop with a cell and as a filter/map/fold pipeline (65).\nWhere the state went: the cell&#039;s 0 → 20 → 25 → 65 become the fold&#039;s per-call bindings.\nHistory: Backus&#039;s 1977 Turing lecture (pub. 1978) — the von Neumann bottleneck, the Algol\ninner product vs Def IP ≡ (/+)∘(α×)∘Trans, functional forms ∘ α / bu. Theory: the forms as\nBridger closures (compose, bu, below), currying; laws — map fusion is Backus&#039;s III.4, and\nfold-after-map rewrites total_withdrawn into one fold; referential transparency. Where laws\nfail: a printing stage (same list, different output) and a cell-reading stage (different\nlist). Design space: Haskell (IO, GHC&#039;s map/map rule), OCaml refs, Rust Fn/FnMut and lazy\niterators, Bridger (refs anywhere, purity checked only in Part VII rule filters); cost of\nintermediate lists and Hughes&#039;s &quot;glue&quot;. No new rule, no new arm. Every Bridger example\nchecked on the reference interpreter (--features m4 and m8); every quotation is in the\nchapter&#039;s authoring note with its page.\n&quot;">
+<meta property="og:title" content="Functional Programming - Slidev">
+<meta property="og:description" content="&quot;Lecture 19 (Functional Programming). Ch. 24 / functions/functional-programming.md, closes the\ncontent of Part V before M4. SHORT DECK (~20 min) — quiz day (Q6).\nProblem: total_withdrawn as a Part IV loop with a cell and as a filter/map/fold pipeline (65).\nWhere the state went: the cell&#039;s 0 → 20 → 25 → 65 become the fold&#039;s per-call bindings.\nHistory: Backus&#039;s 1977 Turing lecture (pub. 1978) — the von Neumann bottleneck, the Algol\ninner product vs Def IP ≡ (/+)∘(α×)∘Trans, functional forms ∘ α / bu. Theory: the forms as\nBridger closures (compose, bu, below), currying; laws — map fusion is Backus&#039;s III.4, and\nfold-after-map rewrites total_withdrawn into one fold; referential transparency. Where laws\nfail: a printing stage (same list, different output) and a cell-reading stage (different\nlist). Design space: Haskell (IO, GHC&#039;s map/map rule), OCaml refs, Rust Fn/FnMut and lazy\niterators, Bridger (refs anywhere, purity checked only in Part VII rule filters); cost of\nintermediate lists and Hughes&#039;s &quot;glue&quot;. No new rule, no new arm. Every Bridger example\nchecked on the reference interpreter (--features m4 and m8); every quotation is in the\nchapter&#039;s authoring note with its page.\n&quot;">  <script type="module" crossorigin src="./assets/index-DFcrbsQQ.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-hePW80VL.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/shiki-BDOa5D_m.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-QKqV1Vbb.js">
+  <link rel="modulepreload" crossorigin href="./assets/slidev/env-mdJZTkPO.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/vue-CTLAYFu5.js">
+  <link rel="stylesheet" crossorigin href="./assets/modules/shiki-BrmBd2_v.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-OaQq_dLq.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="mermaid-rendering-container"></div>
+  
+</body>
+</html>

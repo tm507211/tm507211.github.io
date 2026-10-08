@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Milestone M4 — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 100rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    h3 { margin-top: 1.4rem; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    pre { font-size: .9em; }
+    table code { white-space: nowrap; }
+    .grade-table td:first-child { white-space: nowrap; }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Milestone M4 <small>Functions, Closures, and Static Scope</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      In this milestone functions become values, and your interpreter runs its first whole Bridger
+      program. You put two forms into the evaluator: a <strong>lambda</strong>, which evaluates to a
+      closure holding its parameters, its body, and the environment it was written in, and a
+      <strong>call</strong>, which runs that body in the captured environment extended with the
+      arguments. Every program starts by calling <code>main</code>, so once your <code>Call</code> arm
+      works, <code>cargo run</code> can run a <code>.brg</code> file from start to finish.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>At a glance</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>Due</dt><dd>Friday, October 16, at 11:59&nbsp;PM.</dd>
+          <dt>Submit</dt><dd>Through Gradescope, linked from the course Canvas page.</dd>
+          <dt>Attempts</dt><dd><strong>Unlimited.</strong> Resubmit as many times as you like before
+            the deadline; only your last submission is graded.</dd>
+          <dt>Deliverables</dt><dd>A single <code>.zip</code> containing your <code>src/</code>
+            folder and the <code>.md</code> files from the project root, including your
+            <code>Description.md</code>.</dd>
+          <dt>Reading</dt><dd>The textbook's
+            <a href="../../../../books/pl-design/milestones/m4.html">Milestone M4</a> chapter is the
+            full specification. This page adds the course-specific rules: how to submit and how it is
+            graded.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>What to build <small class="text-muted">the specification</small></h2>
+    <p class="refs text-muted">
+      Full specification:
+      <a href="../../../../books/pl-design/milestones/m4.html">Textbook &mdash; Milestone M4: functions, closures, and static scope</a>
+      &nbsp;|&nbsp; Previous milestone:
+      <a href="m3.html">Milestone M3: control flow and mutation</a>
+    </p>
+    <p>
+      Read the <a href="../../../../books/pl-design/milestones/m4.html">Milestone M4 chapter</a> before
+      you start &mdash; it is the authoritative specification, and it points to the
+      &ldquo;Building it&rdquo; sections of
+      <a href="../../../../books/pl-design/functions/functions.html">First-class functions</a> and
+      <a href="../../../../books/pl-design/functions/calls.html">Evaluating function calls</a>, which walk
+      through each arm premise by premise. In short, you implement the two milestone-tagged holes in
+      <code>eval_expr</code>:
+    </p>
+    <pre><code>// src/interp/eval.rs — the two M4 arms
+Expr::Lambda(..) =&gt; todo_m4!("E-Lam"),
+Expr::Call(..)   =&gt; todo_m4!("E-App (dispatch Bridger vs. Native closure)"),</code></pre>
+    <p>
+      Two arms is a smaller count than M3's seven, but <code>Call</code> carries a lot: it is where a
+      closure meets its arguments, where the call depth is counted, where the <code>return</code> channel
+      you built at M3 is finally caught, and where the prelude's native functions are dispatched.
+      <code>Lambda</code> is short:
+    </p>
+    <ul>
+      <li><strong><code>Lambda</code></strong> builds a <code>Closure::Bridger</code> from the parameter
+        names, a copy of the body, and the <code>env</code> the arm was given, and returns it wrapped as a
+        <code>Value::Closure</code>. It evaluates <em>nothing</em> &mdash; the body runs only when the
+        closure is called, so a lambda whose body would be stuck is still a value. A parameter's type
+        annotation is for the type checker at M5 and is dropped here.</li>
+      <li><strong><code>Call</code></strong> evaluates the operator first. If it is not a
+        <code>Value::Closure</code>, the call is stuck with <code>NotAFunction</code> (its
+        <code>found</code> filled in by <code>type_of</code>) <em>before</em> any argument is evaluated.
+        Otherwise it evaluates the arguments from left to right and dispatches on the closure:
+        <ul>
+          <li>a <code>Closure::Native</code> hands the argument values to the provided
+            <code>eval_prelude</code>;</li>
+          <li>a <code>Closure::Bridger</code> checks the argument count against the parameter count
+            (<code>ArityMismatch</code>, with <code>expected</code> the parameter count and
+            <code>found</code> the argument count), extends the <strong>closure's</strong> environment
+            &mdash; not the caller's &mdash; with one binding per parameter, and evaluates the body there,
+            between <code>enter_call</code> and <code>leave_call</code>.</li>
+        </ul>
+        Both errors carry the span of the <em>whole call</em>.</li>
+    </ul>
+    <p>
+      Two details decide whether the <code>Bridger</code> case is right. First, <strong>a
+      <code>return</code> stops at its call</strong>: a body that ends in
+      <code>Err(Control::Return(v))</code> makes <code>v</code> the call's value, while a
+      <code>Control::Raise</code> passes through the call unchanged. Second, <strong>the frame count must
+      balance</strong>: <code>leave_call</code> runs after the body <em>whatever</em> the body's outcome.
+      Putting <code>?</code> on the body's result before <code>leave_call</code> would leave on exactly the
+      <code>Return</code> and <code>Raise</code> paths without decrementing the count &mdash; and, for
+      <code>Return</code>, without catching it. Take the body's result as a value, call
+      <code>leave_call</code>, and only then decide what the result means.
+    </p>
+    <p>
+      Everything around those two arms is provided. <code>Env::extend</code>, <code>enter_call</code>
+      (which refuses past 100&nbsp;000 nested calls with <code>StackOverflow</code>),
+      <code>leave_call</code>, <code>eval_prelude</code>, <code>type_of</code>, and the two new
+      <code>RuntimeError</code> variants are ready to use. So is the driver, <code>eval_program</code>: it
+      binds every prelude function and every top-level <code>fn</code> into the program's root
+      environment, initializes the global <code>let</code>s in dependency order (reporting a cycle as
+      <code>InitializationCycle</code>), and then evaluates a call <code>main()</code> &mdash; through
+      <em>your</em> <code>Call</code> arm. The higher-order natives <code>map</code>,
+      <code>filter</code>, and <code>fold</code> also call the function they are handed by evaluating an
+      ordinary call expression through your arm, so <code>map(xs, |x| x * 10)</code> runs your
+      <code>Call</code> once per element, with the same arity check and the same <code>return</code>
+      handling as a call written in the program.
+    </p>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>Your earlier arms are graded again here</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          Functions are the first values that <em>cannot</em> be compared, and whole programs are the
+          first place where the order of side effects is easy to observe. One of the M4 properties,
+          <strong>evaluation order</strong> (below), checks behavior that lives in arms you wrote at M1
+          and M3, so look back at them before you submit:
+        </p>
+        <ul style="margin-bottom:0">
+          <li><strong>Left to right, everywhere.</strong> Binary operators (arithmetic, comparisons,
+            <code>==</code>), tuples, lists, and calls evaluate their operands left to right, so a
+            program that prints inside each operand prints in source order.</li>
+          <li><strong>Assignment evaluates its target first.</strong> In <code>e1 := e2</code>, the
+            target <code>e1</code> runs before <code>e2</code>, and a target that is not a reference is
+            stuck <em>before</em> <code>e2</code> runs.</li>
+          <li><strong><code>==</code> on a function is stuck.</strong> At M1 there were no functions, so
+            your equality arm may simply compare the two values. Now <code>f == g</code> &mdash; or
+            <code>==</code> on a tuple or list that contains a function anywhere inside &mdash; must be
+            stuck with <code>RuntimeError::NotComparable</code>. The provided
+            <code>uncomparable(v)</code> in <code>src/interp/value.rs</code> returns the type of the first
+            function it finds inside <code>v</code>, or <code>None</code>; it is what you need for
+            <code>found</code>. References, by contrast, compare by identity: an alias of a reference is
+            <code>==</code> to it.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Getting the code and running the tests</h2>
+    <p>
+      M4 builds directly on your M3, M2, and M1 code. Because the milestones are
+      <strong>cumulative</strong>, <code>cargo m4</code> runs every M3, M2, and M1 test too, and the
+      provided-test gate (below) will fail the whole milestone if any of them fail. <strong>Finish
+      <a href="m3.html">Milestone M3</a> first</strong> &mdash; keep working in the same clone with your
+      completed M1&ndash;M3 arms in place. Every program begins with a call, and calls run the bodies your
+      earlier arms evaluate, so without them the whole-program tests cannot pass no matter what you write
+      here.
+    </p>
+    <p>
+      The toolchain, the clone, and the layout of the codebase are the ones from
+      <a href="m1.html#getting-the-code-and-running-the-tests">Milestone M1</a> &mdash; that setup is
+      done once, and this milestone does not change it. If you are starting fresh, follow the M1 page to
+      install <a href="https://rustup.rs"><code>rustup</code></a>, clone
+      <a href="https://github.com/chaluli/bridger-interpreter"><code>bridger-interpreter</code></a>, and
+      complete M1 through M3. Then pick up the same loop, with the milestone number advanced:
+    </p>
+    <pre><code>cargo m4                                    # run the Milestone-4 tests
+cargo fmt                                   # format your code
+cargo clippy --all-targets -- -D warnings   # lint</code></pre>
+    <p>
+      <code>cargo m4</code> is short for <code>cargo test --features m4</code>, and runs the M4 tests
+      <em>and</em> every M3, M2, and M1 test. To list the two milestone-tagged holes at any time:
+    </p>
+    <pre><code>grep -rn 'todo_m4!' src</code></pre>
+
+    <h3>Running a program</h3>
+    <p>
+      New at M4: the interpreter runs programs from a file. <code>cargo run</code> builds the
+      <code>bridger</code> binary and passes it the arguments after <code>--</code>. Standard input is the
+      program's input, so a program that calls <code>read_int</code> or <code>read_line</code> can be fed
+      with a pipe:
+    </p>
+    <pre><code>$ cat fact.brg
+fn fact(n: Int) -&gt; Int = if n == 0 { 1 } else { n * fact(n - 1) };
+fn main() { println(fact(5)); }
+
+$ cargo run -q --features m4 -- fact.brg
+120
+
+$ echo "3 4" | cargo run -q --features m4 -- sum.brg
+7</code></pre>
+    <p>
+      A program that gets stuck stops with the error's message and the source underlined at the span your
+      arm attached, and exits with status <code>1</code>. A wrong span underlines the wrong code, which is
+      why the tests check the span of every error along with its variant. Writing a few small programs of
+      your own and running them is the fastest way to see what your closures are doing.
+    </p>
+
+    <h3>A few examples</h3>
+    <p>Expressions and the values your evaluator should produce:</p>
+    <pre><code>(|x| x + 1)(4)                                 &rArr; 5
+(|| 7)()                                       &rArr; 7    (zero parameters)
+(|f| f(3))(|x| x * 2)                          &rArr; 6    (a function as an argument)
+(|x| |y| x * 10 + y)(4)(2)                     &rArr; 42   (a function returned, then called)
+
+{ let y = 1; let f = |x| x + y; let y = 100; f(0) }
+                                               &rArr; 1    (f keeps the y it captured)
+
+(|| { return 7; 9 })()                         &rArr; 7    (the call catches the return)
+map([1, 2, 3], |x| x * 10)                     &rArr; [10, 20, 30]
+fold([1, 2, 3], 0, |a, x| a * 10 + x)          &rArr; 123  (fold goes from the left)</code></pre>
+    <p>Expressions and programs that are <em>stuck</em> &mdash; no value, and the run reports a runtime error:</p>
+    <pre><code>5()                        &rArr; stuck   (NotAFunction: found Int)
+(|x, y| 0)(1)              &rArr; stuck   (ArityMismatch: expected 2, found 1)
+(|x| x) == (|x| x)         &rArr; stuck   (NotComparable: functions have no equality)
+
+let a = a + 1;             &rArr; stuck   (InitializationCycle: a global that reads itself)
+
+fn sum_to(n: Int) -&gt; Int = if n == 0 { 0 } else { n + sum_to(n - 1) };
+fn main() { println(sum_to(1000000)); }
+                           &rArr; stuck   (StackOverflow at the call sum_to(n - 1))</code></pre>
+    <p>
+      The provided tests come in two kinds. The first builds an <code>Expr</code> by hand, as the earlier
+      milestones' tests do, with the new builders <code>lambda</code> and <code>call</code>. The second
+      loads a whole program from source and runs it through <code>eval_program</code>:
+      <code>run_program</code> returns the value <code>main</code> produced and the text it printed,
+      <code>run_stuck</code> returns the error it got stuck on, and <code>run_with_input</code> /
+      <code>run_stuck_with_input</code> do the same with text on standard input. When <code>cargo m4</code>
+      is all green, your evaluator is very likely correct.
+    </p>
+
+    <h2>How M4 is graded</h2>
+    <p>M4 is worth <strong>100 points</strong>:</p>
+    <div class="table-responsive">
+      <table class="table table-bordered grade-table">
+        <thead>
+          <tr><th>Item</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Auto-graded tests</td>
+            <td><strong>80</strong>, split <strong>40 / 40</strong>: <strong>40</strong> on the new M4
+              behavior &mdash; seven properties, about <strong>5.7 points each</strong> &mdash; and
+              <strong>40</strong> on carried-over regression tests for the past milestones (M1, M2, and M3),
+              since M4 is cumulative and your evaluator must keep the expression, binding, and state
+              fragments working. The carried-over 40 is divided <strong>evenly among M1, M2, and M3</strong>
+              (about 13.3 points each), then across each milestone's properties &mdash; so a regression in
+              any one of them is weighted against that milestone's own share. These are held-back tests,
+              run on Gradescope against the public interface &mdash; separate from the provided tests you
+              run locally with <code>cargo m4</code>.</td>
+          </tr>
+          <tr>
+            <td>Formatting &amp; linting</td>
+            <td><strong>10</strong>: <strong>5</strong> for <code>cargo fmt</code> (checked on your
+              submitted files) and <strong>5</strong> for <code>cargo clippy</code> (checked with
+              <code>-D warnings</code>). Run both before submitting; the starter is clean on a fresh
+              clone, so a warning means something you introduced.</td>
+          </tr>
+          <tr>
+            <td><code>Description.md</code></td>
+            <td><strong>10</strong>, human-graded (see below).</td>
+          </tr>
+          <tr class="danger">
+            <td>Does not compile</td>
+            <td><strong>0</strong> for the entire milestone. The autograder builds your files against its own copies of
+              the frozen files, so make sure your code builds with those files unmodified.</td>
+          </tr>
+          <tr class="danger">
+            <td>Fails any provided test</td>
+            <td><strong>0</strong> for the entire milestone. The provided (visible) tests are a hard
+              gate: passing all of them &mdash; the M4 tests <em>and</em> the carried-over M3, M2, and M1
+              tests &mdash; is required before any of the 80 auto-graded points are counted.</td>
+          </tr>
+          <tr class="danger">
+            <td>Description does not match your code</td>
+            <td>The <code>Description.md</code> can be scored <strong>negative</strong> &mdash; roughly
+              <strong>&minus;20</strong>, and up to <strong>&minus;40</strong> &mdash; at the
+              discretion of the TA or instructor (see below). Passing every test does not by itself
+              secure full credit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The two <strong>0 gates</strong> come first: code that does not compile, or that fails any of the
+      tests shipped with the repository, earns no credit for the milestone regardless of anything else.
+      Because M4 is cumulative, a change that breaks an M3, M2, or M1 test trips this gate too. Only after
+      both gates pass are the 80 auto-graded points, the 10 style points, and the 10 description points
+      assessed.
+    </p>
+    <p>
+      Each of the 80 points is tied to one <strong>property</strong> &mdash; a single rule your evaluator
+      must obey. Seven properties cover the new M4 behavior:
+    </p>
+    <ul>
+      <li><strong>Lambdas and application</strong> &mdash; a lambda closes over its definition
+        environment (static scope); functions are first-class values that can be passed and returned;
+        the wrong number of arguments is <code>ArityMismatch</code>, calling a non-function is
+        <code>NotAFunction</code>, and a <code>return</code> ends only the innermost call.</li>
+      <li><strong>Programs</strong> &mdash; a whole program runs <code>main</code> and yields its value;
+        <code>print</code>/<code>println</code> reach the output; top-level functions may be declared in
+        any order, call one another, recurse, and be passed as values.</li>
+      <li><strong>Globals</strong> &mdash; global <code>let</code>s are visible to <code>main</code> and to
+        each other, each initialized once, in dependency order (through function bodies too); a cycle
+        among them is <code>InitializationCycle</code>.</li>
+      <li><strong>Prelude natives</strong> &mdash; native functions run through the same call path,
+        including <code>map</code>, <code>filter</code>, and <code>fold</code>, which iterate rather than
+        recurse, so a long list costs no call depth.</li>
+      <li><strong>Readers</strong> &mdash; the <code>read_*</code> family consumes whitespace-separated
+        tokens and whole lines from the input; the <code>_opt</code> readers return <code>None</code> on a
+        bad token or at end of input, while a plain reader is stuck with an <code>InputError</code>.</li>
+      <li><strong>Runtime limits</strong> &mdash; runaway recursion is a clean <code>StackOverflow</code>
+        (keeping whatever was already printed), an over-large <code>range</code> is
+        <code>RangeTooLarge</code>, and an expression nested too deeply is <code>TooDeep</code> &mdash; each
+        a stuck state, never a crash of the interpreter itself.</li>
+      <li><strong>Evaluation order</strong> &mdash; operands are evaluated left to right, threading their
+        effects; references compare by identity; an assignment target that is not a reference is stuck
+        before its right-hand side runs; <code>==</code> on (or printing of) a function is stuck. See the
+        box above: much of this lives in your earlier arms.</li>
+    </ul>
+    <p>
+      Several of these properties exercise provided code &mdash; the driver, the readers, the range
+      bound &mdash; but none of them can pass until your <code>Call</code> arm works, since every program
+      starts with a call, and a <code>Call</code> arm that does not balance <code>enter_call</code> and
+      <code>leave_call</code> will fail the runtime-limits property in ways that are hard to see in a
+      small test. The carried-over 40 re-checks the expression rules from M1, the binding rules from M2,
+      and the state and control rules from M3, so a regression in any of them costs points here.
+    </p>
+    <p>
+      A property is <strong>all-or-nothing</strong>: it is checked by several cases &mdash; some
+      <strong>visible</strong>, some <strong>hidden</strong> &mdash; and you earn its points only when
+      all of them pass. When a property fails, Gradescope reports <strong>which property</strong> it was
+      and states the rule it checks, so you know what behavior to fix. If the failing case is a visible
+      one, you also see a short description of it; if it is a hidden one, you see a hint about what kind of
+      case it is, but not the specific input. Because attempts are unlimited, the workflow is: submit, read
+      which properties failed, fix them, and resubmit.
+    </p>
+
+    <h2>The write-up: <code>Description.md</code></h2>
+    <p>
+      You may use generative AI on this project, and a coding assistant can likely solve M4 on its
+      own. That is fine &mdash; what I grade is not <em>only</em> that the code works, but that
+      <strong>you understand the code you submitted</strong>. The <code>Description.md</code> is how I
+      judge that. Write it yourself, in your own words, about the code you are actually turning in.
+    </p>
+    <p>Put a <code>Description.md</code> at the root of the repository that answers all of the following.</p>
+
+    <h3>Concept questions</h3>
+    <p>
+      A few sentences each, in your own words. These are about the code <em>you</em> wrote &mdash;
+      point at your own implementation where a question asks you to, rather than repeating the
+      textbook's answers.
+    </p>
+    <ol>
+      <li>
+        In <code>{ let y = 1; let f = |x| x + y; let y = 100; f(0) }</code> the result is <code>1</code>,
+        not <code>101</code>. Walk through what your <code>Expr::Lambda</code> arm stores in the closure,
+        which environment your <code>Expr::Call</code> arm extends with the parameter <code>x</code>, and
+        why that gives <code>1</code>. What would the result be if your <code>Call</code> arm extended the
+        <em>caller's</em> environment instead, and what is the name for the scoping discipline your
+        interpreter implements?
+      </li>
+      <li>
+        Your <code>Call</code> arm evaluates the operator, the arguments, and checks the arity, in some
+        order. Say the order your code uses, and use it to explain why <code>5(print(1))</code> is stuck
+        with <code>NotAFunction</code> <em>without</em> printing anything, while
+        <code>(|x, y| 0)(print(1))</code> prints <code>1</code> and then is stuck with
+        <code>ArityMismatch</code>. Which span do both errors carry?
+      </li>
+      <li>
+        At M3, nothing you wrote caught <code>Control::Return</code>. Now your <code>Call</code> arm does.
+        Show how your arm turns <code>Err(Control::Return(v))</code> into the call's value while letting a
+        <code>Control::Raise</code> through, and explain why you must not apply <code>?</code> to the
+        body's result before calling <code>leave_call</code>. What two things would go wrong if you did?
+      </li>
+      <li>
+        <code>fold(range(0, 1000000), 0, |a, x| a + x)</code> runs to completion, while the recursive
+        <code>sum_to(1000000)</code> is a <code>StackOverflow</code>, even though both call a Bridger
+        function a million times. Explain the difference in terms of how many calls are <em>in progress at
+        once</em> and what your <code>enter_call</code>/<code>leave_call</code> pair counts. How does
+        <code>fold</code>'s callback reach your <code>Call</code> arm at all, given that <code>fold</code>
+        is a native?
+      </li>
+      <li>
+        A top-level <code>fn fact</code> can call itself, but
+        <code>let fact = |n| if n == 0 { 1 } else { n * fact(n - 1) };</code> inside <code>main</code> is
+        stuck with an unbound variable. Using what your <code>Lambda</code> arm captures and what the
+        provided driver does for top-level functions, explain why the two behave differently.
+      </li>
+    </ol>
+
+    <h3>How you implemented it</h3>
+    <ul>
+      <li>
+        Walk through your <code>Expr::Call</code> arm from start to finish: how you destructure it, how
+        you evaluate the operator and arguments, how you dispatch on <code>Closure::Bridger</code> versus
+        <code>Closure::Native</code>, how you build the body's environment, and how you handle the body's
+        result. Then describe your <code>Expr::Lambda</code> arm in a sentence or two. Naming the provided
+        tools you used (<code>self.eval_expr</code>, <code>env.extend</code>, <code>enter_call</code>,
+        <code>leave_call</code>, <code>eval_prelude</code>, <code>type_of</code>,
+        <code>RuntimeError</code>, <code>.into()</code>/<code>?</code>) is encouraged.
+      </li>
+      <li>
+        Say what, if anything, you changed in your M1&ndash;M3 arms for this milestone &mdash; for
+        example, to make <code>==</code> on a function stuck, or to fix an evaluation-order problem a
+        whole-program test exposed &mdash; and why.
+      </li>
+      <li>
+        Point out anything that was tricky, a bug you fixed, or a design choice you made &mdash; and if
+        you used an assistant, say what you had it do and how you checked its work.
+      </li>
+    </ul>
+
+    <div class="panel panel-warning">
+      <div class="panel-heading"><strong>Understanding what you submit</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The <code>Description.md</code> is worth up to <strong>10 points</strong>, graded by hand.
+          But it can also be scored <strong>negative</strong>: if your description does not actually
+          match the code you submitted &mdash; it describes an approach your code does not take, gets
+          the behavior wrong, or reads as though you cannot explain your own submission &mdash; you can
+          lose roughly <strong>20 points, and up to 40</strong>, as judged by the TA or instructor, who
+          may also ask you to explain your submission in person. Passing every test does not by itself
+          secure full credit.
+        </p>
+        <p style="margin-bottom:0">
+          You are welcome to use a coding assistant to <em>write</em> the code. You are responsible for
+          <em>understanding</em> it. Code you cannot explain will not earn full credit. This
+          expectation grows across the semester, so keep building the habit while the milestones are
+          still small.
+        </p>
+      </div>
+    </div>
+
+    <h2>Submitting</h2>
+    <p>
+      First write your <code>Description.md</code> at the root of the repository. Then, from inside the
+      project folder, check the code:
+    </p>
+    <pre><code>cd bridger-interpreter                       # the project root
+
+cargo m4                                     # all Milestone-4 tests pass (M3, M2, and M1 too)?
+cargo fmt                                    # format your code
+cargo clippy --all-targets -- -D warnings    # lint — fix any warnings</code></pre>
+    <p>
+      Then package <code>src/</code> and the root <code>.md</code> files into a <code>.zip</code>.
+      Run the command for your system from the project root.
+    </p>
+    <p><strong>macOS / Linux</strong> (Terminal):</p>
+    <pre><code>zip -r ../m4-submission.zip src *.md</code></pre>
+    <p><strong>Windows</strong> (PowerShell):</p>
+    <pre><code>Compress-Archive -Path src, *.md -DestinationPath ..\m4-submission.zip -Force</code></pre>
+    <p>
+      Either one writes <code>m4-submission.zip</code> in the folder just above the project, with
+      <code>src/</code> and <code>Description.md</code> at the top of the archive. The autograder
+      replaces <code>Cargo.toml</code>, <code>tests/</code>, and the frozen <code>src/</code> files with its
+      own copies, so any changes you make to them are discarded. Only <code>src/interp/eval.rs</code> is
+      graded as your code, so any helper functions you write must live in that file.
+    </p>
+    <p>
+      Upload <code>m4-submission.zip</code> to the <strong>Milestone M4</strong> assignment on
+      Gradescope (linked from Canvas). Some tests are visible, so you will get results back shortly and
+      can resubmit before the deadline; other tests are hidden, so passing every visible test does not
+      guarantee full credit.
+    </p>
+    <p class="text-muted" style="font-size:.92em">
+      No <code>zip</code> command on Linux? Install it (on Debian/Ubuntu,
+      <code>sudo apt install zip</code>). Alternatively, in Finder (macOS) or File Explorer (Windows),
+      select the <code>src</code> folder and the <code>.md</code> files inside the project folder (not
+      the project folder itself) and choose <strong>Compress</strong> /
+      <strong>Send to &rarr; Compressed (zipped) folder</strong>.
+    </p>
+    <p>
+      See the <strong>Course Project Policies</strong> on the
+      <a href="../../fall26.html">main course page</a> for the collaboration, generative-AI, and
+      late-work rules that apply to every milestone.
+    </p>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages &middot;
+      <a href="../../fall26.html">Course home</a>
+    </footer>
+
+  </div>
+</body>
+</html>

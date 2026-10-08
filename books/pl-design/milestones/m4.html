@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-59d04d34.js";
+            window.path_to_searchindex_js = "../searchindex-37824c41.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -182,79 +182,377 @@
 <h1 id="milestone-m4"><a class="header" href="#milestone-m4">Milestone M4</a></h1>
 <p class="chapter-subtitle">Functions, Closures, and Static Scope</p>
 
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Closes Part V. Course offering: due Fri Oct 16.
-     Sources: spec §8, §14
+     Closes Part V. SPEC ONLY (plan §9.5): what to build, the checklist, worked
+     examples, self-check; NO grading, deadlines, submission, or autograder text,
+     and no course/institution names in rendered prose.
+     TEMPLATE: M1 sets the codebase/toolchain/build loop; M3's shape (arms ->
+     checklist table -> fields + prose -> worked examples -> cargo mN -> design
+     problems). Checklist DEFERS the rules to functions.md (E-Lam) and calls.md
+     (E-App); NO arm bodies printed (feedback: no milestone solutions in chapters) —
+     calls.md's "Building it" already describes the arm in prose; this chapter
+     points there and adds the contracts and the one ordering trap.
      DECISION (2026-09-28): no dynamic-scope-first stage; students build static scope
-     directly (functions.md E-Lam, calls.md E-App). The contrast is scope.md's optional
-     experiment, not a milestone step.
-     Status: placeholder — spine authored just-in-time.
-     Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
-     satisfy, worked examples, self-check tests). Grading, deadlines, submission
-     and autograder mechanics stay in the syllabus and never appear here.
+     directly. The contrast is scope.md's optional experiment, not a milestone step.
+     REPO FACTS (interpreter crate, verified 2026-10-08):
+       - TWO todo_m4! holes in src/interp/eval.rs: Expr::Lambda ("E-Lam"),
+         Expr::Call ("E-App (dispatch Bridger vs. Native closure)").
+       - Fields: Lambda(Vec<LambdaParam>, Box<Expr>, Span), LambdaParam {name, ty:
+         Option<Ty>, span}; Call(Box<Expr>, Vec<Expr>, Span).
+       - Value::Closure(Rc<Closure>); Closure::Bridger { params: Vec<Name>, body:
+         Expr, env: Env } | Closure::Native(BuiltinId).
+       - PROVIDED: Env::extend; Interpreter::enter_call(span) -> Result<(),
+         RuntimeError> (refuses past MAX_DEPTH = 100_000 with StackOverflow
+         {limit, span}); leave_call(); eval_prelude(id, args, span) runs a native;
+         RuntimeError::NotAFunction {found: Ty, span}, ArityMismatch {expected,
+         found, span}; type_of for `found`.
+       - Prelude callbacks: native map/filter/fold call a function value through
+         Interpreter::apply (prelude.rs), which evaluates a SYNTHETIC
+         `f(a0, …)` through the student's Call arm — so pipelines with lambdas need
+         a working Call arm.
+       - eval_program (provided): binds natives + every top-level fn into the root
+         (add_function, the recursion knot), runs global initializers in DEPENDENCY
+         order (cycle -> InitializationCycle), then evaluates a synthetic `main()`
+         Expr::Call through eval_expr. So `cargo run` cannot run any program before
+         M4. Checked: `cargo run -q --features m4 -- fact.brg` prints 120.
+       - Binary: `bridger FILE.brg`; stdin read whole when not a terminal; exit 0
+         ran / 1 rejected or stuck. Static pre-passes start at M5.
+       - `cargo m4` = `cargo test --features m4`, cumulative (M4..M1).
+       - tests/m4.rs: by-hand builders lambda(&[names], body, s), call(f, args, s);
+         whole-program helpers run_program(src) -> (Value, output), run_stuck(src),
+         run_with_input, run_stuck_with_input. Tests FROZEN.
+     EXAMPLES run 2026-10-08 on the reference interpreter, release builds --features
+       m4 and m8: (|x| x + 1)(4)=5; capture 15; (|f| f(3))(|x| x*2)=6;
+       (|| { return 7; 9 })()=7; arity "takes 2 argument(s), given 1", span = whole
+       call; 5() "a value of type Int is not a function"; sum_to(1000000)
+       StackOverflow at the inner call; map([1,2,3], |x| x*10)=[10, 20, 30];
+       compose_all([inc, dbl])(5)=11, compose_all([dbl, inc])(5)=12,
+       compose_all([])(5)=5; times(inc, 10)(0)=10, times(inc, 99990)(0)=99990,
+       times(inc, 150000) builds, then calling it is StackOverflow inside compose's
+       lambda. Same output at m4 and m8 (checker accepts all of these).
+     RUN TRANSCRIPTS in "Running a program" are pasted verbatim from the m4 release
+       binary run on adders.brg / sum.brg (stdin "3 4") / arity.brg / selfref.brg,
+       output piped (no colour). They depend on error.rs messages and miette's layout
+       (main.rs width 100): regenerate if either changes. Exit status 1 confirmed for
+       both stuck runs. A StackOverflow transcript was left out: its help line wraps
+       at 94 columns, past the 85-column fence limit.
+     PROPERTIES (instructor, not rendered): lambda/closure capture, application +
+     arity, NotAFunction, return caught at call, whole programs (main value, output,
+     recursion, natives, globals in dependency order, init cycle), readers.
+     DESIGN PROBLEMS: Part V cross-chapter; do NOT duplicate the content chapters'
+     concept checks. Fresh: let rec in the evaluator (environments + closures +
+     recursion), a whole program that would catch a caller's-env bug (scope as a
+     test), compose_all by fold (FP writing task), times(f, n) — built with no
+     frames, overflows when called (closures + recursion cost).
+     Course offering (instructor note, not rendered): due Fri Oct 16.
+     Status: draft authored 2026-10-08, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-Everything in Part V has been building toward one thing: an interpreter that actually runs these
-programs. This chapter says what yours should do now, and how to know it works.
+<p>Part V made functions values. A <a href="../functions/functions.html">lambda</a> evaluates to a closure that
+holds its parameters, its body, and the environment it was written in; a
+<a href="../functions/calls.html">call</a> runs that body in the captured environment extended with the
+arguments; and because the body looks names up where the function was <em>defined</em>, Bridger is
+<a href="../functions/scope.html">statically scoped</a>. This milestone puts the two forms into the evaluator.</p>
+<p>It is also the first milestone at which a whole Bridger program runs. Execution starts by calling
+<code>main</code>, and a call is one of the arms you write here, so until now there has been no way to reach a
+program’s body. New on the provided side are the pieces around that call: the driver that sets up
+the program’s environment and calls <code>main</code>, the counter that bounds how deeply calls nest, and the
+prelude’s native primitives, which your calls dispatch to.</p>
+<h2 id="to-dos"><a class="header" href="#to-dos">To-dos</a></h2>
+<p><code>grep -rn 'todo_m4!' src</code> lists two arms left as holes after M3:</p>
+<pre><code class="language-rust ignore">// src/interp/eval.rs — the two M4 arms of eval_expr
+Expr::Lambda(..) =&gt; todo_m4!("E-Lam"),
+Expr::Call(..)   =&gt; todo_m4!("E-App (dispatch Bridger vs. Native closure)"),</code></pre>
+<p><code>Lambda</code> is short. <code>Call</code> carries most of this milestone: it is where a closure meets its
+arguments, where the call depth is counted, and where the <code>return</code> channel you built at M3 is
+finally caught.</p>
+<h2 id="milestone-specification"><a class="header" href="#milestone-specification">Milestone specification</a></h2>
+<p>Each form this milestone adds, the rule that gives it meaning, and the cases that leave it
+<a href="../eval/values.html#expressions-that-do-not-evaluate-to-a-value">stuck</a>:</p>
+<table>
+<thead>
+<tr><th>Form</th><th>Rule</th><th>Stuck when</th></tr>
+</thead>
 
-## What you build
+<tbody>
+<tr>
+  <td style="white-space:nowrap"><code>|x, y| e</code></td>
+  <td style="white-space:nowrap"><code>E-Lam</code></td>
+  <td>—</td>
+</tr>
 
-Function values — a lambda evaluates to a closure capturing its defining environment — and calls
-that run the body in that captured environment. Bridger is **statically scoped**: a function body's
-free variables resolve where the function was *defined*, not where it was called.
+<tr>
+  <td style="white-space:nowrap"><code>f(e1, …, en)</code></td>
+  <td style="white-space:nowrap"><code>E-App</code></td>
+  <td><code>f</code> is not a function; the argument count differs from the parameter count;
+  calls nest more than 100 000 deep</td>
+</tr>
 
-## What is provided
+</tbody>
 
-—
+</table>
 
-## The specification you must satisfy
+<p>The rules are in <a href="../functions/functions.html">First-class functions</a> and <a href="../functions/calls.html">Evaluating function
+calls</a>; this table is the checklist your evaluator is measured against. A
+call of a prelude primitive is stuck in the ways the <a href="../appendix/prelude.html">prelude</a> lists for
+it, and those cases are provided.</p>
+<p>Four contracts hold across the two arms:</p>
+<ul>
+<li><strong>A lambda evaluates nothing.</strong> Its body runs only when the closure is called, so a lambda whose
+body would be stuck is still a value.</li>
+<li><strong>A call evaluates in a fixed order</strong>: the operator first, then the arguments from left to
+right. An operator that is not a function is stuck before any argument is evaluated.</li>
+<li><strong>A body runs in the closure’s environment</strong>, extended with one binding per parameter. The
+environment of the caller plays no part; that is what makes the language statically scoped.</li>
+<li><strong>A <code>return</code> stops at its call.</strong> The <code>Control::Return</code> that M3’s <code>return</code> raises is caught by the
+nearest enclosing call and becomes that call’s value; a <code>Control::Raise</code> passes through calls
+unchanged.</li>
+</ul>
+<h2 id="implementing-milestone-m4"><a class="header" href="#implementing-milestone-m4">Implementing Milestone M4</a></h2>
+<p>Destructure each arm’s <code>..</code> into the fields you need:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variant</th><th>Fields</th><th>Covers</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Expr::Lambda</code></td><td><code>(Vec&lt;LambdaParam&gt;, Box&lt;Expr&gt;, Span)</code></td><td>parameters, body</td></tr>
+<tr><td><code>Expr::Call</code></td><td><code>(Box&lt;Expr&gt;, Vec&lt;Expr&gt;, Span)</code></td><td>operator, arguments, the whole call’s span</td></tr>
+</tbody>
+</table>
+</div>
+<p>The value a lambda produces and the tools a call needs are all provided, and the content chapters
+show them: the <code>Closure</code> enum and <code>LambdaParam</code> in <a href="../functions/functions.html#building-it">First-class
+functions</a>, and <code>Env::extend</code>, the two error variants,
+<code>enter_call</code>, <code>leave_call</code>, and <code>eval_prelude</code> in <a href="../functions/calls.html#building-it">Evaluating function
+calls</a>. Those sections describe each arm step by step, following
+E-Lam’s and E-App’s premises in order. What follows adds what a test will hold you to.</p>
+<ul>
+<li><strong><code>Lambda</code></strong> builds a <code>Closure::Bridger</code> from the parameter names, a copy of the body, and the
+<code>env</code> the arm was given, and returns it as a <code>Value::Closure</code>. A parameter’s type annotation is
+for the type checker of <a href="../types/motivation.html">Part VI</a><!-- xref:../types/motivation.md --> and
+is dropped here.</li>
+<li><strong><code>Call</code></strong> with an operator that is not a <code>Value::Closure</code> is <code>NotAFunction</code>, with <code>found</code> filled
+in by <code>type_of</code>. With a <code>Closure::Native</code>, it hands the argument values to <code>eval_prelude</code>. With a
+<code>Closure::Bridger</code>, a count mismatch is <code>ArityMismatch</code>, <code>expected</code> being the parameter count and
+<code>found</code> the argument count. Both errors carry the span of the whole call.</li>
+<li><strong>The frame count must balance.</strong> <code>enter_call</code> comes before the body and <code>leave_call</code> after it,
+whatever the body’s outcome. A body that ends in <code>Control::Return</code> or <code>Control::Raise</code> arrives as
+an <code>Err</code>, and applying <code>?</code> to the body’s result before calling <code>leave_call</code> would leave on exactly
+those paths without decrementing the count — and, for <code>Return</code>, without catching it. Take the
+body’s result as a value, call <code>leave_call</code>, and then decide what the result means.</li>
+</ul>
+<p><code>map</code>, <code>filter</code>, and <code>fold</code> are native, but the function they are handed usually is not. The
+prelude calls it by evaluating an ordinary call expression through your <code>Call</code> arm, so a pipeline
+such as <code>map(xs, |x: Int| x * 10)</code> exercises your arm once per element, with the same arity check
+and the same <code>return</code> handling as a call written in the program.</p>
+<h2 id="running-a-program"><a class="header" href="#running-a-program">Running a program</a></h2>
+<p>From this milestone on, the interpreter runs programs from a file. <code>cargo run</code> builds the
+<code>bridger</code> binary and passes it the arguments after <code>--</code>:</p>
+<pre><code class="language-text">$ cat fact.brg
+fn fact(n: Int) -&gt; Int = if n == 0 { 1 } else { n * fact(n - 1) };
+fn main() { println(fact(5)); }
 
-*To be written: the inference rules from this part, collected — the checklist your evaluator is
-measured against. Sources: spec §8, §14.*
+$ cargo run -q --features m4 -- fact.brg
+120
+</code></pre>
+<p>The provided driver, <code>eval_program</code>, does the work between loading the file and running <code>main</code>. It
+binds every prelude primitive and every top-level <code>fn</code> into the program’s root environment, with
+each <code>fn</code> a closure over that root — the arrangement that lets top-level functions call themselves
+and one another, described in <a href="../functions/functional.html#building-it">Recursion and higher-order
+functions</a>. It then evaluates the global <code>let</code>s, each one
+after the globals it reads, and reports a cycle among them as an error. Last, it evaluates the call
+<code>main()</code> through your <code>Call</code> arm. No static checks run yet; the type checker joins at <a href="m5.html">Milestone
+M5</a>.</p>
+<p>A program that uses closures and a prelude function prints what <code>println</code> wrote:</p>
+<pre><code class="language-text">$ cat adders.brg
+fn make_adder(k: Int) -&gt; fn(Int) -&gt; Int = |x: Int| x + k;
 
-## How to know it works
+fn main() {
+    let add5 = make_adder(5);
+    println(add5(10));
+    println(map([1, 2, 3], make_adder(100)));
+}
 
-A function returned from another function still sees the variables it was defined with, even after
-the defining call has returned — the counter and adder programs from the closures chapter.
+$ cargo run -q --features m4 -- adders.brg
+15
+[101, 102, 103]
+</code></pre>
+<p>The program’s input is standard input, read whole when it does not come from a terminal, so a
+program that reads can be fed with a pipe:</p>
+<pre><code class="language-text">$ cat sum.brg
+fn main() {
+    let a = read_int();
+    let b = read_int();
+    println(a + b);
+}
 
-*To be written: worked examples with expected output, and a self-check test set you can run on your
-own machine.*
+$ echo "3 4" | cargo run -q --features m4 -- sum.brg
+7
+</code></pre>
+<p>A program that gets stuck stops with a diagnostic: the error’s message, and the source with the
+expression that got stuck underlined. The exit status is <code>1</code>, where a program that ran exits with
+<code>0</code>. Here a call passes one argument to a function of two:</p>
+<pre><code class="language-text">$ cat arity.brg
+fn area(w: Int, h: Int) -&gt; Int = w * h;
 
-## Seeing the contrast
+fn main() {
+    println(area(3));
+}
 
-The milestone asks for static scope only. To see what the other discipline would do, the
-[static and dynamic scope](../functions/scope.md) chapter describes an optional experiment on a
-finished evaluator: run a call's body in the caller's environment, watch the closure examples
-diverge, try to write down the type of the free variable, and change it back.
+$ cargo run -q --features m4 -- arity.brg
+  × takes 2 argument(s), given 1
+   ╭─[arity.brg:4:13]
+ 3 │ fn main() {
+ 4 │     println(area(3));
+   ·             ───┬───
+   ·                ╰── here
+ 5 │ }
+   ╰────
+</code></pre>
+<p>And here is the <code>let</code>-bound lambda from <a href="../functions/functional.html">recursion and higher-order
+functions</a>, which cannot see its own name:</p>
+<pre><code class="language-text">$ cat selfref.brg
+fn main() {
+    let fact = |n: Int| if n == 0 { 1 } else { n * fact(n - 1) };
+    println(fact(5));
+}
 
-## Design problems
+$ cargo run -q --features m4 -- selfref.brg
+  × unbound variable `fact`
+   ╭─[selfref.brg:2:52]
+ 1 │ fn main() {
+ 2 │     let fact = |n: Int| if n == 0 { 1 } else { n * fact(n - 1) };
+   ·                                                    ──┬─
+   ·                                                      ╰── here
+ 3 │     println(fact(5));
+   ╰────
+</code></pre>
+<p>The rendering is provided; what it shows comes from your arms. The message is the one for the
+<code>RuntimeError</code> variant your arm returned, and the underline is the span it attached:
+<code>ArityMismatch</code> from your <code>Call</code> arm with the span of the whole call, and <code>UnboundVariable</code> from
+the <code>Var</code> arm you wrote at <a href="m2.html">M2</a>, with the span of the name. A wrong span underlines the
+wrong code, which is why the tests check the span of every error along with its variant.</p>
+<h2 id="worked-examples"><a class="header" href="#worked-examples">Worked examples</a></h2>
+<p>An expression, and the value it evaluates to:</p>
+<pre><code class="language-text">(|x: Int| x + 1)(4)                         ⇓ 5
 
-*To be written (plan §9.5, tier two): exercises that reason across this part's chapters, plus
-programming exercises written in Bridger, where the goal is to think in the paradigm as well as
-implement it. Answers in collapsible blocks.*
--->
+let y = 10;
+let f = |x: Int| x + y;
+f(5)                                        ⇓ 15   (y from the lambda's env)
+
+(|f: fn(Int) -&gt; Int| f(3))(|x: Int| x * 2)  ⇓ 6    (a function as an argument)
+
+(|| { return 7; 9 })()                      ⇓ 7    (the call catches the return)
+
+map([1, 2, 3], |x: Int| x * 10)             ⇓ [10, 20, 30]
+</code></pre>
+<p>Expressions with no value, which halt the run:</p>
+<pre><code class="language-text">(|x: Int, y: Int| 0)(1)        ⇓ stuck  (ArityMismatch: expected 2, found 1)
+5()                            ⇓ stuck  (NotAFunction: found Int)
+</code></pre>
+<p>And a whole program that gets stuck partway through, because each level of <code>sum_to</code> holds a frame
+until the level below it returns:</p>
+<pre><code class="language-text">fn sum_to(n: Int) -&gt; Int = if n == 0 { 0 } else { n + sum_to(n - 1) };
+fn main() { println(sum_to(1000000)); }
+                               ⇓ stuck  (StackOverflow at the call sum_to(n - 1))
+</code></pre>
+<h2 id="how-to-know-it-works"><a class="header" href="#how-to-know-it-works">How to know it works</a></h2>
+<p><code>cargo m4</code> runs the provided milestone M4 tests and, because the milestones are cumulative, the M3,
+M2, and M1 tests with them. The M4 tests come in two kinds. The first builds an <code>Expr</code> by hand, as
+the earlier milestones’ tests do, with the new builders <code>lambda</code> and <code>call</code>. The second loads a
+program from source and runs it through <code>eval_program</code>, checking the value <code>main</code> returns, the text
+it printed, or the error it got stuck on:</p>
+<pre><code class="language-rust ignore">// (|x| x + 1)(4)  ⇓  5
+let f = lambda(&amp;["x"], binary(Add, var("x", 1), int(1, 2), 3), 0);
+assert_eq!(value_of(&amp;call(f, vec![int(4, 4)], 5)), Value::Int(5));
+
+// a whole program: main's value, and what it printed
+let (v, out) = run_program("fn main() -&gt; () { print(42); }");</code></pre>
+<p>The whole-program tests reach parts of the driver as well as your arms: globals initialized in
+dependency order, a cycle among globals reported as an error, the <code>read_*</code> family consuming input.
+None of those needs code of yours beyond <code>Lambda</code> and <code>Call</code>, but none of them can pass until a
+call works, since every program starts with one.</p>
+<p>Fill the arms, run <code>cargo m4</code>, and repeat until every M4 test — and every M3, M2, and M1 test —
+passes. Then run a program or two of your own with <code>cargo run</code>.</p>
+<h2 id="seeing-the-contrast"><a class="header" href="#seeing-the-contrast">Seeing the contrast</a></h2>
+<p>The milestone asks for static scope only. To see what the other discipline would do, the <a href="../functions/scope.html">static
+and dynamic scope</a> chapter describes an optional experiment on a finished
+evaluator: run a call’s body in the caller’s environment, watch the closure examples diverge, and
+change it back.</p>
+<h2 id="design-problems"><a class="header" href="#design-problems">Design problems</a></h2>
+<details>
+<summary>Bridger has no <code>let rec</code>. Suppose you added <code>let rec f = |x| e</code>, in whose right-hand side <code>f</code> is in scope. Why can your <code>Block</code> arm not implement it with <code>Env::extend</code> alone, and what are two ways it could be done?</summary>
+<p>The closure for <code>|x| e</code> has to capture an environment that already contains <code>f</code>, bound to that same
+closure. <code>Env::extend</code> returns a new scope containing a value you already have, so either order
+fails: extend first, and there is no closure yet to bind <code>f</code> to; build the closure first, and the
+environment it captured has no <code>f</code>, which is exactly why a <code>let</code>-bound lambda cannot call itself
+(<a href="../binding/environments.html#the-design-space">environments</a>). The binding has to be made before its
+value exists and filled in afterwards. One way is the one the provided driver uses for top-level
+functions: a scope whose bindings can be added after the scope is shared, so the closure captures
+the scope and the scope then receives the closure. <code>Env</code> provides that only for the program’s root,
+through <code>add_function</code>, which the driver calls and your arms do not. The other way needs nothing new
+from <code>Env</code>: treat <code>let rec f = |x| e</code> as the knot through the store from <a href="../functions/functional.html#bridgers-recursion">recursion and higher-order
+functions</a> — allocate a cell, bind <code>f</code> to it, build
+the closure, write it into the cell — at the cost of reading <code>f</code> through <code>deref</code>, which a <code>let rec</code>
+would have to insert wherever <code>f</code> is used.</p>
+</details>
+<details>
+<summary>Suppose a <code>Call</code> arm by mistake extended the <em>caller's</em> environment with the parameters instead of the closure's. Most of the examples on this page still produce the same values. Write a short whole program whose output shows the mistake, and say which property of the program is responsible.</summary>
+<pre><code class="language-text">fn make_adder(k: Int) -&gt; fn(Int) -&gt; Int = |x: Int| x + k;
+
+fn main() {
+    let add5 = make_adder(5);
+    println(add5(1));            // 6; with the caller's env, stuck: no k
+}
+</code></pre>
+<p>The lambda’s body mentions <code>k</code>, a name bound only in the call of <code>make_adder</code>, and the lambda is
+called after that call has returned. With the closure’s environment, <code>k</code> is found where the lambda
+was written, and the program prints <code>6</code>. With the caller’s environment, the body looks for <code>k</code> in
+<code>main</code>, which has no <code>k</code>, and the program is stuck with an unbound variable. A test that catches the
+mistake needs a function whose body uses a free name bound somewhere other than at the call site. In
+the examples above, the free names (<code>y</code> in <code>f</code>, the top-level functions) are visible from the caller
+as well, so both disciplines agree on them. <a href="../functions/scope.html">Static and dynamic scope</a> gives
+a program, <code>twice(add_x, 10)</code>, where the two disciplines both produce a value and disagree on it.</p>
+</details>
+<details>
+<summary>Write <code>compose_all</code>, which takes a list of <code>fn(Int) -&gt; Int</code> and returns their composition, using <code>fold</code> and no recursion of your own. What does it return for the empty list, and in which order are the functions applied?</summary>
+<pre><code class="language-text">fn id(x: Int) -&gt; Int = x;
+fn compose(f: fn(Int) -&gt; Int, g: fn(Int) -&gt; Int) -&gt; fn(Int) -&gt; Int =
+    |x: Int| f(g(x));
+
+fn compose_all(fs: [fn(Int) -&gt; Int]) -&gt; fn(Int) -&gt; Int = fold(fs, id, compose);
+
+compose_all([inc, dbl])(5)     // 11
+compose_all([dbl, inc])(5)     // 12
+compose_all([])(5)             // 5
+</code></pre>
+<p>with <code>inc</code> and <code>dbl</code> adding one and doubling. The accumulator of the fold is a function, starting
+at <code>id</code>; each step composes the function so far with the next element, so <code>[inc, dbl]</code> becomes
+<code>compose(compose(id, inc), dbl)</code>, which applies <code>dbl</code> first: <code>inc(dbl(5))</code> is <code>11</code>. The function
+written last in the list runs first, as in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∘</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span></span></span></span>. The empty list returns <code>id</code>, the function
+that composing with leaves unchanged, in the same role <code>0</code> plays for a sum. <code>fold</code>’s combining
+function is <code>compose</code> itself, a top-level <code>fn</code> passed by name.</p>
+</details>
+<details>
+<summary>With <code>times(f, n) = fold(range(0, n), id, |acc, i| compose(f, acc))</code>, the expression <code>times(inc, 150000)</code> evaluates to a function without trouble, and calling that function with <code>0</code> is a <code>StackOverflow</code>. Explain both halves.</summary>
+<pre><code class="language-text">fn times(f: fn(Int) -&gt; Int, n: Int) -&gt; fn(Int) -&gt; Int =
+    fold(range(0, n), id, |acc: fn(Int) -&gt; Int, i: Int| compose(f, acc));
+
+let big = times(inc, 150000);  // fine
+big(0)                         // StackOverflow inside compose's lambda
+</code></pre>
+<p>Building <code>big</code> is a loop. <code>fold</code> is native and opens no frames of its own; it calls the combining
+lambda once per element, and each call returns, with a new closure, before the next begins. At no
+point are two of those calls in progress, so the depth never exceeds a few frames. The result is a
+chain of 150 000 closures, each holding <code>f</code> and the closure before it in its environment, and
+building it costs memory but no depth. Calling <code>big(0)</code> walks that chain. The outermost closure
+computes <code>f(g(x))</code>, so it must call <code>g</code> — the next closure in the chain — and wait for its result
+before calling <code>f</code>. Every closure in the chain is in progress at once, one frame each, and the count
+passes the limit of 100 000 well before the end. With <code>n</code> below the limit, as in
+<code>times(inc, 10)(0)</code>, the call returns <code>10</code>. The closures do what the recursive <code>sum_to</code> did,
+holding one pending operation per level, although the program that built them contains no
+recursive function.</p>
+</details>
 
                     </main>
 
@@ -291,22 +589,6 @@ implement it. Answers in collapsible blocks.*
         <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
         <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script>
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
         <script>
