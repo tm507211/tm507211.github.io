@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Midterm Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Midterm <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      The midterm covers Lectures 1&ndash;19 and their textbook chapters, from syntax and the
+      abstract syntax tree through programming functionally. This guide is organized by concept,
+      not by chapter. It lists what you should be able to do, not the questions you will be
+      asked. Almost every question gives you a small piece of Bridger code and asks what it
+      evaluates to or prints, and why. Answers are short: a few sentences, in your own words,
+      earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>In class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>The full class period, 50 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>About ten short conceptual questions, each about the size of a quiz
+            question. Most give you a block of Bridger code to trace by hand. Some ask you to draw
+            something: an abstract syntax tree, an environment, or a derivation tree. When a
+            question needs an evaluation rule, the rule is printed on the exam. You will not write
+            any code, in Bridger or in Rust.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.
+            You may name a rule (<code>E-Let</code>, <code>E-App</code>) if it helps, but you are
+            never required to.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Reading Bridger code
+      <small class="text-muted">All lectures</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/appendix/grammar.html">Appendix B (grammar)</a>
+      &nbsp;|&nbsp;
+      <a href="../../../../books/pl-design/appendix/prelude.html">Appendix C (prelude)</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Trace a short program by hand and say exactly what it prints, line by line, including
+        what it prints before it gets stuck.</li>
+      <li>Read a block as an expression: its value is its last expression, and a block ending in
+        <code>;</code> is <code>()</code>.</li>
+      <li>Read the operators by precedence: <code>*</code> <code>/</code> <code>%</code> before
+        <code>+</code> <code>-</code>, before comparisons, before <code>and</code>, before
+        <code>or</code>; <code>/</code> on integers discards the remainder.</li>
+      <li>Read <code>fn</code> declarations, lambdas (<code>|x: Int| e</code>), function types
+        (<code>fn(Int) -&gt; Int</code>), and calls of a function held in a cell,
+        <code>(deref f)(x)</code>.</li>
+      <li>Know what the prelude's <code>map</code>, <code>filter</code>, <code>fold</code>, and
+        <code>range</code> do, and in what order they call the function you give them.</li>
+    </ul>
+
+    <h2>Syntax, semantics, and the abstract syntax tree
+      <small class="text-muted">Lectures 2&ndash;3</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/foundations/syntax-semantics.html">Syntax and semantics</a>
+      &nbsp;and
+      <a href="../../../../books/pl-design/foundations/ast.html">The abstract syntax tree</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-02/index.html">Lecture 2</a>,
+      <a href="../slides/lecture-03/index.html">Lecture 3</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Say whether an error is a syntax error or a semantic one.</li>
+      <li>Draw the abstract syntax tree for an expression, using precedence and associativity to
+        decide its shape, and say why the evaluator never needs either rule.</li>
+      <li>Explain why the concrete syntax (<code>x + y</code>, <code>(+ x y)</code>,
+        <code>x y +</code>) can vary while the tree stays the same.</li>
+    </ul>
+
+    <h2>Evaluation rules and stuck expressions
+      <small class="text-muted">Lectures 4&ndash;7</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/eval/values.html">Values and runtime errors</a>,
+      <a href="../../../../books/pl-design/eval/tree-walking.html">Tree-walking evaluation</a>,
+      <a href="../../../../books/pl-design/eval/error-handling.html">Error handling</a>,
+      <a href="../../../../books/pl-design/eval/big-step.html">Program semantics</a>
+      &nbsp;|&nbsp; Slides: Lectures
+      <a href="../slides/lecture-04/index.html">4</a>,
+      <a href="../slides/lecture-05/index.html">5</a>,
+      <a href="../slides/lecture-06/index.html">6</a>,
+      <a href="../slides/lecture-07/index.html">7</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Read a big-step rule premise by premise, and say which premise fails when an
+        expression is stuck.</li>
+      <li>Build a derivation tree for a small expression from rules you are given, one rule per
+        node of the AST.</li>
+      <li>Explain <em>stuck</em> as the absence of a derivation, and say how the interpreter
+        makes that absence visible (the error side of <code>Result</code>).</li>
+      <li>Explain short-circuit <code>and</code>/<code>or</code>: why the right operand may never
+        be evaluated, and so may never get the chance to be stuck.</li>
+      <li>Tell equality (structural, for any two values) apart from ordering (integers only).</li>
+      <li>Compare ways to report an expected failure: exceptions, error values
+        (<code>Result</code>), and aborting the program.</li>
+    </ul>
+
+    <h2>Environments and lexical scope
+      <small class="text-muted">Lectures 8&ndash;10</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/binding/environments.html">Environments and <code>let</code></a>,
+      <a href="../../../../books/pl-design/binding/lexical-scope.html">Lexical scope</a>,
+      <a href="../../../../books/pl-design/binding/representations.html">Environment representations and lookup</a>
+      &nbsp;|&nbsp; Slides: Lectures
+      <a href="../slides/lecture-08/index.html">8</a>,
+      <a href="../slides/lecture-09/index.html">9</a>,
+      <a href="../slides/lecture-10/index.html">10</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Say which binding each use of a name reads: the nearest enclosing <code>let</code>
+        whose scope (the rest of its block) contains it.</li>
+      <li>Explain why a <code>let</code>'s right-hand side sees the <em>enclosing</em> binding of
+        its own name.</li>
+      <li>Explain shadowing: a new binding hides an old one until its block ends, and nothing is
+        overwritten.</li>
+      <li>Draw the environment at a point in a program as a chain of bindings, innermost first,
+        and count the bindings a lookup reads before it finds its name.</li>
+      <li>Explain why lexical scope lets that count be worked out before the program runs.</li>
+    </ul>
+
+    <h2>Imperative programming
+      <small class="text-muted">Lectures 11&ndash;13</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/imperative/control-flow.html">Expressions, statements, and blocks</a>
+      &nbsp;and
+      <a href="../../../../books/pl-design/imperative/conditionals-loops.html">Conditionals and loops</a>
+      &nbsp;|&nbsp; Slides: Lectures
+      <a href="../slides/lecture-11/index.html">11</a>,
+      <a href="../slides/lecture-12/index.html">12</a>,
+      <a href="../slides/lecture-13/index.html">13</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain why Bridger treats <code>if</code>, loops, and assignment as expressions, and
+        why the effect-only ones evaluate to <code>()</code>.</li>
+      <li>Trace a <code>while</code> or <code>for</code> loop over cells and give the final
+        contents of each cell.</li>
+      <li>Explain why a loop that never stops has no derivation.</li>
+      <li>Follow a <code>return</code> out through <code>if</code>, loops, and blocks to the call
+        that catches it, and say what the call then evaluates to.</li>
+      <li>Say which function a <code>return</code> inside a lambda leaves.</li>
+    </ul>
+
+    <h2>Mutable and immutable references
+      <small class="text-muted">Lectures 11&ndash;12</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/imperative/mutation.html">Mutation and references</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain why a <code>let</code> binding never changes, and where change lives instead:
+        a cell made by <code>ref</code>, read by <code>deref</code>, written by
+        <code>:=</code>.</li>
+      <li>Separate the environment (name &#8594; location) from the store (location &#8594;
+        value), and say which of the two each of <code>let</code>, <code>ref</code>,
+        <code>deref</code>, and <code>:=</code> touches.</li>
+      <li>Tell an alias apart from a copy: <code>let b = a</code> shares a cell;
+        <code>ref deref a</code> makes a new one.</li>
+      <li>Predict what a program prints when two names reach one cell.</li>
+    </ul>
+
+    <h2>Functions and closures
+      <small class="text-muted">Lectures 14&ndash;16</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/functions/functions.html">First-class functions</a>,
+      <a href="../../../../books/pl-design/functions/calls.html">Evaluating function calls</a>,
+      <a href="../../../../books/pl-design/functions/closures.html">Closures</a>
+      &nbsp;|&nbsp; Slides: Lectures
+      <a href="../slides/lecture-14/index.html">14</a>,
+      <a href="../slides/lecture-15/index.html">15</a>,
+      <a href="../slides/lecture-16/index.html">16</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain what makes functions first-class: passed, returned, and stored like any other
+        value.</li>
+      <li>Give the order in which a call evaluates its parts (the function, then the arguments
+        left to right, then the body) and use it to predict printed output.</li>
+      <li>Explain what a closure captures, and why its body runs in that captured environment
+        rather than the caller's.</li>
+      <li>Explain how a closure can outlive the call that created it, and how two closures can
+        share one cell.</li>
+      <li>Compare call by value with call by name and call by need.</li>
+    </ul>
+
+    <h2>Static and dynamic scoping
+      <small class="text-muted">Lecture 17</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/functions/scope.html">Static vs. dynamic scope</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-17/index.html">Lecture 17</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Trace one program under both rules: static scope looks a free name up where the
+        function was <em>written</em>; dynamic scope looks it up among the calls still in
+        progress, most recent first.</li>
+      <li>Explain why a function returned from another loses its free names under dynamic
+        scope.</li>
+      <li>Explain why dynamic scope makes a function's meaning depend on who calls it, and why
+        Bridger is statically scoped.</li>
+    </ul>
+
+    <h2>Recursion
+      <small class="text-muted">Lecture 18</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/functions/functional.html">Recursion and higher-order functions</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-18/index.html">Lecture 18</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Trace a recursive function and count the calls active at its deepest point.</li>
+      <li>Explain why a top-level <code>fn</code> can call itself but a lambda bound by
+        <code>let</code> cannot, and how a cell can tie the knot instead.</li>
+      <li>Explain why each call takes a stack frame, what happens when a recursion runs too deep,
+        and why writing it in tail form does not help in Bridger (no tail-call
+        elimination).</li>
+    </ul>
+
+    <h2>Higher-order functions and functional programming
+      <small class="text-muted">Lectures 18&ndash;19</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/functions/functional.html">Recursion and higher-order functions</a>
+      &nbsp;and
+      <a href="../../../../books/pl-design/functions/functional-programming.html">Programming functionally</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-18/index.html">Lecture 18</a>,
+      <a href="../slides/lecture-19/index.html">Lecture 19</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Evaluate a pipeline of <code>map</code>, <code>filter</code>, and <code>fold</code> by
+        hand.</li>
+      <li>Read functions that take or return functions: composition, partial application, and
+        currying.</li>
+      <li>Say whether a function is pure, and what referential transparency buys: a call can be
+        replaced by its value.</li>
+      <li>Explain why rewriting a pipeline (for example, fusing two <code>map</code>s into one)
+        is safe for pure functions but can change what a program does when a stage has a side
+        effect.</li>
+      <li>Rewrite a loop over cells as a <code>fold</code> in your head, and say what state each
+        version keeps.</li>
+    </ul>
+
+    <h2>Sample questions
+      <small class="text-muted">Practice</small></h2>
+    <p>
+      These are the same kind and size of question as the midterm, on different programs. No
+      answers are given: work each one by hand first, then, if you have the interpreter built,
+      run the program to check yourself. Unless a question says otherwise, there is no type
+      checker.
+    </p>
+
+    <ol class="objectives">
+      <li>
+        <p><strong>Abstract syntax tree.</strong> Draw the abstract syntax tree of this
+          expression. What value does it evaluate to?</p>
+<pre>8 / 2 / 2 + 3 * 2 &lt; 10</pre>
+      </li>
+      <li>
+        <p><strong>Stuck expressions.</strong> For each expression, give the value it evaluates
+          to or write <em>stuck</em> and why it is stuck.</p>
+        <table class="table table-bordered table-condensed" style="max-width:32rem">
+          <thead><tr><th>expression</th><th>value, or stuck and why</th></tr></thead>
+          <tbody>
+            <tr><td><code>true or (1 / 0 == 0)</code></td><td></td></tr>
+            <tr><td><code>(1, 2) == (1, 2)</code></td><td></td></tr>
+            <tr><td><code>-true</code></td><td></td></tr>
+            <tr><td><code>"a" &lt; "b"</code></td><td></td></tr>
+            <tr><td><code>[1, 2] == [2, 1]</code></td><td></td></tr>
+            <tr><td><code>7 % 0</code></td><td></td></tr>
+          </tbody>
+        </table>
+      </li>
+      <li>
+        <p><strong>Derivation trees.</strong> Using the rules below, draw the derivation tree for
+          <code>(9 / 3 &gt; 2) and (1 &lt; 0)</code> and give its value. Label each step with
+          its rule.</p>
+<pre>E-Lit       n ⇓ n
+
+E-Div       e1 ⇓ v1    e2 ⇓ v2    v1, v2 ∈ ℤ    v2 ≠ 0
+            ───────────────────────────────────────────
+                         e1 / e2 ⇓ v1 ÷ v2
+
+E-Ord       e1 ⇓ v1    e2 ⇓ v2    v1, v2 ∈ ℤ
+            ───────────────────────────────────    (⊗ is &lt;, &lt;=, &gt;, &gt;=)
+                   e1 ⊗ e2 ⇓ (v1 ⊗ v2)
+
+E-And-True  e1 ⇓ true    e2 ⇓ v    v ∈ 𝔹
+            ─────────────────────────────
+                    e1 and e2 ⇓ v</pre>
+      </li>
+      <li>
+        <p><strong>Reading scopes.</strong> What does <code>main</code> print? For each
+          <code>m</code> and <code>n</code> on the right of an <code>=</code>, say which binding
+          it reads.</p>
+<pre>let n = 2;
+fn main() {
+    let m = n + 1;
+    let n = m * n;
+    {
+        let m = n - m;
+        let n = m + 10;
+        println(n);
+    };
+    println(n + m);
+}</pre>
+      </li>
+      <li>
+        <p><strong>Environments.</strong> Draw the environment in which <code>x + y</code> is
+          evaluated, innermost binding first. How many bindings must be read to look up
+          <code>x</code> and <code>y</code>, and what does the block evaluate to?</p>
+<pre>{ let x = 10;
+  { let y = x + 1;
+    { let x = y * 2;
+      { let y = x - y; x + y } } } }</pre>
+      </li>
+      <li>
+        <p><strong>Aliasing cells.</strong> What does <code>main</code> print and why? Draw the
+          store after the two assignments.</p>
+<pre>fn main() {
+    let p = ref 5;
+    let q = ref deref p;
+    let r = p;
+    p := deref q * 2;
+    q := deref r + 1;
+    println(deref p);
+    println(deref q);
+    println(deref r);
+}</pre>
+      </li>
+      <li>
+        <p><strong>Returning early.</strong> What does <code>main</code> print? Can the final
+          <code>0</code> in <code>first_square_over</code> ever be its result? Why or why
+          not?</p>
+<pre>fn first_square_over(limit: Int) -&gt; Int {
+    let i = ref 1;
+    while true {
+        if deref i * deref i &gt; limit { return deref i; }
+        i := deref i + 1;
+    }
+    0
+}
+fn main() {
+    println(first_square_over(20));
+    println(first_square_over(0) * 100);
+}</pre>
+      </li>
+      <li>
+        <p><strong>Static and dynamic scoping.</strong> What does this program print in Bridger?
+          What would it print under dynamic scoping? Explain why the two outputs differ.</p>
+<pre>let scale = 10;
+fn bump(x: Int) -&gt; Int = x + scale;
+fn twice(f: fn(Int) -&gt; Int, x: Int) -&gt; Int = f(f(x));
+fn main() {
+    let scale = 1;
+    println(twice(bump, 0));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Recursion through a cell.</strong> This program prints <code>120</code>. A
+          version that wrote <code>let f = |n: Int| ... f(n - 1) ...</code> would get stuck. Why
+          does this one work? Why must the call be written <code>(deref f)(n - 1)</code> and not
+          <code>deref f(n - 1)</code>?</p>
+<pre>fn main() {
+    ref f: fn(Int) -&gt; Int = |n: Int| 0;
+    f := (|n: Int| if n == 0 { 1 } else { n * (deref f)(n - 1) });
+    println((deref f)(5));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Tail calls.</strong> The first line prints <code>5050</code>; the second
+          gets stuck. Why, even though the recursive call is the last thing
+          <code>sum_to</code> does? What would a language with tail-call elimination do
+          instead?</p>
+<pre>fn sum_to(n: Int, acc: Int) -&gt; Int =
+    if n == 0 { acc } else { sum_to(n - 1, acc + n) };
+fn main() {
+    println(sum_to(100, 0));
+    println(sum_to(1000000, 0));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Higher-order functions.</strong> What does <code>main</code> print? For each
+          line, say which functions are passed as arguments and which are returned as
+          results.</p>
+<pre>fn compose(f: fn(Int) -&gt; Int, g: fn(Int) -&gt; Int) -&gt; fn(Int) -&gt; Int =
+    |x: Int| f(g(x));
+fn add(k: Int) -&gt; fn(Int) -&gt; Int = |x: Int| x + k;
+fn main() {
+    let h = compose(add(1), |x: Int| x * 3);
+    println(map([1, 2, 3], h));
+    println(fold(map([1, 2, 3], add(10)), 0, |acc: Int, x: Int| acc + x));
+    println(filter(range(1, 7), |x: Int| x % 2 == 0));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Purity.</strong> What does <code>main</code> print? Is <code>tick</code> a
+          pure function? Could a programmer replace the second <code>map</code> with
+          <code>let b = a;</code> without changing what the program prints? Why or why not?</p>
+<pre>let calls = ref 0;
+fn tick(x: Int) -&gt; Int { calls := deref calls + 1; x + deref calls }
+fn main() {
+    let a = map([10, 20], tick);
+    let b = map([10, 20], tick);
+    println(a);
+    println(b);
+    println(a == b);
+}</pre>
+      </li>
+    </ol>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. The six quizzes are
+        the next best thing: redo them without looking at your answers. Beyond that, write small
+        programs and predict their output before you run them: shadow a name inside a block; make
+        two names for one cell and a copy of it; put a <code>return</code> inside a loop; return
+        a closure from a function and call it from a scope that binds the same names; write a
+        recursive function both at the top level and as a <code>let</code>-bound lambda; and run
+        a <code>map</code> whose function prints. If you have the interpreter built, run your
+        programs and check yourself.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>syntax vs. semantics</li>
+        <li>concrete vs. abstract syntax</li>
+        <li>precedence / associativity</li>
+        <li>value</li>
+        <li>stuck expression</li>
+        <li>big-step rule / premise</li>
+        <li>derivation tree</li>
+        <li>short-circuit evaluation</li>
+        <li>exception vs. error value</li>
+        <li>environment</li>
+        <li>binding / scope of a binding</li>
+        <li>shadowing</li>
+        <li>lexical (static) scope</li>
+        <li>dynamic scope</li>
+        <li>scope chain / lookup</li>
+        <li>de Bruijn index</li>
+        <li>expression vs. statement</li>
+        <li>unit, <code>()</code></li>
+        <li>early return</li>
+        <li>cell / location / store</li>
+        <li><code>ref</code>, <code>deref</code>, <code>:=</code></li>
+        <li>aliasing</li>
+        <li>first-class function</li>
+        <li>lambda</li>
+        <li>evaluation order</li>
+        <li>call by value / name / need</li>
+        <li>closure / captured environment</li>
+        <li>recursion</li>
+        <li>stack frame</li>
+        <li>tail call / tail-call elimination</li>
+        <li>higher-order function</li>
+        <li><code>map</code>, <code>filter</code>, <code>fold</code></li>
+        <li>function composition</li>
+        <li>partial application / currying</li>
+        <li>pure function / side effect</li>
+        <li>referential transparency</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the midterm.
+    </footer>
+
+  </div>
+</body>
+</html>
