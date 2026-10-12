@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Type Checking - Slidev</title>
+<link rel="icon" href="https://cdn.jsdelivr.net/gh/slidevjs/slidev/assets/favicon.png">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta property="slidev:version" content="52.19.1">
+<meta name="description" content="&quot;Lecture 20 (Type Checking). Combines the Why Types? and Type Checking lectures: Ch. 26\ntypes/motivation.md and Ch. 27 types/type-checker.md. ~40 min, given by a guest lecturer, so\nthe speaker notes carry the full explanation for every slide.\nMotivation (~10): describe/double crash late or not at all on M4; the same programs rejected\nup front at M5; types from storage (FORTRAN I-N, Algol, typeless B, C) to checking (Hoare\n1973, Milner 1978). Rules (~12): ⊢ e : τ beside e ⇓ v, T-Arith vs E-Add, one T-If vs two\nE-If rules, a derivation, a program that runs and has no type, why every checker rejects\nsomething (halting), what types cannot see. Checking (~18): Γ beside ρ, function types,\nT-Lam guesses, checking vs inferring, inference variables, unification, an undetermined [],\nthe occurs check on |x| x(x), Bridger&#039;s check_expr and where errors land.\nEvery Bridger output was run on the reference interpreter (--features m4 / m5); every\nquotation is in the chapters&#039; authoring notes with its page. No M5 hidden-test programs.\n&quot;">
+<meta property="og:title" content="Type Checking - Slidev">
+<meta property="og:description" content="&quot;Lecture 20 (Type Checking). Combines the Why Types? and Type Checking lectures: Ch. 26\ntypes/motivation.md and Ch. 27 types/type-checker.md. ~40 min, given by a guest lecturer, so\nthe speaker notes carry the full explanation for every slide.\nMotivation (~10): describe/double crash late or not at all on M4; the same programs rejected\nup front at M5; types from storage (FORTRAN I-N, Algol, typeless B, C) to checking (Hoare\n1973, Milner 1978). Rules (~12): ⊢ e : τ beside e ⇓ v, T-Arith vs E-Add, one T-If vs two\nE-If rules, a derivation, a program that runs and has no type, why every checker rejects\nsomething (halting), what types cannot see. Checking (~18): Γ beside ρ, function types,\nT-Lam guesses, checking vs inferring, inference variables, unification, an undetermined [],\nthe occurs check on |x| x(x), Bridger&#039;s check_expr and where errors land.\nEvery Bridger output was run on the reference interpreter (--features m4 / m5); every\nquotation is in the chapters&#039; authoring notes with its page. No M5 hidden-test programs.\n&quot;">  <script type="module" crossorigin src="./assets/index-Dd0ZjW-Q.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-hePW80VL.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/shiki-BDOa5D_m.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-QKqV1Vbb.js">
+  <link rel="modulepreload" crossorigin href="./assets/slidev/env-D4cep5eE.js">
+  <link rel="modulepreload" crossorigin href="./assets/modules/vue-CTLAYFu5.js">
+  <link rel="stylesheet" crossorigin href="./assets/modules/shiki-BrmBd2_v.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-Dv3X32fl.css">
+</head>
+<body>
+  <div id="app"></div>
+  <div id="mermaid-rendering-container"></div>
+  
+</body>
+</html>
