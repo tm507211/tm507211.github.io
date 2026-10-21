@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 7 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 7 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lectures 20&ndash;21 and their textbook
+      chapters: why types, type checking and unification, and function types and polymorphism.
+      Lecture&nbsp;21 is covered through <em>Generic values</em>; let-bound lambdas,
+      let-generalization, and the rest of that lecture are <em>not</em> on this quiz. Answers are
+      short: a sentence or two, in your own words, earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 15 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions, each about a small block of
+            Bridger code. Most ask whether Bridger's type checker rejects the program and why;
+            one also asks what the program prints with no type checker. One gives a short list of
+            generic declarations to sort into accepted and rejected. You will not write any code,
+            in Bridger or in Rust.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.
+            You may name a rule (<code>T-If</code>, <code>Chk-Lam</code>, <code>T-Inst</code>) if
+            it helps, but you are never required to.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Why types?
+      <small class="text-muted">Lecture 20, first half</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/types/motivation.html">Why types? From runtime errors to static checking</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-20/index.html">Lecture 20</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain how a type error behaves with no checker: it is found only when the bad
+        expression runs, after earlier output has already been printed, and an annotation that is
+        never checked may not fail at all (<code>double("ab")</code> prints <code>abab</code>).</li>
+      <li>Say what a static pass changes: the checker runs between parsing and evaluation, so a
+        rejected program prints nothing.</li>
+      <li>Read the typing judgment <code>&#8866; e : &tau;</code> beside
+        <code>e &#8659; v</code>: a type says what kind of value an expression will produce,
+        without computing it. Compare <code>T-Arith</code> with <code>E-Add</code>, and the one
+        <code>T-If</code> rule with the two <code>E-If</code> rules.</li>
+      <li>Build a small typing derivation, and say which premise fails for an expression that
+        has no type (<code>1 + false</code>).</li>
+      <li>Explain why a checker is <em>conservative</em>: <code>T-If</code> types both branches
+        without knowing which runs, so a program can run without going wrong and still be
+        rejected. An exact checker would decide the halting problem.</li>
+      <li>Sort errors into those the checker rules out (<code>1 + true</code>,
+        <code>5(3)</code>, a wrong number of arguments, an unbound name) and those it cannot
+        (division by zero, deep recursion, failed input).</li>
+      <li>Retell the history in outline: types first told the machine how to store a value
+        (FORTRAN, Algol, typeless B, C); Hoare argued the same information catches the
+        programmer's mistakes; Milner's &ldquo;well-typed expressions do not go wrong.&rdquo;</li>
+    </ul>
+
+    <h2>A type checker
+      <small class="text-muted">Lecture 20, second half</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/types/type-checker.html">A type checker</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-20/index.html">Lecture 20</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Compare the typing context <code>&Gamma;</code> (name &#8614; type, before the program
+        runs) with the environment <code>&rho;</code> (name &#8614; value, while it runs). Say why
+        lexical scope lets the checker build <code>&Gamma;</code> from the program text, and how a
+        <code>let</code> that shadows a name at a different type is handled.</li>
+      <li>Read <code>T-Lam</code> and <code>T-App</code>, and give the function type of a small
+        lambda. Say what <code>T-Lam</code> leaves unsaid: where the parameter's type comes
+        from.</li>
+      <li>Distinguish the two modes of a bidirectional checker: <em>synthesize</em>
+        (<code>e &rArr; &tau;</code>, work the type out) and <em>check</em>
+        (<code>e &lArr; &tau;</code>, the type is given). Explain how <code>Chk-Lam</code> takes a
+        lambda's parameter types from the type it is checked against, e.g. a function
+        parameter's declared type.</li>
+      <li>Predict where an error is reported in a lambda passed to a function, and what a checker
+        that synthesized the lambda's type first would report instead.</li>
+      <li>Trace inference variables through a declaration: give an unannotated parameter a fresh
+        variable &alpha;, collect what the body requires of it, and solve it.</li>
+      <li>Unify two types by hand: the same constructor unifies part by part, an unsolved
+        variable is solved, anything else is a mismatch. Give the solutions, or say why it
+        fails.</li>
+      <li>Explain why <code>let xs = [];</code> followed only by <code>len(xs)</code> needs an
+        annotation: every variable must be solved by the end of its declaration.</li>
+      <li>Explain the occurs check: derive the equation that self-application or a list
+        containing itself produces (&alpha; = <code>fn(&alpha;) &rarr; &beta;</code>, &alpha; =
+        <code>[&alpha;]</code>), and why no finite type satisfies it.</li>
+      <li>Describe the shape of <code>check_expr</code> in Milestone&nbsp;M5:
+        <code>expected: Some(&tau;)</code> checks, <code>None</code> synthesizes, and an arm that
+        needs two types to agree calls <code>unify</code>, not <code>==</code>.</li>
+    </ul>
+
+    <h2>Function types and polymorphism
+      <small class="text-muted">Lecture 21, through &ldquo;Generic values&rdquo;</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/types/polymorphism.html">Function types and polymorphism</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-21/index.html">Lecture 21</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Explain why a checker with only monomorphic types rejects <code>id</code> used at
+        <code>Int</code> and at <code>String</code>, and <code>compose</code> written at
+        <code>Int</code> applied to a <code>String</code> stage, though both programs run.</li>
+      <li>Distinguish Strachey's two kinds of polymorphism: <em>ad hoc</em> (different code at
+        each type, like <code>+</code> or Bridger's <code>++</code>) and <em>parametric</em> (one
+        definition, the same at every type).</li>
+      <li>Contrast type parameters written by the programmer (Reynolds, CLU) with types inferred
+        at each use (Milner, Damas&ndash;Milner), and say which parts of each Bridger takes.</li>
+      <li>Explain how the top-level context <code>&Gamma;<sub>0</sub></code> is built from the
+        signatures alone, so bodies can be checked in any order and mutually recursive functions
+        need nothing extra. Say why a global <code>let g = |x| x;</code> is rejected even if a
+        later function calls <code>g(1)</code>.</li>
+      <li>Read a type scheme such as <code>&forall;T. fn(T) &rarr; T</code>, and write the
+        signature of a generic function, e.g. <code>compose&lt;A, B, C&gt;</code>, saying which
+        type parameters are shared.</li>
+      <li>Say what a generic body may do with a <code>T</code> (return it, pass it on, store it in
+        a list, tuple, or cell) and what it may not (arithmetic, equality, printing). Explain why
+        two different type parameters cannot be treated as equal.</li>
+      <li>Read <code>T-Fn</code> and <code>T-Inst</code>. Explain why the checker gives each use of
+        a generic function <em>fresh</em> inference variables, and trace a generic call such as
+        <code>compose(|n| n + 1, |s: String| len(s))</code> to its solutions.</li>
+      <li>Explain that instantiation happens where the generic function's <em>name</em> is
+        written: <code>map(xs, id)</code> instantiates <code>id</code>, and
+        <code>let f = id;</code> binds <code>f</code> to one instance, so <code>f</code> cannot be
+        used at two types.</li>
+    </ul>
+
+    <h2>Sample questions
+      <small class="text-muted">Practice</small></h2>
+    <p>
+      These are the same kind and size of question as the quiz, on different programs. No answers
+      are given: work each one by hand first, then, if you have the interpreter built, run the
+      program to check yourself &mdash; at Milestone&nbsp;M4 for &ldquo;no type checker&rdquo;,
+      and at M5 for the checker.
+    </p>
+
+    <ol class="objectives">
+      <li>
+        <p><strong>Checking before running.</strong> What is the output of this program on an
+          interpreter without type checking? When type checked, does the type checker report any
+          errors? If so, which error and why?</p>
+<pre>fn safe_div(a: Int, b: Int) -&gt; Int =
+    if b == 0 { "undefined" } else { a / b };
+fn main() {
+    println(safe_div(10, 2));
+    println(safe_div(9, 3));
+    println(safe_div(1, 0));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Checking a lambda.</strong> Why is this program rejected by Bridger's type
+          checker? Where is the error reported?</p>
+<pre>fn keep(f: fn(Int) -&gt; Bool, xs: [Int]) -&gt; [Bool] = map(xs, f);
+fn main() {
+    println(keep(|n| n &gt; 2, [1, 5]));
+    println(keep(|n| not n, [1, 5]));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Typing <code>nest</code>.</strong> Why is this program rejected by the type
+          checker? Would it run without one?</p>
+<pre>fn main() {
+    let nest = |x| [x, [x]];
+    println(2);
+}</pre>
+      </li>
+      <li>
+        <p><strong>Instantiation.</strong> This program is rejected. Which line is the type error
+          reported on and why? Which change to that line would make the program type-check?</p>
+<pre>1  fn first&lt;A, B&gt;(p: (A, B)) -&gt; A = p.0;
+2  fn main() {
+3      println(first((1, "a")));
+4      println(first(("b", 2)));
+5      let f = first;
+6      println(f((3, "c")));
+7      println(f(("d", 4)));
+8  }</pre>
+      </li>
+      <li>
+        <p><strong>Inside a generic body.</strong> Write if each declaration is accepted or
+          rejected by the type checker. If rejected also briefly describe why.</p>
+        <table class="table table-bordered table-condensed" style="max-width:44rem">
+          <thead><tr><th>declaration</th><th>accepted, or rejected and why</th></tr></thead>
+          <tbody>
+            <tr><td><code>fn twice&lt;T&gt;(f: fn(T) -&gt; T, x: T) -&gt; T = f(f(x));</code></td><td></td></tr>
+            <tr><td><code>fn neg&lt;T&gt;(x: T) -&gt; Bool = not x;</code></td><td></td></tr>
+            <tr><td><code>fn wrap&lt;T&gt;(x: T) -&gt; [[T]] = [[x]];</code></td><td></td></tr>
+            <tr><td><code>fn less&lt;T&gt;(a: T, b: T) -&gt; Bool = a &lt; b;</code></td><td></td></tr>
+            <tr><td><code>fn flip&lt;A, B&gt;(p: (A, B)) -&gt; (A, B) = (p.1, p.0);</code></td><td></td></tr>
+            <tr><td><code>fn is_zero&lt;T&gt;(a: Int, b: T) -&gt; Bool = a == 0;</code></td><td></td></tr>
+            <tr><td><code>fn echo&lt;T&gt;(x: T) -&gt; T { println(x); x }</code></td><td></td></tr>
+          </tbody>
+        </table>
+      </li>
+    </ol>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Beyond that: write an
+        <code>if</code> whose untaken branch has the wrong type and run it with and without the
+        checker; pass a lambda whose body misuses its parameter to a function that declares the
+        parameter's type, and predict where the error lands; give a lambda's parameter a fresh
+        &alpha; and solve it by hand; unify a few pairs of types, including one that fails the
+        occurs check; and write a generic function, call it at two types, then bind it with
+        <code>let</code> and try again. If you have the interpreter built, run your programs and
+        check yourself.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>static type checking</li>
+        <li>typing judgment (<code>&#8866; e : &tau;</code>)</li>
+        <li>typing rule / typing derivation</li>
+        <li>well-typed</li>
+        <li>conservative checker</li>
+        <li>typing context (<code>&Gamma;</code>)</li>
+        <li>function type</li>
+        <li>monomorphic type</li>
+        <li>bidirectional checking</li>
+        <li>synthesize vs. check</li>
+        <li>inference variable</li>
+        <li>unification</li>
+        <li>solution (of an inference variable)</li>
+        <li>undetermined type</li>
+        <li>occurs check / infinite type</li>
+        <li><code>TypeMap</code></li>
+        <li>ad hoc polymorphism</li>
+        <li>parametric polymorphism</li>
+        <li>type parameter</li>
+        <li>type scheme (<code>&forall;T. &hellip;</code>)</li>
+        <li>top-level context (<code>&Gamma;<sub>0</sub></code>)</li>
+        <li>declaration boundary</li>
+        <li>instantiation (<code>T-Inst</code>)</li>
+        <li>fresh variable</li>
+        <li>generic function</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>
