@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-2d33cc70.js";
+            window.path_to_searchindex_js = "../searchindex-3a6a8896.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -180,38 +180,418 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="dynamic-and-gradual-typing"><a class="header" href="#dynamic-and-gradual-typing">Dynamic and Gradual Typing</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     design-space chapter (lectured, not implemented).
-     Status: placeholder — spine authored just-in-time.
+     No lecture (plan: "Type Soundness (+ gradual typing, no lecture)"). Design-space chapter:
+     nothing here is implemented, and no milestone asks for it.
+     USER CALL (2026-10-22): a HYPOTHETICAL gradual Bridger (? / consistency / casts / blame)
+     plus a full section on where types go after checking (erasure), folding in the plan's
+     candidate "Typed IRs and type erasure" chapter.
+     SEAM: motivation.md owns the safe/unsafe table, PEP 484, and TypeScript-as-checker-then-
+     erase in one sentence; soundness.md owns the soundness statement and its left/right error
+     columns, TypeScript's non-goal, Java array stores. type-checker.md's design space owns
+     validate / side table / elaborate-to-typed-IR; polymorphism.md's owns uniform
+     representation vs per-instantiation copies and Java generics erasure in one sentence.
+     THIS chapter points back to all of those and adds: tags vs types, ?, consistency, cast
+     insertion, function wrappers, blame, what erasure forecloses (reifiable types, checked
+     boundaries), and the optional / transient / guarded spectrum.
+     THROUGHLINE: a type the checker did not see must be checked when the value arrives, and a
+     run-time check can only read what the run time keeps. Bridger's tags are enough for base
+     types and not for functions (type_of reports a closure as fn(…)), so a function crossing
+     a boundary is wrapped and its checks deferred. A language that erases everything has
+     nothing to check at a boundary.
+     HYPOTHETICAL SYNTAX: `Dyn` is written for ? in Bridger code because `?` is already the
+     error-propagation operator. Every hypothetical program is labelled as such in the prose,
+     and its behaviour is described, never shown as interpreter output.
+     EXAMPLES run 2026-10-22, reference interpreter, release --features m4 / m5 / m7
+     (stdin </dev/null): settings (mixed-type pairs): m4 three lines width = 80 / title =
+     Report / verbose = true; m5 mismatch expected Int, found String at "Report" (2:46).
+     indent with settings [("width", 4), ("title", "Report")]: m4 prints "    width" then
+     type error expected Int, found String at `width > 0` inside indent (1:38). twice with
+     |n| to_string(n): m4 prints 18 then 2 (no error); the chapter's program
+     (let g = |n| to_string(n); println(twice(g, 2))) prints 2 on m4. Setting ADT version: m7
+     prints the same three lines as m4.
+     VERIFIED WORDINGS (2026-10-22):
+       Abadi, Cardelli, Pierce, Plotkin: TOPLAS text in DEC SRC report layout (SRC-RR-47 file
+         on HP Labs' archive; its footnote says it is the TOPLAS extended version), abstract
+         p. 1, page image: "we propose to add a type Dynamic ... typecase construct."
+         (Dynamic, v, T, typecase in typewriter.) 1989 SRC text NOT seen.
+       Siek & Taha, Scheme Workshop 2006 proceedings (TR-2006-06) pp. 81-92, page images:
+         p. 81 "The focus of this paper ... annotating function parameters with types, or
+         not." p. 83 "The intuition is that we should require the known portions of the two
+         types to be equal and ignore the unknown parts." p. 83 "The type consistency relation
+         is reflexive and symmetric but not transitive". p. 85 cast semantics sentence. Their
+         rule names are CREFL, CFUN, CUNR, CUNL; the chapter uses its own C- names.
+       Tobin-Hochstadt & Felleisen DLS 2006: PRE-FINAL author copy (12 pp., "200X" block), p. 1
+         "Ideally, they should port one module at a time, always leaving the overall product
+         intact and running." Typed Scheme POPL 2008 author copy (final block), abstract.
+       Findler & Felleisen ICFP 2002 author copy (ACM block, 12 pp.), §1 p. 2 (proceedings p.
+         49, inferred): "The key observation is that a contract checker cannot ensure that g's
+         argument meets its contract when g is called. Instead, it must wait until proc is
+         applied." (g, proc are their example's names; quoted with them.)
+       Wadler & Findler ESOP 2009, via the TR on Wadler's site (contains ESOP verbatim), §1 p.
+         1: "A corollary is that when a program integrating less-typed and more-typed
+         components goes wrong the blame must lie with the less-typed component." The title's
+         nod to Milner is ONLY in the 2007 Scheme Workshop version; not quoted here. That
+         version also attributes "safety is preservation plus progress" to Harper (citing
+         TAPL p. 95): relevant to soundness.md, not used yet.
+       Vitousek et al. DLS 2014, preprint (2014/8/12) via Wayback: §2.2.2 p. 5 "In the
+         transient semantics, a cast checks that the value has a type consistent with the
+         target type of the cast, but it does not wrap the value in a proxy." §1 p. 2 "it is
+         unable to report the location of the original cast that caused the error to occur".
+         Transient there checks object members recursively; do NOT call it "shallow".
+       Takikawa et al. POPL 2016, preprint: abstract "Worse, a few report disastrous numbers."
+         §1 p. 1 "We find that Typed Racket's cost of soundness is *not* tolerable." The
+         abstract has no figures.
+       TypeScript Handbook "TypeScript for the New Programmer", "Erased Types" (live HTML):
+         "once TypeScript's compiler is done with checking your code, it *erases* the types
+         ... has no type information."
+       JLS SE 27 §4.6 (definition) and §4.7 (live HTML): "Because some type information is
+         erased during compilation, not all types are available at run time. Types that are
+         completely available at run time are known as *reifiable types*."
+       C#: learn.microsoft.com built-in reference types page, "The dynamic type": "The dynamic
+         type indicates ... resolved at run time." C# 4.0, April 2010 (version history page).
+     WEAKER EVIDENCE: TypeScript any as consistent with every type, javac's unchecked-cast
+       warning, Typed Racket's module-boundary wrappers and blame, Siek & Taha closures
+       carrying parameter types, and "the slow configurations were mixtures" (Takikawa body,
+       not transcribed) are from knowledge. So are C# reified generics (List<int> and
+       List<string> distinct at run time) and mypy as a separate checker (PEP 484 itself is
+       verified in motivation.md).
+     Status: draft authored 2026-10-22, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover, as a **design-space** discussion with pros and cons:
+<p>From Milestone M5, a Bridger program is checked as a whole before any of it runs. This one holds a
+list of named settings, each paired with a value of a different type, and prints them. <code>to_string</code>
+is the prelude’s conversion of a value to its text:</p>
+<pre><code class="language-text">fn main() {
+    let settings = [("width", 80), ("title", "Report"), ("verbose", true)];
+    for s in settings {
+        println(s.0 ++ " = " ++ to_string(s.1));
+    }
+}
+</code></pre>
+<p>The M4 evaluator prints <code>width = 80</code>, <code>title = Report</code>, and <code>verbose = true</code>. The M5 checker
+rejects the program at <code>"Report"</code>, with <code>expected Int, found String</code>: a list’s elements share one
+type, and the first pair fixed it as <code>(String, Int)</code>.</p>
+<p>Before M5, a function’s signature declared types that nothing checked. In this second program,
+<code>indent</code> declares <code>width: Int</code> and returns that many spaces, and <code>main</code> passes it the second
+component of each setting:</p>
+<pre><code class="language-text">fn indent(width: Int) -&gt; String =
+    if width &gt; 0 { " " ++ indent(width - 1) } else { "" };
 
-- Dynamic typing; **gradual typing** (TypeScript, typed Python) and the boundary contracts it needs.
-- **Type erasure** and where real compilers put types.
--->
+fn main() {
+    let settings = [("width", 4), ("title", "Report")];
+    for s in settings {
+        println(indent(s.1) ++ s.0);
+    }
+}
+</code></pre>
+<p>On the M4 evaluator it prints <code>    width</code> and then stops with <code>expected Int, found String</code> at
+<code>width &gt; 0</code>, inside <code>indent</code>. The mistake is in <code>main</code>, which passed a string to a function whose
+signature asks for an <code>Int</code>.</p>
+<p>The programs raise these questions:</p>
+<ul>
+<li><strong>Can a program be checked in part?</strong> The settings program could keep its checked functions and
+leave the list unchecked. What would a checker do with a value whose type it has not been told?</li>
+<li><strong>When an unchecked value reaches checked code, who checks it, and who is blamed?</strong> The M4 run
+reports the failure inside <code>indent</code>. What would it take to report it at the call in <code>main</code>, and
+what if the value crossing over is a function?</li>
+<li><strong>What is left of the types when the program runs?</strong> Bridger’s checker hands the evaluator
+nothing. A check made at run time can read only what the run time keeps.</li>
+</ul>
+<p>Languages without static types go back at least to Lisp. Mixing checked and unchecked code in one
+program is more recent.</p>
+<h2 id="tags-and-types"><a class="header" href="#tags-and-types">Tags and types</a></h2>
+<p>Bridger’s evaluator has been dynamically typed since Part II. Each value carries a tag, the
+variant of <code>Value</code> it was built as, and each arm checks the tag of the values it receives:
+addition requires two <code>Value::Int</code>s, a call requires a <code>Value::Closure</code>. A tag records less than a
+type. The tag of <code>|n| n + 1</code> says that it is a function, and nothing about what it takes or
+returns; the interpreter’s diagnostics print a closure’s type as <code>fn(…)</code>, since that is all the
+value records. Lisp, Smalltalk, and Python check tags in the same way, which puts them in the safe
+and untyped cell of <a href="motivation.html#when-types-are-checked">Cardelli’s table</a>.</p>
+<p>Statically typed languages sometimes needed values whose type was not known until run time: data
+read from a file, or a message from another program. Martín Abadi, Luca Cardelli, Benjamin Pierce,
+and Gordon Plotkin’s “<a href="https://doi.org/10.1145/103135.103138">Dynamic Typing in a Statically Typed
+Language</a>” (1991) gave such values a type of their own: “we
+propose to add a type <code>Dynamic</code> whose values are pairs of a value <code>v</code> and a type tag <code>T</code> where <code>v</code>
+has the type denoted by <code>T</code>. Instances of <code>Dynamic</code> are built with an explicit tagging construct
+and inspected with a type safe <code>typecase</code> construct.” A program had to inspect a <code>Dynamic</code> value’s
+tag explicitly before it could use the value at any other type.</p>
+<p>Jeremy Siek and Walid Taha’s “<a href="http://scheme2006.cs.uchicago.edu/13-siek.pdf">Gradual Typing for Functional
+Languages</a>” (2006) removed the explicit
+inspection. “The focus of this paper is languages that literally provide static and dynamic typing
+in the same program, with the programmer controlling the degree of static checking by annotating
+function parameters with types, or not.” A parameter without an annotation got an unknown type,
+and the checker let a value of that type flow wherever a typed value was expected, inserting a
+check at run time in place of a <code>typecase</code>. In the same year Sam Tobin-Hochstadt and Matthias
+Felleisen’s “<a href="https://doi.org/10.1145/1176617.1176755">Interlanguage Migration: From Scripts to
+Programs</a>” (2006) addressed programmers whose untyped
+scripts had grown into programs they wanted to type: “Ideally, they should port one module at a
+time, always leaving the overall product intact and running.” Their Typed Scheme, now Typed
+Racket, made that migration possible a module at a time.</p>
+<h2 id="a-type-for-the-unknown"><a class="header" href="#a-type-for-the-unknown">A type for the unknown</a></h2>
+<p>Siek and Taha write the unknown type <code>?</code>. Bridger already uses <code>?</code> as the error-propagation operator
+of <a href="../adt/pattern-matching.html">Part VIII</a><!-- xref:../adt/pattern-matching.md -->, so the programs
+below write the type <code>?</code> as <code>Dyn</code>; the typing rules and the prose keep Siek and Taha’s <code>?</code>. Bridger
+has no <code>Dyn</code> type. The programs in this section and the next are written in a <strong>hypothetical gradual
+Bridger</strong>, and their behaviour is worked out from the rules; none of them will run in the version of
+Bridger this book builds.</p>
+<p>In the settings program, the list could be given the type <code>[(String, Dyn)]</code>: each element a pair
+of a name and a value of unknown type.</p>
+<pre><code class="language-text">let settings: [(String, Dyn)] =
+    [("width", 80), ("title", "Report"), ("verbose", true)];
+</code></pre>
+<p>The checker cannot require <code>80</code> and <code>"Report"</code> to have the same type as <code>Dyn</code>, since no type equals
+an unknown one. Siek and Taha replace equality with a weaker relation: “The intuition is that we
+should require the known portions of the two types to be equal and ignore the unknown parts.” Two
+types are <strong>consistent</strong>, written <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>, by these rules:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.0436em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">C-Refl</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:2em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mclose">?</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">C-DynR</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:2em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mclose">?</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">C-DynL</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:2em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1076em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.1132em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.1132em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.1132em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.1132em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">C-Fn</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>with lists, tuples, and reference types consistent when their parts are, as with <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">C-Fn</span></span></span></span></span>.
+<code>Int</code> is consistent with <code>?</code>, and so is <code>String</code>, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mclose">?</span></span></span></span></span>
+is consistent with <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord"><span class="mclose">?</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Bool</span></span></span></span></span>. <code>Int</code> and <code>String</code> are not
+consistent with each other, so the relation, in Siek and Taha’s words, is “reflexive and symmetric
+but not transitive”: <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mclose">?</span></span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mclose">?</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.2222em;"></span><span class="mord text"><span class="mord texttt">String</span></span></span></span></span> do not
+give <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.2222em;"></span><span class="mord text"><span class="mord texttt">String</span></span></span></span></span>.</p>
+<p>The bidirectional checker of <a href="type-checker.html#checking-and-inferring">A type checker</a> changes in
+one rule. Where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">Chk-Sub</span></span></span></span></span> required the synthesized type to equal the expected one, the
+gradual version requires consistency:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.1649em;vertical-align:-0.686em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.4789em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">Γ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">e</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇐</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">Γ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">e</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇒</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">Chk-Sub-Gradual</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The other rules use consistency wherever they compared types. In the loop, <code>s.1</code> has type <code>?</code>, and
+<code>indent(s.1)</code> is accepted, since <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mclose">?</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span></span></span></span>. <code>indent("Report")</code> is still
+rejected, because <code>String</code> and <code>Int</code> are both known and differ. A program with no <code>Dyn</code> in it is
+checked exactly as before, since without <code>?</code> consistency is equality. A program that writes <code>Dyn</code>
+everywhere is accepted wherever M4 would have run it.</p>
+<h2 id="checking-at-the-boundary"><a class="header" href="#checking-at-the-boundary">Checking at the boundary</a></h2>
+<p>The checker has accepted <code>indent(s.1)</code> without knowing that <code>s.1</code> is an <code>Int</code>, and <code>indent</code>’s body
+was checked on the assumption that <code>width</code> is an <code>Int</code>. Something has to confirm the assumption when
+the value arrives. Wherever the checker used consistency between two different types, it rewrites
+the expression to carry a <strong>cast</strong>, a check to be made at run time. A cast is written <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.2806em;"><span style="top:-2.55em;margin-left:-0.1132em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathit mtight">to</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇐</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.1352em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.1132em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathit mtight">from</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mclose"><span class="mclose">⟩</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">ℓ</span></span></span></span></span></span></span></span></span></span></span></span>, read from right to left, from the
+type the value has to the type it is needed at:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇐</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.1491em;vertical-align:-0.25em;"></span><span class="mord"><span class="mclose">?</span></span><span class="mclose"><span class="mclose">⟩</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">ℓ</span></span></span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">s.1</span></span></span></span></span></span></p>
+<p>reads <em>check that the value of <code>s.1</code>, of type <code>?</code>, is an <code>Int</code></em>. Siek and Taha describe what the
+cast does: “When e evaluates to v, the cast will check that the type of v is consistent with τ and
+then produce a value based on v that has the type τ. If the type of v is inconsistent with τ, the
+cast produces a CastError.” The label <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">ℓ</span></span></span></span> records where the cast was inserted, here the argument
+of the call in <code>main</code>.</p>
+<p>A cast to <code>Int</code> reads the value’s tag, the same check the evaluator’s addition arm makes. For the
+pair <code>("title", "Report")</code>, the cast finds a <code>Value::Str</code> and fails before <code>indent</code> is entered. The
+error names <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">ℓ</span></span></span></span>, the call in <code>main</code>, whereas M4 reported the failure at the comparison inside
+<code>indent</code>. Errors of this kind join the right-hand column of the <a href="soundness.html#what-the-guarantee-says">soundness
+table</a>: a gradually typed program that the checker accepts can
+stop with a failed cast at a boundary, while its typed parts never stop on a type error of their
+own.</p>
+<h3 id="functions"><a class="header" href="#functions">Functions</a></h3>
+<p>A cast to a function type cannot be checked by reading a tag. The hypothetical program below
+binds a lambda to a name of type <code>Dyn</code> and passes it to <code>twice</code>, whose parameter is
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span></span></span></span>:</p>
+<pre><code class="language-text">fn twice(f: fn(Int) -&gt; Int, x: Int) -&gt; Int = f(f(x));
+
+fn main() {
+    let g: Dyn = |n| to_string(n);
+    println(twice(g, 2));
+}
+</code></pre>
+<p>The cast at the call is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇐</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0991em;vertical-align:-0.25em;"></span><span class="mord"><span class="mclose">?</span></span><span class="mclose"><span class="mclose">⟩</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">ℓ</span></span></span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord text"><span class="mord texttt">g</span></span></span></span></span>, and the value of <code>g</code> is a closure whose tag says only that it is a
+function. Whether it returns an <code>Int</code> for every <code>Int</code> it is given is a question about every call it
+could receive, and no inspection of the closure answers it in general. Robert Bruce Findler and
+Matthias Felleisen’s “<a href="https://doi.org/10.1145/581478.581484">Contracts for Higher-Order Functions</a>”
+(2002) met the problem when checking contracts: “The key observation is that a contract checker
+cannot ensure that g’s argument meets its contract when g is called. Instead, it must wait until
+proc is applied.”</p>
+<p>So the cast checks the tag, and then <strong>wraps</strong> the closure in a new function that checks each use:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇐</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.1491em;vertical-align:-0.25em;"></span><span class="mord"><span class="mclose">?</span></span><span class="mclose"><span class="mclose">⟩</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">ℓ</span></span></span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">λ</span><span class="mord mathnormal">x</span><span class="mord">.</span><span class="mspace"> </span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇐</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2491em;vertical-align:-0.35em;"></span><span class="mord"><span class="mclose">?</span></span><span class="mclose"><span class="mclose">⟩</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">ℓ</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="delimsizing size1">(</span></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace"> </span><span class="mopen">⟨</span><span class="mord"><span class="mclose">?</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇐</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.2491em;vertical-align:-0.35em;"></span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mclose"><span class="mclose">⟩</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8991em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">ℓ</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mord"><span class="delimsizing size1">)</span></span></span></span></span></span></p>
+<p>Because <code>g</code> has type <code>?</code>, the wrapper treats its parameter and result types as <code>?</code>. It casts the
+incoming <code>Int</code> argument to <code>?</code>, which always succeeds, and casts <code>g</code>’s result from <code>?</code> to <code>Int</code>,
+which can fail. <code>twice</code> calls the wrapper with <code>2</code>, <code>g</code> returns the string <code>"2"</code>, and the result’s
+cast fails, naming <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">ℓ</span></span></span></span>: the call in <code>main</code> that supplied <code>g</code>. With the <code>Dyn</code> annotation removed,
+the M4 evaluator runs the same program to completion: the first call to <code>g</code> returns <code>"2"</code>, the
+second passes <code>"2"</code> to <code>to_string</code> and gets <code>"2"</code> back, and <code>main</code> prints <code>2</code>, a string returned by
+a function whose signature promised an <code>Int</code>.</p>
+<p>Siek and Taha’s closures carried the types of their parameters, so their casts could reject a
+function at once when its declared type was inconsistent with the target. A closure built from
+<code>|n| to_string(n)</code> has no declared parameter type in Bridger, and its run-time value records none,
+so the wrapper is the only check available.</p>
+<h3 id="blame"><a class="header" href="#blame">Blame</a></h3>
+<p>The label on a cast says which side of a boundary failed. Philip Wadler and Robert Bruce Findler’s
+“<a href="https://doi.org/10.1007/978-3-642-00590-9_1">Well-Typed Programs Can’t Be Blamed</a>” (2009) proved
+which side that can be: “when a program integrating less-typed and more-typed components goes wrong
+the blame must lie with the less-typed component.” In both examples the failure is blamed on
+<code>main</code>, where a <code>Dyn</code> value met a typed parameter. <code>indent</code> and <code>twice</code> are never blamed, because
+their types were checked. The title echoes Milner’s “well-typed programs cannot go wrong”, from
+<a href="soundness.html#going-wrong">Soundness, informally</a>: a gradually typed program can go wrong, but only
+in the parts that are not statically typed.</p>
+<h2 id="where-types-go-after-checking"><a class="header" href="#where-types-go-after-checking">Where types go after checking</a></h2>
+<p>A cast reads something the running program keeps. A check on <code>Int</code> needs a tag on every value, and
+a check on a function type needs a wrapper that remembers the target type. Languages differ in how
+much of a program’s types survive to run time, and the difference decides which of these checks a
+language can make.</p>
+<h3 id="erased"><a class="header" href="#erased">Erased</a></h3>
+<p>Bridger’s checker passes the evaluator nothing, as <a href="motivation.html#bridgers-checker">the first chapter of this
+part</a> described, and the evaluator runs an accepted program exactly
+as it would have run unchecked. Once checking is done, the types are gone; only the tags remain,
+and they were there before the checker existed. <a href="../objects/dispatch.html">Part IX</a><!-- xref:../objects/dispatch.md -->
+is the first place the checker gives the evaluator something it worked out from types.</p>
+<p>TypeScript erases more. As its handbook puts it, “once TypeScript’s compiler is done with checking
+your code, it <em>erases</em> the types to produce the resulting “compiled” code. This means that once your
+code is compiled, the resulting plain JS code has no type information.“ Where untyped JavaScript
+passes a value to a TypeScript function, nothing checks it, since nothing in the compiled code
+records what the function’s parameter was declared to be. TypeScript is gradual in what its checker
+accepts, and it has a type <code>any</code> that is consistent with every type, but it inserts no casts. Its
+boundaries behave like the M4 run of <code>indent</code>: a wrong value travels into typed code and fails, if
+at all, wherever an operation finally rejects it.</p>
+<p>Java erases part of its types. Generic classes were added in 2004 to a virtual machine that had
+none, and the compiler checks the type arguments and then removes them, as <a href="polymorphism.html#how-generic-code-runs">Function types and
+polymorphism</a> described. The language specification states
+the consequence: “Because some type information is erased during compilation, not all types are
+available at run time. Types that are completely available at run time are known as <em>reifiable
+types</em>.” A <code>List&lt;String&gt;</code> and a <code>List&lt;Integer&gt;</code> are the same class when the program runs, so a cast
+to <code>List&lt;String&gt;</code> can check that a value is a list, but not what the list holds. The compiler warns
+that such a cast is unchecked.</p>
+<h3 id="kept"><a class="header" href="#kept">Kept</a></h3>
+<p>A language can keep types where it will need them. C# keeps the type arguments of its generics at
+run time, so a <code>List&lt;int&gt;</code> and a <code>List&lt;string&gt;</code> remain distinguishable. Its <code>dynamic</code> type, added
+in C# 4.0 in 2010, is the reverse of Abadi and his colleagues’ <code>typecase</code>: “The <code>dynamic</code> type
+indicates that the variable and references to its members bypass compile-time type checking.
+Instead, these operations are resolved at run time.” Each operation on a <code>dynamic</code> value consults
+the value’s run-time type, which the virtual machine records for every object.</p>
+<p>Compilers keep types longer than interpreters do, in the typed intermediate representations that <a href="type-checker.html#where-the-types-go">A
+type checker</a> described, because they choose representations and
+instructions by type. They usually discard them when they emit machine code. Rust and C++ compile a
+separate copy of a generic function for each type it is called with, so the types are fixed in the
+generated code and none need be recorded at run time.</p>
+<h3 id="what-a-boundary-can-check"><a class="header" href="#what-a-boundary-can-check">What a boundary can check</a></h3>
+<p>Sound gradual typing needs at least Bridger’s amount of run-time information: tags for checking
+base types, and closures that can be wrapped. A language that erases its types and checks nothing
+at the boundary, as TypeScript does, can be gradual only in its checker. A cast inserted by the
+checker needs some part of the type to remain when the program runs.</p>
+<h2 id="bridgers-types"><a class="header" href="#bridgers-types">Bridger’s types</a></h2>
+<p>Bridger has no <code>Dyn</code>. Through M4 it is untyped, and from M5 it is statically typed, with every
+declaration checked before <code>main</code> starts. It never mixes the two in one program. The evaluator
+keeps its tag checks throughout, which is what lets the same evaluator run the untyped milestones
+and backs up the checker in the typed ones.</p>
+<p>For values of several types in one list, Bridger’s answer arrives in <a href="../adt/adts.html">Part
+VIII</a><!-- xref:../adt/adts.md -->. A <strong>sum type</strong> names the possibilities, and
+<code>match</code> takes a value apart according to which one it is:</p>
+<pre><code class="language-text">type Setting = Num(Int) | Text(String) | Flag(Bool);
+
+fn show(v: Setting) -&gt; String = match v {
+    Num(n) =&gt; to_string(n),
+    Text(s) =&gt; s,
+    Flag(b) =&gt; to_string(b),
+};
+
+fn main() {
+    let settings = [("width", Num(80)), ("title", Text("Report")),
+                    ("verbose", Flag(true))];
+    for s in settings {
+        println(s.0 ++ " = " ++ show(s.1));
+    }
+}
+</code></pre>
+<p>This prints the three lines the M4 evaluator printed for the original program, and the checker
+accepts it. <code>Num</code>, <code>Text</code>, and <code>Flag</code> are tags the program declares itself, and <code>match</code> inspects
+them, much as <code>typecase</code> inspects a <code>Dynamic</code> value’s tag. The sum type lists the types a setting
+may have. <code>Dyn</code> would allow any, and would leave the checking to the casts.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<h3 id="how-much-a-boundary-checks"><a class="header" href="#how-much-a-boundary-checks">How much a boundary checks</a></h3>
+<p>Gradually typed languages differ in what happens where an unchecked value meets a type.</p>
+<ul>
+<li><strong>Nothing.</strong> TypeScript’s checker uses <code>any</code> the way the rules above use <code>?</code>, and its compiled
+code contains no casts. Python’s annotations are checked by separate tools such as mypy, and, as
+<a href="motivation.html#writing-types-down">PEP 484</a> says, not when the program runs. This is often called
+<strong>optional typing</strong>. A program runs at full speed, and an annotation is a claim nothing enforces
+at run time.</li>
+<li><strong>The value’s own tag, and no wrapper.</strong> Reticulated Python, described by Michael Vitousek,
+Andrew Kent, Jeremy Siek, and Jim Baker in “<a href="https://doi.org/10.1145/2661088.2661101">Design and Evaluation of Gradual Typing for
+Python</a>” (2014), offers a <strong>transient</strong> semantics: “In
+the transient semantics, a cast checks that the value has a type consistent with the target type
+of the cast, but it does not wrap the value in a proxy.” A function is checked to be callable,
+and its arguments and results are checked where it is used. The checks are cheaper, and when one
+fails, the paper notes, the implementation “is unable to report the location of the original
+cast that caused the error to occur”.</li>
+<li><strong>Tags and wrappers, with blame.</strong> Typed Racket, the descendant of Tobin-Hochstadt and
+Felleisen’s Typed Scheme, checks every value that crosses from an untyped module into a typed
+one, wraps functions and other values whose types cannot be checked at once, and blames the
+module at fault. The guarantee is the one Wadler and Findler proved.</li>
+</ul>
+<h3 id="what-sound-boundaries-cost"><a class="header" href="#what-sound-boundaries-cost">What sound boundaries cost</a></h3>
+<p>The wrappers run on every call that crosses a boundary, and a wrapped function passed back and forth
+gathers a wrapper at each crossing. Asumu Takikawa and colleagues’ “<a href="https://doi.org/10.1145/2837614.2837630">Is Sound Gradual Typing
+Dead?</a>” (2016) measured Typed Racket programs with every
+combination of typed and untyped modules. Earlier publications, their abstract notes, gave few
+measurements: “Worse, a few report disastrous numbers.” Their own conclusion: “We find that Typed
+Racket’s cost of soundness is <em>not</em> tolerable.” The slow configurations were mixtures, in which
+values crossed many boundaries: the state a program is in while it is being migrated one module at a
+time. The transient design, which predates the paper, accepts weaker checks and less precise error
+reports in exchange for cheaper boundaries.</p>
+<h3 id="dynamic-values-in-a-static-language"><a class="header" href="#dynamic-values-in-a-static-language">Dynamic values in a static language</a></h3>
+<p>Abadi and his colleagues’ <code>Dynamic</code> and C#’s <code>dynamic</code> start from a statically typed language and
+let some values be checked late. The first requires the program to inspect the tag before using
+the value; the second resolves each operation on the value at run time. Gradual typing starts from
+the other side, a dynamically typed program, and lets types be added to it in place. The rules for
+<code>?</code> serve both directions, and the choice between them is about which programs a language’s users
+already have.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Gradual typing</strong>: Siek and Taha’s “<a href="http://scheme2006.cs.uchicago.edu/13-siek.pdf">Gradual Typing for Functional
+Languages</a>” (2006) defines <code>?</code>, consistency, and the
+cast-inserting translation for a small functional language, and gives the run-time semantics of the
+casts. Tobin-Hochstadt and Felleisen’s “<a href="https://doi.org/10.1145/1328438.1328486">The Design and Implementation of Typed
+Scheme</a>” (2008) describes a type system designed for
+programs first written without types, including the checks at module boundaries.</p>
+<p><strong>Contracts and blame</strong>: Findler and Felleisen’s “<a href="https://doi.org/10.1145/581478.581484">Contracts for Higher-Order
+Functions</a>” (2002) introduces the wrappers and the
+assignment of blame, for contracts written by programmers. Wadler and Findler’s “<a href="https://doi.org/10.1007/978-3-642-00590-9_1">Well-Typed
+Programs Can’t Be Blamed</a>” (2009) connects them to
+casts between more and less precise types and proves the blame theorem.</p>
+<p><strong>Cost</strong>: Takikawa and colleagues’ “<a href="https://doi.org/10.1145/2837614.2837630">Is Sound Gradual Typing
+Dead?</a>” (2016) gives the method for measuring every mixture
+of typed and untyped modules along with the Typed Racket results.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>Consistency is not transitive. What would a gradual checker accept if it were?</summary>
+<p>Every type is consistent with <code>?</code>, so a transitive relation would make every two types consistent:
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mclose">?</span></span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mclose">?</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.2222em;"></span><span class="mord text"><span class="mord texttt">String</span></span></span></span></span> would give
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.2222em;"></span><span class="mord text"><span class="mord texttt">String</span></span></span></span></span>. <code>indent("Report")</code> would be accepted, and so would <code>1 + true</code>,
+in a program with no <code>Dyn</code> in it at all. Consistency stops at the unknown part of a type: it
+compares the parts both types know and ignores the rest, so two fully known types are consistent
+only when they are equal.</p>
+</details>
+<details>
+<summary>Why can a cast to <code>Int</code> be checked when the value arrives, but a cast to <code>fn(Int) -&gt; Int</code> cannot? What does each one read?</summary>
+<p>A cast to <code>Int</code> reads the value’s tag, which records exactly what <code>Int</code> asks for: whether the value
+is an integer. A cast to a function type would have to know what the function returns for every
+integer it might be given, which is a question about its behaviour. Bridger’s closure tag records
+only that the value is a function. So the cast checks that much at once and
+wraps the function, deferring the rest to each call, where the argument and result are values
+whose tags can be read.</p>
+</details>
+<details>
+<summary>In the <code>twice</code> example, the failure is blamed on <code>main</code>. Why not on <code>twice</code>, whose call to <code>f</code> produced the bad value?</summary>
+<p><code>twice</code> was checked against its signature: it calls <code>f</code> only with <code>Int</code>s and uses its results only
+as <code>Int</code>s, so it keeps every promise its types make. The promise that <code>f</code> returns an <code>Int</code> was made
+by the cast at the call in <code>main</code>, where a <code>Dyn</code> value was passed as a
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">Int</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6111em;"></span><span class="mord text"><span class="mord texttt">Int</span></span></span></span></span>. The wrapper carries that cast’s label, so when the
+result check fails, the label names <code>main</code>. This is the case Wadler and Findler’s theorem covers:
+the less precisely typed side, here <code>main</code>’s <code>Dyn</code>, is the one blamed.</p>
+</details>
+<details>
+<summary>TypeScript accepts a program much as a gradual checker would, but it erases its types. What could it not do at a boundary, and what would it have to keep to do it?</summary>
+<p>It cannot check a value arriving from untyped JavaScript, because the compiled code has no record
+of the type the receiving function declared, and so no casts to run. A wrong value enters typed
+code and fails wherever some operation finally rejects it, which may be far from where it entered,
+or it may not fail at all. To check, TypeScript would have to keep, at each boundary, the declared
+type in the compiled code and insert a cast there: a tag test for base types, and a wrapper for
+functions and objects. That is what Typed Racket does, and the cost Takikawa and colleagues
+measured is the cost of those checks.</p>
+</details>
+<details>
+<summary>The settings list can be written with a <code>Dyn</code> element type or with the sum type <code>Setting</code>. Compare the two.</summary>
+<p><code>Setting</code> lists the three kinds of value a setting may be, and the checker makes every use of one
+handle each kind: <code>show</code> has to match <code>Num</code>, <code>Text</code>, and <code>Flag</code>, and from Part VIII a <code>match</code> that
+missed one would be rejected. A new kind of setting is a change to the type, which the checker then
+follows to every <code>match</code> on it. <code>Dyn</code> lists nothing: any value is allowed in the list, each use
+decides for itself what to expect, and a wrong guess is found by a cast when the program runs.
+<code>Dyn</code> costs nothing to write and suits data whose shape is not known in advance; <code>Setting</code> has to
+be written out, and in return the checker knows every case.</p>
+</details>
 
                     </main>
 

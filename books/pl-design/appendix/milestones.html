@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-2d33cc70.js";
+            window.path_to_searchindex_js = "../searchindex-3a6a8896.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -205,7 +205,7 @@
      Per plan §9.5 this appendix is an INDEX over the part-closing milestone chapters,
      not the place milestones are described: chapter -> deliverable, provided vs.
      implemented. Each milestone lives at the end of its part.
-     SCOPE (user, 2026-10-08): rows for M0–M4 only, the drafted milestones. M5–M8
+     SCOPE (user, 2026-10-08): rows for the drafted milestones only (M0–M5). M6–M8
      rows are kept in the hidden comment below the table; restore each as its
      chapter is drafted, and drop the banner once all are in. Verify each new row's
      holes with `grep -rn 'todo_mN!' src` in the interpreter crate.
@@ -219,6 +219,9 @@
           provided Store (alloc, read, write), Value::Ref.
        M4 holes Lambda Call; provided Closure (Bridger | Native), enter_call /
           leave_call, eval_prelude, eval_program + the bridger binary.
+       M5 (2026-10-22) holes in types/check.rs: the M1–M4 arms of check_expr + unify;
+          provided Checker driver, Ctx, metas, bookkeeping calls; helper module
+          printed in m5.md (pasted by the student, not in the starter).
      SPEC ONLY: no grading, deadlines, or submission text.
      Status: draft authored 2026-10-08, awaiting review.
 -->
@@ -275,18 +278,20 @@ and it sits with <a href="rust-reference.html">Appendix A</a> instead of closing
   and the driver that runs a whole program from a file</td>
 </tr>
 
+<tr>
+  <td style="white-space:nowrap"><a href="../milestones/m5.html">M5</a>: types</td>
+  <td style="white-space:nowrap">Part VI</td>
+  <td>arms of <code>check_expr</code> for the forms of M1–M4, and <code>unify</code></td>
+  <td>the checker's driver, the typing context <code>Ctx</code>, inference variables, and a
+  helper module printed in the milestone chapter</td>
+</tr>
+
 </tbody>
 
 </table>
 
-<!-- Rows for M5–M8, hidden until those chapters are drafted. Each needs its
+<!-- Rows for M6–M8, hidden until those chapters are drafted. Each needs its
      "You write" / "Newly provided" cells checked against the crate first.
-<tr>
-  <td style="white-space:nowrap"><a href="../milestones/m5.md">M5</a>: types</td>
-  <td style="white-space:nowrap">Part VI</td>
-  <td>the static type checker</td>
-  <td></td>
-</tr>
 <tr>
   <td style="white-space:nowrap"><a href="../milestones/m6.md">M6</a>: relations</td>
   <td style="white-space:nowrap">Part VII</td>

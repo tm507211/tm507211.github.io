@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-2d33cc70.js";
+            window.path_to_searchindex_js = "../searchindex-3a6a8896.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -182,67 +182,884 @@
 <h1 id="milestone-m5"><a class="header" href="#milestone-m5">Milestone M5</a></h1>
 <p class="chapter-subtitle">The Type Checker</p>
 
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Closes Part VI. Course offering: due Fri Oct 30.
-     Sources: spec #5, §19-e
-     Status: placeholder — spine authored just-in-time.
-     Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
-     satisfy, worked examples, self-check tests). Grading, deadlines, submission
-     and autograder mechanics stay in the syllabus and never appear here.
+     Closes Part VI. SPEC ONLY (plan §9.5): what to build, the checklist, worked
+     examples, self-check; NO grading, deadlines, submission, or autograder text,
+     and no course/institution names in rendered prose.
+     TEMPLATE: M4's shape (to-dos -> checklist table -> contracts -> implementing ->
+     running -> worked examples -> cargo mN -> design problems). The checklist DEFERS
+     the rules to Appendix D "Typing rules" and the algorithm to type-checker.md and
+     polymorphism.md. NO arm bodies printed (feedback: no milestone solutions); the
+     arm-by-arm guidance is prose, at the level of the contracts a test holds.
+     EXCEPTION (user, 2026-10-22): skeletons of the Block and If arms, printing the
+     bookkeeping calls and the Chk-Sub/record ending; the typing stays as comments.
+     Verified: the skeletons filled with the reference's typing pass every test at
+     m5 and m8, the held-back M5 suite included.
+     HELPERS (decision 2026-10-20): starter gaps are filled by the paste-in module
+     printed here, never by pushes to the students' repo. Facts behind its shape:
+       - It must live inside src/types/check.rs: a student's other new files are not
+         part of what is collected. check.rs is a child of types, so the module
+         reaches Checker's private fields (obligations, global_types).
+       - `mod helpers` with its own `use` lines, so it cannot clash with a student's
+         imports; methods are `pub`, so an unused helper raises no dead-code lint.
+       - check_callee returns the callee's own obligation range, so finish_call
+         re-blames only the callee's bounds; an argument's nested call keeps its own
+         (the 2026-10-20 begin_call/finish_call pair re-blamed nested ones and fails
+         tests/m5.rs's id(same(inc)) case). `subst` dropped: ast.rs's provided
+         Ty::substitute is the same walk.
+       - Width: lines <= 85 AND stable under rustfmt at the default 100 (param names
+         in finish_call push its signature past 100 so fmt keeps it vertical; Res /
+         Bounds aliases keep the others short). Regenerate both checks if edited.
+     VERIFIED 2026-10-22: (1) assembled starter + module appended: clippy --tests -D
+       warnings and fmt --check clean at m5 and m8; (2) the reference check.rs with
+       its own copies deleted and its arms rewired onto the module (check_callee /
+       finish_call / global_type / undetermined): all tests pass at m5 and m8, and the
+       held-back M5 suite passes. The arm guidance follows the reference arms.
+     REPO FACTS: the starter's check_expr has no nesting guard; `depth` is pub(super)
+       with allow(dead_code) and tests/m5.rs has the TooDeep test, so the guard is
+       student work. admits_eq / is_type_param / contains_meta are pub(super) in
+       types/mod.rs. No todo_m5! in eval.rs. Interpreter::check runs the checker only
+       with feature m5, before eval_program.
+     EXAMPLES run 2026-10-22 on reference release builds --features m4 / m5, stdin
+       </dev/null. late.brg: m4 prints "start" then "type error: expected ref<()>,
+       found Int" over the whole assignment; m5 prints nothing, "type mismatch:
+       expected ref<_>, found Int" at `total` (4:5), exit 1. Worked-example types
+       checked as `fn main() -> T = e;`; rejections and spans as printed. [Int]
+       against [String] reports expected String, found Int at the argument.
+       Design problems: p1 (forgetful unify) built as a patched reference — accepted,
+       then stuck at apply(g) ++ "!" with a TypeError, and it passes all of
+       tests/m5.rs; global `let log = ref [];` Ambiguous at ref [] (1:11); the local
+       version prints ["stop", "start"]; the two-function version prints
+       [2, "start"] at m4; make_stack prints Some(2), Some(1), None, Some("hi") at m4
+       and m5; sum(xs) is UnboundVariable.
+     HIDDEN TESTS: never use or name a case from milestones/m5/tests/graded.rs's
+       hidden tests: mdBook passes HTML comments through to the page source.
+     WEAKER EVIDENCE: rustc's error type that unifies with everything (design problem
+       on several errors) is from general knowledge of the compiler, not re-checked.
+     A transcript of the Ambiguous error was left out: its help line is 98 columns.
+     Course offering (instructor note, not rendered): due Fri Oct 30.
+     Status: draft authored 2026-10-22, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-Everything in Part VI has been building toward one thing: an interpreter that actually runs these
-programs. This chapter says what yours should do now, and how to know it works.
+<p>Part VI described a checker that types a program before it runs. The checker has one rule per form,
+as the evaluator does. It checks or synthesizes depending on whether the context supplies a type,
+and it names what neither mode supplies with an inference variable that unification solves. At
+each use of a generic function, it instantiates the function’s type parameters afresh. This
+milestone puts that checker into <code>src/types/check.rs</code>. Nothing in the evaluator changes, and every
+M1–M4 test must still pass.</p>
+<p>From this milestone on, the checker stands between the parser and the evaluator. The interpreter
+checks every declaration in the program and runs <code>main</code> only if all of them are accepted, so a
+program with a type error prints nothing at all. New on the provided side is the driver that walks
+the declarations and judges each one when its body has been checked. There is also a module of
+helpers, printed in <a href="#the-helper-module">the helper module</a> below, which you paste into your own
+file.</p>
+<h2 id="to-dos"><a class="header" href="#to-dos">To-dos</a></h2>
+<p><code>grep -rn 'todo_m5!' src</code> lists the holes, all in <code>src/types/check.rs</code>: an arm of <code>check_expr</code> for
+each form of M1–M4, and the body of <code>unify</code>. Each hole names the rules it implements:</p>
+<pre><code class="language-rust ignore">// src/types/check.rs — some of the M5 holes
+Expr::Lit(..)    =&gt; todo_m5!("T-Int / T-Bool / T-Str / T-Unit"),
+Expr::Var(..)    =&gt; todo_m5!("T-Var / T-Self"),
+Expr::Block(..)  =&gt; todo_m5!("T-Block / T-Let / T-Seq"),
+Expr::Return(..) =&gt; todo_m5!("T-Return (reads ctx.ret())"),
+Expr::Call(..)   =&gt; todo_m5!("T-App (first-order matching of generics at the call)"),
+// … and the rest of the M1–M4 forms
 
-## What you build
+pub fn unify(&amp;mut self, a: &amp;Ty, b: &amp;Ty, span: Span) -&gt; Result&lt;(), TyError&gt; {
+    todo_m5!(
+        "unify (structural agreement; solves TyKind::Meta with an occurs check)"
+    )
+}</code></pre>
+<p>The stub’s <code>let _ = (ctx, expected);</code> keeps the compiler quiet until your arms read those
+parameters, and can be deleted once they do. The arms for relations, constructors, <code>match</code>, <code>?</code>,
+structs, and methods stay holes until their milestones, and so does <code>check_rule</code>.</p>
+<p>One requirement has no hole of its own: <code>check_expr</code> must stop recursing past a fixed depth. It is
+described with the arms below.</p>
+<h2 id="milestone-specification"><a class="header" href="#milestone-specification">Milestone specification</a></h2>
+<p>Each form, the rules that type it, and the cases in which the checker rejects it:</p>
+<table>
+<thead>
+<tr><th>Form</th><th>Rules</th><th>Rejected when</th></tr>
+</thead>
 
-A static checking pass that runs before evaluation and records a type for every expression — a
-side table keyed by span — rejecting ill-typed programs up front.
+<tbody>
+<tr>
+  <td><code>5</code>, <code>true</code>, <code>"s"</code>, <code>()</code></td>
+  <td><code>T-Int</code>, <code>T-Bool</code>, <code>T-Str</code>, <code>T-Unit</code></td>
+  <td>—</td>
+</tr>
 
-## What is provided
+<tr>
+  <td><code>x</code></td>
+  <td><code>T-Var</code>, <code>T-Inst</code></td>
+  <td>no local binding, top-level declaration, or prelude function has the name</td>
+</tr>
 
-The typed-AST shape.
+<tr>
+  <td><code>-e</code>, <code>not e</code></td>
+  <td><code>T-Neg</code>, <code>T-Not</code></td>
+  <td>the operand is not <code>Int</code> (for <code>-</code>) or <code>Bool</code> (for
+  <code>not</code>)</td>
+</tr>
 
-## The specification you must satisfy
+<tr>
+  <td><code>e1 + e2</code>, <code>e1 &lt; e2</code>, …</td>
+  <td><code>T-Arith</code>, <code>T-Ord</code></td>
+  <td>an operand is not <code>Int</code></td>
+</tr>
 
-*To be written: the inference rules from this part, collected — the checklist your evaluator is
-measured against. Sources: spec #5, §19-e.*
+<tr>
+  <td><code>e1 and e2</code>, <code>e1 or e2</code></td>
+  <td><code>T-And</code>, <code>T-Or</code></td>
+  <td>an operand is not <code>Bool</code></td>
+</tr>
 
-## How to know it works
+<tr>
+  <td><code>e1 == e2</code>, <code>e1 != e2</code></td>
+  <td><code>T-Eq</code></td>
+  <td>the operands have different types, or their type admits no equality</td>
+</tr>
 
-Every program that crashed with a runtime type error in M1–M4 is now rejected before it runs, and no well-typed program is rejected.
+<tr>
+  <td><code>e1 ++ e2</code></td>
+  <td><code>T-Concat-Str</code>, <code>T-Concat-List</code></td>
+  <td>the operands are not two strings or two lists of one element type, or neither operand
+  settles which</td>
+</tr>
 
-*To be written: worked examples with expected output, and a self-check test set you can run on your
-own machine.*
+<tr>
+  <td><code>e1 :: e2</code></td>
+  <td><code>T-Cons</code></td>
+  <td><code>e2</code> is not a list of <code>e1</code>'s type</td>
+</tr>
 
-## Design problems
+<tr>
+  <td><code>(e1, …, en)</code>, <code>[e1, …, en]</code></td>
+  <td><code>T-Tuple</code>, <code>T-List</code></td>
+  <td>a list's elements have different types</td>
+</tr>
 
-*To be written (plan §9.5, tier two): exercises that reason across this part's chapters, plus
-programming exercises written in Bridger, where the goal is to think in the paradigm as well as
-implement it. Answers in collapsible blocks.*
--->
+<tr>
+  <td><code>e.i</code></td>
+  <td><code>T-Proj</code></td>
+  <td><code>e</code> is not a tuple, <code>i</code> is past its end, or <code>e</code>'s type is
+  not yet known</td>
+</tr>
+
+<tr>
+  <td><code>{ let x: T = e; … }</code></td>
+  <td><code>T-Let</code>, <code>T-Seq</code></td>
+  <td>the annotation names no declared type, or <code>e</code> does not have it</td>
+</tr>
+
+<tr>
+  <td><code>if e1 { e2 } else { e3 }</code></td>
+  <td><code>T-If</code></td>
+  <td>the condition is not <code>Bool</code>; the branches have different types; a branch of an
+  <code>if</code> without <code>else</code> has a value</td>
+</tr>
+
+<tr>
+  <td><code>while e1 { … }</code>, <code>for x in e1 { … }</code></td>
+  <td><code>T-While</code>, <code>T-For</code></td>
+  <td>the condition is not <code>Bool</code>; <code>e1</code> is not a list; the body is not
+  <code>()</code></td>
+</tr>
+
+<tr>
+  <td><code>ref e</code>, <code>deref e</code>, <code>e1 := e2</code></td>
+  <td><code>T-Ref</code>, <code>T-Deref</code>, <code>T-Assign</code></td>
+  <td>what is read or assigned through is not a reference; the value assigned is not of the
+  cell's type</td>
+</tr>
+
+<tr>
+  <td><code>return e</code></td>
+  <td><code>T-Return</code></td>
+  <td>no function encloses it; <code>e</code> is not of the function's result type</td>
+</tr>
+
+<tr>
+  <td><code>|x, y| e</code></td>
+  <td><code>T-Lam</code></td>
+  <td>the body is not of the result type</td>
+</tr>
+
+<tr>
+  <td><code>f(e1, …, en)</code></td>
+  <td><code>T-App</code></td>
+  <td><code>f</code> is not a function; the argument count differs from the parameter count; an
+  argument is not of its parameter's type; a bound on a type parameter is not met</td>
+</tr>
+
+</tbody>
+
+</table>
+
+<p>Wherever two types must agree, <code>unify</code> decides, and it fails with a mismatch or, when a type would
+have to contain itself, an infinite type. The rules are collected in Appendix D’s <a href="../appendix/language-reference.html#typing-rules">typing
+rules</a>, and <a href="../appendix/language-reference.html#the-static-errors-by-name">the static errors by
+name</a> gives the <code>TyError</code> variant a
+test expects for each case and the span it carries. <a href="../types/type-checker.html">A type checker</a> and
+<a href="../types/polymorphism.html">Function types and polymorphism</a> turn the rules into the algorithm the
+arms follow; this table is the checklist your checker is measured against.</p>
+<p>The provided driver does the checks that belong to a whole declaration. It builds the top-level
+context from the signatures, checks each global in initialization order and reports a cycle among
+them, and checks every other declaration in source order, so the first error in the file is the one
+reported. It validates every written signature, requires <code>main</code> to take no parameters, and turns a
+mismatch in a body whose <code>fn</code> omits <code>-&gt; T</code> into a message saying the result type was left off.
+After each declaration it applies the determination rule to every type your arms recorded, and it
+judges the bounds your arms and the native functions’ types asked for: <code>NoEquality</code>,
+<code>NotPrintable</code>, and <code>UnsatisfiedBound</code> come from there.</p>
+<p>These contracts hold across the arms:</p>
+<ul>
+<li><strong>Every arm ends the same way.</strong> When there is an expected type, the arm unifies the type it has
+built with it (<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">Chk-Sub</span></span></span></span></span>), then resolves the type and records it at its own span with
+<code>record</code>. This holds for the arms that pass the expected type down to their parts as well. A list
+checked against <code>Int</code>, or a pair against a triple, gets nothing from the expected type, and the
+final unification is where its mismatch is found; where the parts did use it, the final
+unification succeeds. The determination rule reads only what was recorded, so a type that is never
+recorded is never judged.</li>
+<li><strong><code>unify(a, b, span)</code> takes the type found first and the type required second.</strong> A failure is
+<code>Mismatch { expected: b, found: a, span }</code>, both resolved. Inside compound types the pair
+reported is the innermost one that disagrees: a <code>[Int]</code> passed where <code>[String]</code> is required is
+<code>expected String, found Int</code>, at the argument.</li>
+<li><strong>Premises are checked in the order the rule writes them</strong>, left to right: an operator’s left
+operand before its right, a call’s callee before its arguments, a condition before its branches.
+The first failure is the one reported, and the tests check which one it is.</li>
+<li><strong>A mismatch is reported where the type goes wrong.</strong> An arm that passes its expected type down
+to a subexpression lets the mismatch surface at the smallest expression whose type disagrees:
+<code>(0 - n)</code> in <a href="../types/motivation.html"><code>describe</code></a>, <code>"one"</code> in an <code>if</code> whose other branch is <code>1</code>.</li>
+</ul>
+<h2 id="implementing-milestone-m5"><a class="header" href="#implementing-milestone-m5">Implementing Milestone M5</a></h2>
+<p>Paste <a href="#the-helper-module">the helper module</a> into <code>src/types/check.rs</code> first; several arms call
+it. Then destructure each arm’s <code>..</code> into the fields you need, as at M4:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Variant</th><th>Fields</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Expr::Lit</code></td><td><code>(Lit, Span)</code></td></tr>
+<tr><td><code>Expr::Var</code></td><td><code>(Name, Span)</code></td></tr>
+<tr><td><code>Expr::Unary</code></td><td><code>(UnOp, Box&lt;Expr&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::Binary</code></td><td><code>(BinOp, Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::Tuple</code>, <code>Expr::List</code></td><td><code>(Vec&lt;Expr&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::Proj</code></td><td><code>(Box&lt;Expr&gt;, u32, Span)</code></td></tr>
+<tr><td><code>Expr::Block</code></td><td><code>(Vec&lt;Stmt&gt;, Option&lt;Box&lt;Expr&gt;&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::If</code></td><td><code>(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Option&lt;Box&lt;Expr&gt;&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::While</code></td><td><code>(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::For</code></td><td><code>(Name, Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::Assign</code></td><td><code>(Box&lt;Expr&gt;, Box&lt;Expr&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::Return</code></td><td><code>(Box&lt;Expr&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::Lambda</code></td><td><code>(Vec&lt;LambdaParam&gt;, Box&lt;Expr&gt;, Span)</code></td></tr>
+<tr><td><code>Expr::Call</code></td><td><code>(Box&lt;Expr&gt;, Vec&lt;Expr&gt;, Span)</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>A block’s statements are <code>Stmt::Let(Name, Option&lt;Ty&gt;, Expr, Span)</code>, the span covering the whole
+binding, and <code>Stmt::Expr(Expr)</code>.
+Types are built with <code>Ty</code>’s constructors (<code>Ty::int()</code>, <code>Ty::list(t)</code>, <code>Ty::func(params, ret)</code>,
+<code>Ty::reference(t)</code>, and the rest in <code>ast.rs</code>) and taken apart by matching on <code>ty.kind</code>, a <code>TyKind</code>.
+Match on a type only after <code>resolve</code>, since an inference variable that has been solved still looks
+like a <code>TyKind::Meta</code> until it is resolved.</p>
+<h3 id="the-provided-checker"><a class="header" href="#the-provided-checker">The provided checker</a></h3>
+<p><a href="../types/type-checker.html#building-it">A type checker</a> shows <code>Ctx</code> and the inference variables
+(<code>fresh_meta</code>, <code>solve</code>, <code>resolve</code>, <code>record</code>), and <a href="../types/polymorphism.html#building-it">Function types and
+polymorphism</a> shows <code>decl</code>. The arms also use these, provided
+in <code>src/types/mod.rs</code>:</p>
+<pre><code class="language-rust ignore">impl Checker {
+    /// Record that `ty` must satisfy trait `trait_` (a bound met at a use site).
+    pub fn require_bound(&amp;mut self, trait_: Name, ty: Ty, span: Span);
+    /// The same, for a bound with type arguments (`T: Conv&lt;String&gt;`).
+    pub fn require_trait(&amp;mut self, trait_: TraitRef, ty: Ty, span: Span);
+    /// The expression at `span` never produces a value.
+    pub fn record_diverging(&amp;mut self, span: Span);
+    pub fn is_diverging(&amp;self, span: Span) -&gt; bool;
+    /// `whole` leaves because its part `sub` does: mark `whole` diverging
+    /// and the code after `sub` within it as never running.
+    pub fn dead_after(&amp;mut self, sub: Span, whole: Span);
+    /// T-Eq's side condition; and whether `ty` is a bare type parameter.
+    pub(super) fn admits_eq(&amp;self, ty: &amp;Ty, visiting: &amp;mut HashSet&lt;Name&gt;) -&gt; bool;
+    pub(super) fn is_type_param(&amp;self, ty: &amp;Ty) -&gt; bool;
+    // and the field `depth: usize`, the nesting of the expression being checked
+}
+
+/// Whether `ty` still contains an inference variable.
+pub(super) fn contains_meta(ty: &amp;Ty) -&gt; bool;
+pub const MAX_NESTING: usize = 150_000;</code></pre>
+<p><code>admits_eq</code> takes a set it uses to stop on recursive types; pass it <code>&amp;mut HashSet::new()</code>.</p>
+<h3 id="the-arms"><a class="header" href="#the-arms">The arms</a></h3>
+<p>What follows adds to the content chapters what a test will hold you to. A rule’s premises are
+checked in the order the rule writes them, and every arm ends as the first contract above says,
+with the final unification and <code>record</code>.</p>
+<ul>
+<li><strong>The nesting bound.</strong> When <code>self.depth</code> has reached <code>MAX_NESTING</code>, <code>check_expr</code> returns
+<code>TooDeep { limit: MAX_NESTING, span }</code> for the expression in hand instead of matching on it.
+Otherwise it increments <code>depth</code>, checks the expression, and decrements <code>depth</code> again whatever the
+outcome. This is the balance <code>enter_call</code> and <code>leave_call</code> kept at M4. Applying <code>?</code> to the result
+before decrementing would leave <code>depth</code> incremented after every error, so take the result as a
+value, decrement, and then return it. Moving the <code>match</code> into a method of its own keeps the
+increment and the decrement in one place.</li>
+<li><strong><code>Var</code></strong> looks a name up in this order: the <code>Ctx</code>; a top-level <code>fn</code>, through <code>decl</code>; a global,
+through <code>global_type</code>; a native prelude function, through <code>native_fn_type</code>. A name found in none
+of them is <code>UnboundVariable</code> at the name. A <code>fn</code> declaration gives the type
+<code>fn(params) -&gt; result</code> from its signature. If it declares type parameters, map each one to a
+fresh inference variable, a new map at every use, and apply the map with <code>Ty::substitute</code>, which
+<code>ast.rs</code> provides. For each parameter declared with a bound <code>T: C</code>, record the bound with
+<code>require_trait</code> on the variable <code>T</code> became, at the name’s span, with the bound’s own type
+arguments substituted in the same way.</li>
+<li><strong>Operators.</strong> Arithmetic and ordering check both operands against <code>Int</code>, <code>and</code> and <code>or</code> against
+<code>Bool</code>, <code>-</code> and <code>not</code> their operand likewise. Equality synthesizes the left operand and checks the
+right against its type. If that type, resolved, still contains a variable, require an <code>Eq</code> bound
+on it for the driver to judge. Otherwise, a type that does not admit equality is
+<code>NoEquality { ty, is_param, span }</code> at the whole expression, with <code>is_param</code> from
+<code>is_type_param</code>. Concatenation synthesizes the left operand. One whose resolved type is neither a
+string, a list, nor an unsolved variable is <code>Mismatch { expected: String, … }</code> at that operand.
+The right operand is then checked against the left’s type, and a type still unsolved after both
+is <code>Ambiguous</code> at the whole expression. Cons synthesizes the element and checks the list against
+a list of its type.</li>
+<li><strong>Tuples, lists, and projection.</strong> A tuple checked against a tuple type of the same width passes
+each component its counterpart; otherwise its components are synthesized. A list takes its element
+type from an expected list type, or else from a fresh variable, and checks every element against
+it in order. The empty list is that fresh variable and nothing more, for the context or the
+determination rule to settle. A projection synthesizes its operand and resolves it: a tuple wide
+enough gives the component, a narrower one is <code>NoSuchComponent { index, arity }</code>, a type not yet
+known goes to <code>undetermined</code>, and anything else is <code>NotATuple { index, found }</code>, all at the
+projection’s span.</li>
+<li><strong>References.</strong> <code>ref e</code> is a reference to whatever <code>e</code> synthesizes. <code>deref e</code> checks <code>e</code> against a
+reference to a fresh variable and has that variable as its type. <code>e1 := e2</code> checks <code>e1</code> against a
+reference to a fresh variable, checks <code>e2</code> against the variable, and has type <code>()</code>.</li>
+<li><strong>Blocks</strong> thread a <code>Ctx</code> through their statements, each <code>let</code> extending it for the statements
+after. A <code>let</code> with an annotation passes it through <code>annotation</code> at the statement’s span, checks
+the initializer against the type <code>annotation</code> returns, and binds the name at that type. A <code>let</code>
+without an annotation binds the name at the type its initializer synthesizes. An expression
+statement is synthesized and its type discarded. The block’s tail is checked against the expected
+type, and a block with no tail has type <code>()</code>.</li>
+<li><strong><code>if</code>, <code>while</code>, <code>for</code>.</strong> A condition is checked against <code>Bool</code>. With an <code>else</code>, the <code>then</code>
+branch is checked against the expected type and the <code>else</code> branch against the <code>then</code> branch’s
+type, which is the <code>if</code>’s type. Without one, the branch is checked with no expected type and must
+unify with <code>()</code>. A branch that does not is <code>IfWithoutElse { found }</code> at the branch, and the <code>if</code>
+has type <code>()</code>. A <code>while</code> body is checked against <code>()</code>. A <code>for</code> checks its iterable against a list
+of a fresh variable and its body against <code>()</code>, in the context extended with the loop variable at
+that variable. Both loops have type <code>()</code>.</li>
+<li><strong><code>return e</code></strong> reads the enclosing function’s result type with <code>ctx.ret()</code>. With none, it is
+<code>ReturnOutsideFunction</code>. Otherwise <code>e</code> is checked against it, the <code>return</code> is recorded as
+diverging, and its own type is a fresh variable, so it fits whatever its context requires.</li>
+<li><strong>Lambdas.</strong> Each parameter’s type is its annotation, through <code>annotation</code> at the parameter’s
+span; failing that, the matching parameter of an expected function type with the same number of
+parameters; failing that, a fresh variable. The result type is the expected function type’s, or a
+fresh variable. The body is checked against the result type in
+<code>ctx.enter(Some(result), ctx.self_ty())</code> extended with the parameters, so a <code>return</code> inside the
+body targets the lambda. The lambda’s type is the function type of the parameters and result, each
+resolved.</li>
+<li><strong>Calls.</strong> <code>check_callee</code> synthesizes the callee and returns its type, resolved, with the range of
+bounds it recorded. A function type with a different number of parameters than there are arguments
+is <code>ArityMismatch</code> at the whole call, naming the callee if it is a variable and <code>"this function"</code>
+otherwise. Each argument is checked against its parameter’s type, left to right; then
+<code>finish_call</code> moves the callee’s bounds onto the arguments that supply them, and the call has the
+function type’s result type. When the callee’s type is still an unsolved variable, as in
+<code>|f| f(1)</code>, the call infers a function type for it: synthesize the arguments, make a fresh result
+variable, and unify the callee’s type with the function type they form, at the call’s span. Any
+other callee type is <code>NotAFunction { found }</code> at the callee.</li>
+<li><strong><code>unify</code></strong> resolves both types first. An unsolved variable agrees with itself. An unsolved
+variable against any other type is solved as that type, unless it occurs in that type, which is
+<code>InfiniteType</code> at <code>span</code>. <code>Int</code>, <code>Bool</code>, <code>String</code>, <code>()</code>, and <code>Self</code> agree with themselves. Two
+tuples of the same width, two lists, two references, two function types with the same number of
+parameters (the parameters in order, then the results), and two named types with the same name and
+number of arguments agree when their parts unify pairwise, left to right. Any other pair is the
+mismatch.</li>
+</ul>
+<h3 id="leaving-and-dead-code"><a class="header" href="#leaving-and-dead-code">Leaving and dead code</a></h3>
+<p>Three provided calls tell the driver what your arms know about control flow:</p>
+<ul>
+<li><strong><code>record_diverging(span)</code></strong> marks an expression that produces no value. A diverging expression’s
+type is exempt from the determination rule, which is why <code>return 0</code> can stand in a branch whose
+type nothing else fixes. The <code>return</code> arm marks itself. A block whose tail diverges is marked too,
+and so is an <code>if</code> whose branches both diverge.</li>
+<li><strong><code>dead_after(sub, whole)</code></strong> marks <code>whole</code> as diverging because its part <code>sub</code> is, and the code
+after <code>sub</code> within <code>whole</code> as never running. A block calls it as soon as a statement’s expression,
+or a <code>let</code> initializer, diverges, with that statement’s span and the block’s, and before it checks
+the statements after it. Those are still checked, inside the region now marked dead, so the call
+has to come first for <code>undetermined</code> and the determination rule to treat them as dead. Only the
+first diverging statement calls it. A block that leaves this way and has no tail has a fresh
+variable as its type, where it would otherwise have <code>()</code>. An <code>if</code> or <code>while</code> calls it when its
+condition diverges, and a <code>for</code> when its iterable does.</li>
+<li><strong><code>note_callee(span)</code></strong> exempts a named callee from the determination rule, since whatever is
+unknown in its type is unknown in an argument or in the call, which are the places to report it.
+<code>check_callee</code> calls it.</li>
+</ul>
+<p>Code that never runs needs no annotations, so the determination rule skips it, and <code>undetermined</code>
+returns a fresh variable for it where it would otherwise report <code>Ambiguous</code>. A mismatch in dead code
+is still an error. So</p>
+<pre><code class="language-text">fn f() -&gt; Int { return 1; let y = []; println(y); 2 }
+</code></pre>
+<p>checks, although nothing fixes the element type of <code>y</code>. In
+<code>fn f() -&gt; Int { return 1; 1 + true }</code>, by contrast, <code>1 + true</code> is still rejected.</p>
+<h3 id="where-the-calls-go"><a class="header" href="#where-the-calls-go">Where the calls go</a></h3>
+<p>The two arms below show where the calls are made and when, with the typing left as comments for you
+to fill in. Each ends as every arm does: unify the type with the expected one, if there is one,
+then resolve the type, record it at the arm’s span, and return it. Those last lines are the same in
+every arm, and a method of your own can save writing them out each time.</p>
+<pre><code class="language-rust ignore">Expr::Block(stmts, tail, span) =&gt; {
+    let mut cx = ctx.clone();
+    let mut leaves = false;
+    for stmt in stmts {
+        // T-Let / T-Seq: check the statement, extending `cx` for a `let`.
+        // `e` is the statement's expression or the `let`'s initializer,
+        // `at` is the statement's span.
+        let (e, at) = /* … */;
+        // The first statement that leaves makes the rest of the block dead;
+        // the call comes before the remaining statements are checked.
+        if !leaves &amp;&amp; self.is_diverging(e.span()) {
+            leaves = true;
+            self.dead_after(at, *span);
+        }
+    }
+    let ty = match tail {
+        Some(e) =&gt; /* the tail, checked in `cx` against `expected` */,
+        None if leaves =&gt; self.fresh_meta(), // a block that leaves fits anywhere
+        None =&gt; Ty::unit(),
+    };
+    if tail.as_ref().is_some_and(|e| self.is_diverging(e.span())) {
+        self.record_diverging(*span);
+    }
+    // Chk-Sub, then record: the end of every arm
+    if let Some(exp) = expected {
+        self.unify(&amp;ty, exp, *span)?;
+    }
+    let ty = self.resolve(&amp;ty);
+    self.record(*span, ty.clone());
+    Ok(ty)
+}</code></pre>
+<pre><code class="language-rust ignore">Expr::If(cond, then, els, span) =&gt; {
+    // the condition, checked against Bool
+    if self.is_diverging(cond.span()) {
+        self.dead_after(cond.span(), *span); // both branches are dead
+    }
+    // the `then` branch, checked against `expected` when there is an `else`
+    // and against `None` when there is not; its type `t` is the `if`'s
+    let t = /* … */;
+    match els {
+        Some(e) =&gt; {
+            // the `else` branch, against `t`
+            if self.is_diverging(then.span()) &amp;&amp; self.is_diverging(e.span()) {
+                self.record_diverging(*span); // every path leaves
+            }
+        }
+        None =&gt; { /* `t` must unify with (), or it is IfWithoutElse */ }
+    }
+    // Chk-Sub, then record: the end of every arm
+    if let Some(exp) = expected {
+        self.unify(&amp;t, exp, *span)?;
+    }
+    let t = self.resolve(&amp;t);
+    self.record(*span, t.clone());
+    Ok(t)
+}</code></pre>
+<p>The other forms follow the same pattern. A <code>while</code> calls <code>dead_after(cond.span(), *span)</code> when its
+condition diverges, a <code>for</code> makes the same call with its iterable’s span when the iterable
+diverges, and a <code>return</code> calls <code>record_diverging(*span)</code> on itself.</p>
+<h3 id="the-helper-module"><a class="header" href="#the-helper-module">The helper module</a></h3>
+<p>The starter leaves the module below out. Paste it at the end of <code>src/types/check.rs</code>, after the
+closing brace of the <code>impl Checker</code> block. It is a module of its own with its own <code>use</code> lines, so it
+cannot clash with the imports your arms add. Its methods are public, so one you have not called yet
+raises no warning. It can read the <code>Checker</code>’s private fields because <code>check.rs</code> is part of the
+<code>types</code> module.</p>
+<ul>
+<li><strong><code>annotation(ty, ctx, span)</code></strong> checks a type written inside a body, a <code>let</code>’s or a lambda
+parameter’s, against the declared types and the type parameters in scope. It also replaces <code>Self</code>
+by the type an <code>impl</code> is for, which matters from <a href="../objects/structs.html">Part IX</a><!-- xref:../objects/structs.md --> on.</li>
+<li><strong><code>native_fn_type(name, span)</code></strong> is the type of a native prelude function, with fresh variables
+for its generic parts and the bounds of <a href="../appendix/prelude.html">Appendix C</a> recorded on them, or
+<code>None</code> if <code>name</code> is not a native function. The entries marked <code>#[cfg(not(feature = "m8"))]</code> drop
+out at M8, where those functions become Bridger code in the prelude that <code>decl</code> finds.</li>
+<li><strong><code>global_type(x)</code></strong> is the type of the global <code>x</code>: its annotation, or the type the driver
+recorded when it checked the initializer. It is <code>None</code> if <code>x</code> is not a global.</li>
+<li><strong><code>check_callee(f, ctx)</code></strong> and <strong><code>finish_call(bounds, param_tys, args, call_span)</code></strong> bracket a
+call. A bound the callee carries, such as <code>Ord</code> on <code>min</code>’s parameter, is recorded where the
+callee is named. <code>finish_call</code> moves it to the argument whose parameter mentions the bounded type,
+where the type that fails it is written, so <code>let g = min(f, f);</code> with <code>f</code> a function is reported
+at the first <code>f</code>.</li>
+<li><strong><code>undetermined(span)</code></strong> is for an operand whose type a rule needs and does not yet know: a fresh
+variable in dead code, <code>Ambiguous</code> at <code>span</code> elsewhere.</li>
+</ul>
+<pre><code class="language-rust ignore">/// Provided helpers (Milestone M5): plumbing that no typing rule describes.
+/// Paste this module at the end of the file, unchanged.
+mod helpers {
+    use crate::ast::{Decl, Expr, Name, Span, Ty, TyKind};
+    use crate::types::{Checker, Ctx, TyError};
+    use std::ops::Range;
+
+    type Res&lt;T&gt; = Result&lt;T, TyError&gt;;
+    type Bounds = Range&lt;usize&gt;;
+
+    impl Checker {
+        /// A type annotation written inside a body (`let x: T`, `|x: T|`): `Self`
+        /// resolved to the enclosing `impl`'s type, and every name it uses checked
+        /// to be a declared type or a type parameter in scope (`Self` outside an
+        /// `impl` names no type).
+        pub fn annotation(&amp;self, ty: &amp;Ty, ctx: &amp;Ctx, span: Span) -&gt; Res&lt;Ty&gt; {
+            let ty = match ctx.self_ty() {
+                Some(self_ty) =&gt; ty.with_self(&amp;self_ty),
+                None =&gt; ty.clone(),
+            };
+            self.validate_type(&amp;ty, span)?;
+            Ok(ty)
+        }
+
+        /// The type of a native prelude function (Appendix C, "Functions").
+        /// `print` / `println` / `to_string` carry a `Print` bound and `contains`
+        /// an `Eq` bound; until M8 `len` carries `Len` and `min` / `max` /
+        /// `minimum` / `maximum` carry `Ord`, which the built-in types satisfy.
+        /// `None` for a name that is not a native primitive.
+        pub fn native_fn_type(&amp;mut self, name: &amp;str, span: Span) -&gt; Option&lt;Ty&gt; {
+            let opt = |t: Ty| Ty::named("Option".to_string(), vec![t]);
+            let sig = match name {
+                "print" | "println" =&gt; {
+                    let t = self.fresh_meta();
+                    self.require_bound("Print".to_string(), t.clone(), span);
+                    Ty::func(vec![t], Ty::unit())
+                }
+                "to_string" =&gt; {
+                    let t = self.fresh_meta();
+                    self.require_bound("Print".to_string(), t.clone(), span);
+                    Ty::func(vec![t], Ty::str())
+                }
+                "abs" =&gt; Ty::func(vec![Ty::int()], Ty::int()),
+                "even" | "odd" =&gt; Ty::func(vec![Ty::int()], Ty::bool()),
+                "range" =&gt; Ty::func(vec![Ty::int(), Ty::int()], Ty::list(Ty::int())),
+                #[cfg(not(feature = "m8"))]
+                "len" =&gt; {
+                    let t = self.fresh_meta();
+                    self.require_bound("Len".to_string(), t.clone(), span);
+                    Ty::func(vec![t], Ty::int())
+                }
+                #[cfg(not(feature = "m8"))]
+                "min" | "max" =&gt; {
+                    let t = self.fresh_meta();
+                    self.require_bound("Ord".to_string(), t.clone(), span);
+                    Ty::func(vec![t.clone(), t.clone()], t)
+                }
+                #[cfg(not(feature = "m8"))]
+                "minimum" | "maximum" =&gt; {
+                    let t = self.fresh_meta();
+                    self.require_bound("Ord".to_string(), t.clone(), span);
+                    Ty::func(vec![Ty::list(t.clone())], opt(t))
+                }
+                "contains" =&gt; {
+                    let t = self.fresh_meta();
+                    self.require_bound("Eq".to_string(), t.clone(), span);
+                    Ty::func(vec![Ty::list(t.clone()), t], Ty::bool())
+                }
+                "head" =&gt; {
+                    let t = self.fresh_meta();
+                    Ty::func(vec![Ty::list(t.clone())], opt(t))
+                }
+                "tail" =&gt; {
+                    let t = self.fresh_meta();
+                    Ty::func(vec![Ty::list(t.clone())], opt(Ty::list(t)))
+                }
+                "unwrap_or" =&gt; {
+                    let t = self.fresh_meta();
+                    Ty::func(vec![opt(t.clone()), t.clone()], t)
+                }
+                "map" =&gt; {
+                    let (a, b) = (self.fresh_meta(), self.fresh_meta());
+                    Ty::func(
+                        vec![Ty::list(a.clone()), Ty::func(vec![a], b.clone())],
+                        Ty::list(b),
+                    )
+                }
+                "filter" =&gt; {
+                    let a = self.fresh_meta();
+                    let keep = Ty::func(vec![a.clone()], Ty::bool());
+                    Ty::func(vec![Ty::list(a.clone()), keep], Ty::list(a))
+                }
+                "fold" =&gt; {
+                    let (a, b) = (self.fresh_meta(), self.fresh_meta());
+                    Ty::func(
+                        vec![
+                            Ty::list(a.clone()),
+                            b.clone(),
+                            Ty::func(vec![b.clone(), a], b.clone()),
+                        ],
+                        b,
+                    )
+                }
+                "is_some" =&gt; {
+                    let t = self.fresh_meta();
+                    Ty::func(vec![opt(t)], Ty::bool())
+                }
+                "read_int" =&gt; Ty::func(vec![], Ty::int()),
+                "read_bool" =&gt; Ty::func(vec![], Ty::bool()),
+                "read_line" =&gt; Ty::func(vec![], Ty::str()),
+                "read_int_opt" =&gt; Ty::func(vec![], opt(Ty::int())),
+                "read_bool_opt" =&gt; Ty::func(vec![], opt(Ty::bool())),
+                "read_line_opt" =&gt; Ty::func(vec![], opt(Ty::str())),
+                _ =&gt; return None,
+            };
+            Some(sig)
+        }
+
+        /// The type of the top-level global `x`: its annotation, or the type
+        /// the driver recorded for its initializer. `None` if `x` is not a
+        /// global.
+        pub fn global_type(&amp;mut self, x: &amp;Name) -&gt; Option&lt;Res&lt;Ty&gt;&gt; {
+            let (annot, init) = match self.decl(x) {
+                Some(Decl::Global(annot, init)) =&gt; (annot.clone(), init.clone()),
+                _ =&gt; return None,
+            };
+            Some(match (annot, self.global_types.get(x)) {
+                (Some(ty), _) =&gt; Ok(ty),
+                (None, Some(ty)) =&gt; Ok(ty.clone()),
+                (None, None) =&gt; self.check_expr(&amp;init, &amp;Ctx::new(None, None), None),
+            })
+        }
+
+        /// Synthesize the type of a call's callee, resolved, and note what the
+        /// call's bookkeeping needs: a named callee is exempt from the
+        /// determination rule, and the bounds the callee's type carries come
+        /// back as a range to pass to `finish_call`.
+        pub fn check_callee(&amp;mut self, f: &amp;Expr, ctx: &amp;Ctx) -&gt; Res&lt;(Ty, Bounds)&gt; {
+            let start = self.obligations.len();
+            let ty = self.check_expr(f, ctx, None)?;
+            if matches!(f, Expr::Var(..)) {
+                self.note_callee(f.span());
+            }
+            Ok((self.resolve(&amp;ty), start..self.obligations.len()))
+        }
+
+        /// Call after checking a call's arguments against the parameter types
+        /// `param_tys`: a bound the callee placed on a type parameter is
+        /// reported at the argument whose parameter mentions it, or at the
+        /// whole call if none does.
+        pub fn finish_call(
+            &amp;mut self,
+            bounds: Bounds,
+            param_tys: &amp;[Ty],
+            args: &amp;[Expr],
+            call_span: Span,
+        ) {
+            for i in bounds {
+                let want = &amp;self.obligations[i].1;
+                let blamed = param_tys.iter().position(|p| contains_ty(p, want));
+                self.obligations[i].2 = match blamed {
+                    Some(j) =&gt; args[j].span(),
+                    None =&gt; call_span,
+                };
+            }
+        }
+
+        /// An operand whose type is still unknown where its rule needs it: in
+        /// code that never runs nothing is required of it; elsewhere its type
+        /// is undetermined.
+        pub fn undetermined(&amp;mut self, span: Span) -&gt; Res&lt;Ty&gt; {
+            if self.in_dead_code(span) {
+                Ok(self.fresh_meta())
+            } else {
+                Err(TyError::Ambiguous { span })
+            }
+        }
+    }
+
+    /// Whether `needle` occurs in `hay` (structurally, spans aside).
+    fn contains_ty(hay: &amp;Ty, needle: &amp;Ty) -&gt; bool {
+        if hay == needle {
+            return true;
+        }
+        let any = |ts: &amp;[Ty]| ts.iter().any(|t| contains_ty(t, needle));
+        match &amp;hay.kind {
+            TyKind::Tuple(ts) | TyKind::Named(_, ts) =&gt; any(ts),
+            TyKind::List(t) | TyKind::Ref(t) =&gt; contains_ty(t, needle),
+            TyKind::Fn(ps, r) =&gt; any(ps) || contains_ty(r, needle),
+            _ =&gt; false,
+        }
+    }
+}</code></pre>
+<h2 id="running-a-program"><a class="header" href="#running-a-program">Running a program</a></h2>
+<p>From this milestone on, <code>cargo run --features m5</code> checks a program before it runs it. A program the
+checker rejects stops with the error before <code>main</code> is called, and the exit status is <code>1</code>. In
+<code>late.brg</code>, <code>total</code> is an ordinary variable, and <code>:=</code> assigns only through a reference. The M4
+interpreter runs the program until it reaches the assignment:</p>
+<pre><code class="language-text">$ cat late.brg
+fn main() {
+    println("start");
+    let total = 0;
+    total := total + 1;
+}
+
+$ cargo run -q --features m4 -- late.brg
+start
+  × type error: expected ref&lt;()&gt;, found Int
+   ╭─[late.brg:4:5]
+ 3 │     let total = 0;
+ 4 │     total := total + 1;
+   ·     ─────────┬────────
+   ·              ╰── here
+ 5 │ }
+   ╰────
+</code></pre>
+<p>With M5’s checker, the program never starts:</p>
+<pre><code class="language-text">$ cargo run -q --features m5 -- late.brg
+  × type mismatch: expected ref&lt;_&gt;, found Int
+   ╭─[late.brg:4:5]
+ 3 │     let total = 0;
+ 4 │     total := total + 1;
+   ·     ──┬──
+   ·       ╰── here
+ 5 │ }
+   ╰────
+</code></pre>
+<p>The evaluator reports the assignment, the expression that got stuck. The checker reports <code>total</code>,
+the expression whose type disagrees with what <code>:=</code> requires of its target: a reference to a fresh
+variable, still unsolved when the mismatch is found. An unsolved variable is printed as <code>_</code>.</p>
+<p>Because the checker runs first, no program runs under <code>--features m5</code> until the arms it reaches
+are written: the first <code>todo_m5!</code> it meets stops the run. <code>cargo run --features m4</code> still runs the
+evaluator with no checker in front of it.</p>
+<h2 id="worked-examples"><a class="header" href="#worked-examples">Worked examples</a></h2>
+<p>An expression in an empty context, and the type the checker gives it:</p>
+<pre><code class="language-text">(1, "a").1                                     : String
+[] ++ [true]                                   : [Bool]
+|x| x + 1                                      : fn(Int) -&gt; Int
+ref [1]                                        : ref&lt;[Int]&gt;
+{ let r = ref 0; r := deref r + 1; deref r }   : Int
+map([1, 2], to_string)                         : [String]
+fold([1, 2, 3], 0, |acc, x| acc + x)           : Int
+</code></pre>
+<p>Expressions the checker rejects:</p>
+<pre><code class="language-text">1 + "a"                          Mismatch (expected Int, found String), at "a"
+(true, 1).4                      NoSuchComponent (index 4, arity 2)
+{ let f = |x| x(x); () }         InfiniteType, at x(x)
+{ let f = |x: Int| x; f == f }   NoEquality (fn(Int) -&gt; Int)
+len(42)                          UnsatisfiedBound (no impl Len for Int), at 42
+{ let xs = []; xs := [1]; () }   Mismatch (expected ref&lt;_&gt;, found [_]), at xs
+abs(1, 2)                        ArityMismatch (`abs` takes 1, given 2)
+</code></pre>
+<h2 id="how-to-know-it-works"><a class="header" href="#how-to-know-it-works">How to know it works</a></h2>
+<p><code>cargo m5</code> runs the provided milestone M5 tests and, with them, the M4, M3, M2, and M1 tests. The M5
+tests come in two kinds. The first builds an <code>Expr</code> by hand with the builders of the earlier
+milestones and types it in an empty context with <code>infer</code>, or against a type with <code>check</code>. The
+second loads a program from source and checks it with <code>check_program</code>, on top of the prelude:</p>
+<pre><code class="language-rust ignore">// |x| x + 1  :  fn(Int) -&gt; Int
+let f = lambda(&amp;["x"], binary(Add, var("x", 1), int(1, 2), 3), 0);
+assert_eq!(infer(&amp;f).unwrap(), Ty::func(vec![Ty::int()], Ty::int()));
+
+// a whole program, checked declaration by declaration
+let src = "fn double(x: Int) -&gt; Int = x * 2; fn main() -&gt; Int = double(21);";
+assert!(check_program(src).is_ok());</code></pre>
+<p>A rejection is tested by its <code>TyError</code> variant and, where it matters, by its span and payload,
+never by the text of its message. Fill the arms and <code>unify</code>, run <code>cargo m5</code>, and repeat until every
+M5 test, and every earlier one, passes. Then run the programs you wrote for M4 with
+<code>cargo run --features m5</code>: a correct program that the checker rejects is either a bug in an arm or
+one of the <a href="../types/motivation.html">conservative</a> rejections Part VI describes, and the error’s
+span says which expression to look at.</p>
+<h2 id="design-problems"><a class="header" href="#design-problems">Design problems</a></h2>
+<details>
+<summary>Your evaluator and your checker make claims about the same programs, and <a href="../types/soundness.html">soundness</a> says how the claims relate. Design a test that finds bugs in <code>check.rs</code> without a list of expected types, and say which bugs it cannot find. Try it on a <code>unify</code> that unifies two function types' parameters and forgets their results.</summary>
+<p>Run every program the checker accepts through the evaluator, and require that none of them stops
+with an error soundness rules out: <code>TypeError</code>, <code>NotAFunction</code>, <code>ArityMismatch</code>, <code>UnboundVariable</code>,
+or a projection a tuple does not have. A program for the test can come from anywhere, the
+examples in this book, the programs you wrote for M1–M4, or a generator, because the test needs to
+know only whether the checker accepted it. The forgetful <code>unify</code> accepts</p>
+<pre><code class="language-text">fn apply(f: fn(Int) -&gt; String) -&gt; String = f(1);
+
+fn main() {
+    let g = |x: Int| x;
+    println(apply(g) ++ "!");
+}
+</code></pre>
+<p>since <code>g</code>’s type <code>fn(Int) -&gt; Int</code> agrees with <code>fn(Int) -&gt; String</code> once the results are skipped.
+When run, the program stops at <code>apply(g) ++ "!"</code> with <code>type error: expected String, found Int</code>, and
+the test reports it. A checker with this mistake passes every provided M5 test. The test cannot
+find a checker that rejects too much: a checker that rejects every program passes it. It cannot
+find a wrong variant or span on a correct rejection. And it finds an unsound acceptance only if a
+run reaches the code the mistake let through: with the call to <code>apply</code> in a branch that never
+runs, the program prints and exits normally. The provided tests check rejections, their variants
+and spans included; the soundness test checks what the checker accepts.</p>
+</details>
+<details>
+<summary>The checker rejects this program at <code>ref []</code>, although every use of <code>log</code> agrees that it holds strings. Moved into <code>main</code> as a local <code>let</code>, the same cell checks. Why does the checker treat the two differently, and what could go wrong if it accepted the first?</summary>
+<pre><code class="language-text">let log = ref [];
+
+fn note(s: String) { log := s :: deref log; }
+
+fn main() {
+    note("start");
+    note("stop");
+    println(deref log);
+}
+</code></pre>
+<p>A global is checked in a declaration of its own, before any function body, and that declaration
+must determine its type completely. <code>ref []</code> leaves the element type open, and the uses that would
+settle it are in <code>note</code> and <code>main</code>, other declarations, which no inference variable outlives. As a
+local, the cell and its uses are one declaration, <code>main</code>’s body, and <code>note("start")</code> solves the
+variable there; the program prints <code>["stop", "start"]</code>.</p>
+<p>There are two ways a checker could accept the global version. If each function solved the global’s
+variable for itself, a second function <code>fn count(n: Int) { log := n :: deref log; }</code> would solve it
+as <code>Int</code>, <code>note</code> as <code>String</code>, and both would be accepted. The M4 evaluator runs that program and
+prints <code>[2, "start"]</code>: one cell read and written at two types, the <a href="../types/soundness.html#what-a-soundness-bug-looks-like">generalized reference
+cell</a> of the soundness chapter in another
+form. If instead every declaration shared one variable for the global, the conflict would be caught,
+but the type of <code>log</code> would depend on which body the checker visited first. Bodies could no
+longer be checked in any order, each against its own signature, as <a href="../types/polymorphism.html#signatures-and-the-top-level-context">the top-level
+context</a> allows. The annotation
+<code>let log: ref&lt;[String]&gt; = ref [];</code> states the type in the one place every use can see.</p>
+</details>
+<details>
+<summary>Write <code>make_stack</code>, generic in the item type, which returns a pair of closures over one shared cell: one pushes an item, the other removes the top item and returns it as an <code>Option</code>. Use it at <code>Int</code> and at <code>String</code> in one <code>main</code>. Which annotations does the program need beyond the signature?</summary>
+<pre><code class="language-text">fn make_stack&lt;T&gt;() -&gt; (fn(T) -&gt; (), fn() -&gt; Option&lt;T&gt;) {
+    let items = ref [];
+    let push = |x| items := x :: deref items;
+    let pop = || {
+        let top = head(deref items);
+        items := unwrap_or(tail(deref items), []);
+        top
+    };
+    (push, pop)
+}
+
+fn main() {
+    let ints = make_stack();
+    ints.0(1);
+    ints.0(2);
+    println(ints.1());          // Some(2)
+    println(ints.1());          // Some(1)
+    println(ints.1());          // None
+    let words = make_stack();
+    words.0("hi");
+    println(words.1());         // Some("hi")
+}
+</code></pre>
+<p>None. In the body, <code>items</code> starts as a reference to a list of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span> and <code>push</code>’s parameter as
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span></span></span></span>, and <code>x :: deref items</code> makes <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span></span></span></span> equal to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span>. The tail <code>(push, pop)</code> is checked
+against the declared result type, which hands <code>fn(T) -&gt; ()</code> to <code>push</code> and solves <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span> as <code>T</code>.
+In <code>main</code>, each call of <code>make_stack</code> instantiates <code>T</code> with a fresh variable, and <code>ints.0(1)</code> and
+<code>words.0("hi")</code> solve the two variables as <code>Int</code> and <code>String</code>, within <code>main</code>’s declaration. A
+<code>ref []</code> is accepted here where the global <code>log</code> of the previous problem was not: each call of
+<code>make_stack</code> allocates its own cell at one instantiation of <code>T</code>, and every use of that cell is in
+the declaration that fixed it.</p>
+</details>
+<details>
+<summary>The checker stops at the first error. Many compilers report several. What would <code>check_expr</code> have to do to keep going after a mismatch, and what has to be true of the type it continues with?</summary>
+<p><code>check_expr</code> returns a <code>Result</code>, and <code>?</code> passes the first <code>Err</code> up through every enclosing arm and
+out of the driver, so the first error ends the check. To keep going, an arm would push the error
+onto a list and return a type in place of the <code>Err</code>. Which type it returns decides whether later
+reports are real. In</p>
+<pre><code class="language-text">fn main() {
+    let xs = [1, 2];
+    let total = sum(xs);
+    println(total);
+}
+</code></pre>
+<p><code>sum</code> is unbound. If the <code>Var</code> arm reported it and continued with a fresh variable, the call would
+infer <code>fn([Int]) -&gt; β</code> for it, and <code>total</code> would have type <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span></span></span></span>, which nothing solves. The
+determination rule would then report <code>total</code> as undetermined: a second error that exists only
+because of the first. The type an arm continues with has to agree with every type in <code>unify</code>, be
+exempt from the determination rule and from bounds, and never appear in a later message. The Rust
+compiler gives such an expression an error type that behaves this way. Across declarations, Bridger
+needs nothing more. The driver could check the next declaration after a failed one, since no type
+crosses a declaration except through a signature, and a mistake inside one body cannot change what
+the checker concludes about another.</p>
+</details>
 
                     </main>
 

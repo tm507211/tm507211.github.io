@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-2d33cc70.js";
+            window.path_to_searchindex_js = "../searchindex-3a6a8896.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -521,9 +521,9 @@ bindings in scope. The program’s declarations are reached through the checker:
 the type bound there, an ordinary monotype, and is used as it is. A name not in the <code>Ctx</code> refers to
 a top-level declaration, and a <code>fn</code> declaration gives a type built from its signature; when the
 declaration has type parameters, the arm replaces each one throughout that type with a fresh
-inference variable from <code>fresh_meta</code>, a new set at every use. <a href="../milestones/m5.html">Milestone M5</a>
-supplies the helpers around that step: <code>subst</code>, which replaces type parameters throughout a type,
-and the lookups for a global’s type and for the signatures of the prelude’s native functions. The
+inference variable from <code>fresh_meta</code>, a new set at every use. <code>Ty::substitute</code>, provided with the
+AST, replaces type parameters throughout a type, and <a href="../milestones/m5.html">Milestone M5</a> supplies
+the lookups for a global’s type and for the signatures of the prelude’s native functions. The
 call arm needs no change: by the time a call is checked, its callee’s type has no type parameters
 left in it, only variables the arguments solve. The variable arm and its instantiation are part of
 <a href="../milestones/m5.html">Milestone M5</a>.</p>

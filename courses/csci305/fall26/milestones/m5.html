@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Milestone M5 — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 100rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    h3 { margin-top: 1.4rem; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    pre { font-size: .9em; }
+    table code { white-space: nowrap; }
+    .grade-table td:first-child { white-space: nowrap; }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Milestone M5 <small>The Type Checker</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      In this milestone your interpreter learns to reject a program <em>before</em> it runs. You fill
+      in the type checker in <code>src/types/check.rs</code>: one arm of <code>check_expr</code> for each
+      form of M1&ndash;M4, and the body of <code>unify</code>. The checker works bidirectionally &mdash;
+      it checks an expression against a type when the context supplies one and synthesizes a type when it
+      does not &mdash; and names what neither mode knows with an inference variable that
+      <code>unify</code> solves. From now on the checker stands between the parser and the evaluator: a
+      program with a type error prints nothing at all.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>At a glance</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>Due</dt><dd>Friday, October 30, at 11:59&nbsp;PM.</dd>
+          <dt>Submit</dt><dd>Through Gradescope, linked from the course Canvas page.</dd>
+          <dt>Attempts</dt><dd><strong>Unlimited.</strong> Resubmit as many times as you like before
+            the deadline; only your last submission is graded.</dd>
+          <dt>Deliverables</dt><dd>A single <code>.zip</code> containing your <code>src/</code>
+            folder and the <code>.md</code> files from the project root, including your
+            <code>Description.md</code>.</dd>
+          <dt>Reading</dt><dd>The textbook's
+            <a href="../../../../books/pl-design/milestones/m5.html">Milestone M5</a> chapter is the
+            full specification. This page adds the course-specific rules: how to submit and how it is
+            graded.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>What to build <small class="text-muted">the specification</small></h2>
+    <p class="refs text-muted">
+      Full specification:
+      <a href="../../../../books/pl-design/milestones/m5.html">Textbook &mdash; Milestone M5: the type checker</a>
+      &nbsp;|&nbsp; Previous milestone:
+      <a href="m4.html">Milestone M4: functions, closures, and static scope</a>
+    </p>
+    <p>
+      Read the <a href="../../../../books/pl-design/milestones/m5.html">Milestone M5 chapter</a> before
+      you start &mdash; it is the authoritative specification. Its table of forms is the checklist your
+      checker is measured against; the rules themselves are collected in the
+      <a href="../../../../books/pl-design/appendix/language-reference.html#typing-rules">typing rules</a>
+      appendix, and the &ldquo;Building it&rdquo; sections of
+      <a href="../../../../books/pl-design/types/type-checker.html#building-it">A type checker</a> and
+      <a href="../../../../books/pl-design/types/polymorphism.html#building-it">Function types and polymorphism</a>
+      turn them into the algorithm the arms follow. Every hole names the rules it implements:
+    </p>
+    <pre><code>// src/types/check.rs — some of the M5 holes
+Expr::Lit(..)    =&gt; todo_m5!("T-Int / T-Bool / T-Str / T-Unit"),
+Expr::Var(..)    =&gt; todo_m5!("T-Var / T-Self"),
+Expr::Block(..)  =&gt; todo_m5!("T-Block / T-Let / T-Seq"),
+Expr::Return(..) =&gt; todo_m5!("T-Return (reads ctx.ret())"),
+Expr::Call(..)   =&gt; todo_m5!("T-App (first-order matching of generics at the call)"),
+// … and the rest of the M1–M4 forms
+
+pub fn unify(&amp;mut self, a: &amp;Ty, b: &amp;Ty, span: Span) -&gt; Result&lt;(), TyError&gt; {
+    todo_m5!("unify (structural agreement; solves TyKind::Meta with an occurs check)")
+}</code></pre>
+    <p>
+      That is many more holes than M4's two, but most arms are short, and they share a shape. A few
+      contracts hold across all of them, and the tests check each one:
+    </p>
+    <ul>
+      <li><strong>Every arm ends the same way.</strong> When there is an expected type, the arm unifies
+        the type it built with it (Chk-Sub), then resolves the type and <code>record</code>s it at its
+        own span. A type that is never recorded is never judged by the determination rule, so an arm
+        that skips <code>record</code> lets an ambiguous type through.</li>
+      <li><strong><code>unify(a, b, span)</code> takes the type found first and the type required
+        second.</strong> A failure is <code>Mismatch { expected: b, found: a, span }</code>, both
+        resolved, and inside compound types the pair reported is the innermost one that disagrees: a
+        <code>[Int]</code> passed where <code>[String]</code> is required is <em>expected String, found
+        Int</em>. Swap the arguments and every mismatch message comes out backwards.</li>
+      <li><strong>Premises are checked in the order the rule writes them</strong> &mdash; left operand
+        before right, callee before arguments, condition before branches &mdash; and the first failure
+        is the one reported.</li>
+      <li><strong>A mismatch is reported where the type goes wrong.</strong> An arm that passes its
+        expected type down to a part lets the mismatch surface at the smallest expression whose type
+        disagrees, rather than at the whole.</li>
+      <li><strong>The nesting bound.</strong> <code>check_expr</code> returns <code>TooDeep</code> once
+        <code>self.depth</code> reaches <code>MAX_NESTING</code>, and otherwise increments
+        <code>depth</code>, checks, and decrements it <em>whatever the outcome</em> &mdash; the same
+        balance <code>enter_call</code> and <code>leave_call</code> kept at M4, with the same trap: a
+        <code>?</code> before the decrement leaves <code>depth</code> raised after every error.</li>
+    </ul>
+    <p>
+      Everything that belongs to a whole declaration is provided. The driver builds the top-level context
+      from the signatures, checks each global in initialization order (reporting a cycle), checks every
+      other declaration in source order, validates every written signature, and after each declaration
+      judges the types your arms recorded and the bounds they asked for &mdash; <code>NoEquality</code>,
+      <code>NotPrintable</code>, and <code>UnsatisfiedBound</code> come from there. The
+      <code>Ctx</code>, the inference variables (<code>fresh_meta</code>, <code>solve</code>,
+      <code>resolve</code>, <code>record</code>), <code>decl</code>, the bound and divergence
+      bookkeeping, and <code>Ty::substitute</code> are ready to use. The chapter walks through what each
+      arm must do, and prints skeletons of the <code>Block</code> and <code>If</code> arms showing where
+      the divergence calls go.
+    </p>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>First: paste in the helper module</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The starter leaves out a module of helpers that several arms call: <code>annotation</code>,
+          <code>native_fn_type</code>, <code>global_type</code>, <code>check_callee</code> /
+          <code>finish_call</code>, and <code>undetermined</code>. The chapter's
+          <a href="../../../../books/pl-design/milestones/m5.html#the-helper-module">helper module</a>
+          section prints it in full. Copy it, unchanged, to the <strong>end of
+          <code>src/types/check.rs</code></strong>, after the closing brace of the
+          <code>impl Checker</code> block.
+        </p>
+        <ul style="margin-bottom:0">
+          <li><strong>It must live in <code>check.rs</code>.</strong> Only the submitted files are
+            collected, so a helper placed in a new file of your own is not part of what is graded, and
+            your submission will not compile on Gradescope.</li>
+          <li>It is a <code>mod helpers</code> with its own <code>use</code> lines, so it cannot clash with
+            the imports your arms add, and its methods are <code>pub</code>, so a helper you have not called
+            yet raises no clippy warning.</li>
+          <li>You may read and use it freely &mdash; and the write-up below asks you about
+            <code>check_callee</code> and <code>finish_call</code> &mdash; but you do not need to change it.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Getting the code and running the tests</h2>
+    <p>
+      M5 builds directly on your M4, M3, M2, and M1 code. Because the milestones are
+      <strong>cumulative</strong>, <code>cargo m5</code> runs every M4, M3, M2, and M1 test too, and the
+      provided-test gate (below) will fail the whole milestone if any of them fail. <strong>Finish
+      <a href="m4.html">Milestone M4</a> first</strong> &mdash; keep working in the same clone with your
+      completed evaluator in place. Nothing in the evaluator changes at M5, but it must keep passing
+      every earlier test, and whole-program tests run it after the checker accepts the program.
+    </p>
+    <p>
+      The toolchain, the clone, and the layout of the codebase are the ones from
+      <a href="m1.html#getting-the-code-and-running-the-tests">Milestone M1</a> &mdash; that setup is
+      done once, and this milestone does not change it. If you are starting fresh, follow the M1 page to
+      install <a href="https://rustup.rs"><code>rustup</code></a>, clone
+      <a href="https://github.com/chaluli/bridger-interpreter"><code>bridger-interpreter</code></a>, and
+      complete M1 through M4. Then pick up the same loop, with the milestone number advanced:
+    </p>
+    <pre><code>cargo m5                                    # run the Milestone-5 tests
+cargo fmt                                   # format your code
+cargo clippy --all-targets -- -D warnings   # lint</code></pre>
+    <p>
+      <code>cargo m5</code> is short for <code>cargo test --features m5</code>, and runs the M5 tests
+      <em>and</em> every M4, M3, M2, and M1 test. To list the milestone-tagged holes at any time:
+    </p>
+    <pre><code>grep -rn 'todo_m5!' src</code></pre>
+    <p>
+      The holes for relations, constructors, <code>match</code>, <code>?</code>, structs, and methods
+      &mdash; and <code>check_rule</code> &mdash; stay <code>todo!</code>s until their own milestones.
+    </p>
+
+    <h3>Running a program</h3>
+    <p>
+      With <code>--features m5</code>, <code>cargo run</code> checks the program before it runs it. A
+      program the checker rejects stops with the error before <code>main</code> is called, and exits with
+      status <code>1</code>. Compare the same program under M4 and M5:
+    </p>
+    <pre><code>$ cat late.brg
+fn main() {
+    println("start");
+    let total = 0;
+    total := total + 1;
+}
+
+$ cargo run -q --features m4 -- late.brg
+start
+  × type error: expected ref&lt;()&gt;, found Int
+   ╭─[late.brg:4:5]
+ 4 │     total := total + 1;
+   ·     ─────────┬────────
+   ·              ╰── here
+
+$ cargo run -q --features m5 -- late.brg
+  × type mismatch: expected ref&lt;_&gt;, found Int
+   ╭─[late.brg:4:5]
+ 4 │     total := total + 1;
+   ·     ──┬──
+   ·       ╰── here</code></pre>
+    <p>
+      The evaluator gets as far as the assignment and reports the whole expression that got stuck; the
+      checker reports <code>total</code>, the expression whose type disagrees, and the program never
+      prints <code>start</code>. An unsolved inference variable prints as <code>_</code>. Because the
+      checker runs first, no program runs under <code>--features m5</code> until the arms it reaches are
+      written &mdash; the first <code>todo_m5!</code> it meets stops the run. <code>--features m4</code>
+      still runs the evaluator with no checker in front of it. Once your checker is done, run the programs
+      you wrote for M4 through it: a correct program that it rejects is either a bug in an arm or one of
+      the conservative rejections the textbook describes, and the error's span tells you where to look.
+    </p>
+
+    <h3>A few examples</h3>
+    <p>Expressions in an empty context, and the type your checker should give them:</p>
+    <pre><code>(1, "a").1                                     : String
+[] ++ [true]                                   : [Bool]
+|x| x + 1                                      : fn(Int) -&gt; Int
+ref [1]                                        : ref&lt;[Int]&gt;
+{ let r = ref 0; r := deref r + 1; deref r }   : Int
+map([1, 2], to_string)                         : [String]
+fold([1, 2, 3], 0, |acc, x| acc + x)           : Int</code></pre>
+    <p>Expressions the checker <em>rejects</em> &mdash; the error variant, and where it is reported:</p>
+    <pre><code>1 + "a"                          Mismatch (expected Int, found String), at "a"
+(true, 1).4                      NoSuchComponent (index 4, arity 2)
+{ let f = |x| x(x); () }         InfiniteType, at x(x)
+{ let f = |x: Int| x; f == f }   NoEquality (fn(Int) -&gt; Int)
+len(42)                          UnsatisfiedBound (no impl Len for Int), at 42
+{ let xs = []; xs := [1]; () }   Mismatch (expected ref&lt;_&gt;, found [_]), at xs
+abs(1, 2)                        ArityMismatch (`abs` takes 1, given 2)</code></pre>
+    <p>
+      The provided tests come in two kinds. The first builds an <code>Expr</code> by hand with the
+      builders from the earlier milestones and types it in an empty context with <code>infer</code>, or
+      against a type with <code>check</code>. The second loads a whole program from source and checks it
+      with <code>check_program</code>, on top of the prelude. A rejection is tested by its
+      <code>TyError</code> variant and, where it matters, by its span and payload &mdash; never by the
+      text of its message. When <code>cargo m5</code> is all green, your checker is very likely correct.
+    </p>
+
+    <h2>How M5 is graded</h2>
+    <p>M5 is worth <strong>100 points</strong>:</p>
+    <div class="table-responsive">
+      <table class="table table-bordered grade-table">
+        <thead>
+          <tr><th>Item</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Auto-graded tests</td>
+            <td><strong>80</strong>, split <strong>40 / 40</strong>: <strong>40</strong> on the new M5
+              behavior &mdash; eight properties, <strong>5 points each</strong> &mdash; and
+              <strong>40</strong> on carried-over regression tests for the past milestones (M1 through
+              M4), since M5 is cumulative and your evaluator must keep working behind the checker. The
+              carried-over 40 is divided <strong>evenly among M1, M2, M3, and M4</strong> (10 points each),
+              then across each milestone's properties &mdash; so a regression in any one of them is
+              weighted against that milestone's own share. These are held-back tests, run on Gradescope
+              against the public interface &mdash; separate from the provided tests you run locally with
+              <code>cargo m5</code>.</td>
+          </tr>
+          <tr>
+            <td>Formatting &amp; linting</td>
+            <td><strong>10</strong>: <strong>5</strong> for <code>cargo fmt</code> (checked on your
+              submitted files) and <strong>5</strong> for <code>cargo clippy</code> (checked with
+              <code>-D warnings</code>). Run both before submitting; the starter is clean on a fresh
+              clone, so a warning means something you introduced.</td>
+          </tr>
+          <tr>
+            <td><code>Description.md</code></td>
+            <td><strong>10</strong>, human-graded (see below).</td>
+          </tr>
+          <tr class="danger">
+            <td>Does not compile</td>
+            <td><strong>0</strong> for the entire milestone. The autograder builds your files against its own copies of
+              the frozen files, so make sure your code builds with those files unmodified.</td>
+          </tr>
+          <tr class="danger">
+            <td>Fails any provided test</td>
+            <td><strong>0</strong> for the entire milestone. The provided (visible) tests are a hard
+              gate: passing all of them &mdash; the M5 tests <em>and</em> the carried-over M4, M3, M2, and
+              M1 tests &mdash; is required before any of the 80 auto-graded points are counted.</td>
+          </tr>
+          <tr class="danger">
+            <td>Description does not match your code</td>
+            <td>The <code>Description.md</code> can be scored <strong>negative</strong> &mdash; roughly
+              <strong>&minus;20</strong>, and up to <strong>&minus;40</strong> &mdash; at the
+              discretion of the TA or instructor (see below). Passing every test does not by itself
+              secure full credit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The two <strong>0 gates</strong> come first: code that does not compile, or that fails any of the
+      tests shipped with the repository, earns no credit for the milestone regardless of anything else.
+      Because M5 is cumulative, a change that breaks an M4, M3, M2, or M1 test trips this gate too. Only
+      after both gates pass are the 80 auto-graded points, the 10 style points, and the 10 description
+      points assessed.
+    </p>
+    <p>
+      Each of the 80 points is tied to one <strong>property</strong> &mdash; a single rule your checker
+      must obey. Eight properties cover the new M5 behavior:
+    </p>
+    <ul>
+      <li><strong>Operator types</strong> &mdash; arithmetic and negation over <code>Int</code>,
+        comparison and the boolean connectives to <code>Bool</code>, concatenation over strings or lists,
+        cons onto a list; an operand of the wrong type is a <code>Mismatch</code>.</li>
+      <li><strong>Equality types</strong> &mdash; <code>==</code> and <code>!=</code> yield
+        <code>Bool</code> on a type that admits equality; operands of different types are a
+        <code>Mismatch</code>, and comparing values with no equality (a function, anywhere inside) is
+        <code>NoEquality</code>.</li>
+      <li><strong>Compound types</strong> &mdash; tuples, lists, and projection are typed structurally;
+        a list literal's elements share one type; an empty list takes its element type from context and
+        is <code>Ambiguous</code> without one.</li>
+      <li><strong>Control types</strong> &mdash; a block threads its <code>let</code> bindings, an
+        <code>if</code> used as a value needs both branches to agree, loops and assignment have type
+        <code>()</code>, and a <code>return</code> must match the enclosing function's result type.</li>
+      <li><strong>Functions</strong> &mdash; a lambda infers a function type, its parameters solved by
+        the body or an expected type; a call checks its arguments against the callee's parameters, and a
+        wrong count is <code>ArityMismatch</code>.</li>
+      <li><strong>Programs check</strong> &mdash; a well-typed program checks, recursion and
+        use-before-definition included; generic and native prelude functions are instantiated afresh at
+        each use; an unknown name is <code>UnboundVariable</code>.</li>
+      <li><strong>Rejections</strong> &mdash; the checker rejects, before the program runs, a type
+        mismatch, a bounded native call on a type that does not meet the bound
+        (<code>UnsatisfiedBound</code>), and a global initialization cycle &mdash; including in a
+        function <code>main</code> never calls and in a branch that is never taken.</li>
+      <li><strong>Annotations and generics</strong> &mdash; a type annotation must name a declared type;
+        a type parameter is a type only within its own declaration; and a self-application whose occurs
+        check fails is <code>InfiniteType</code>.</li>
+    </ul>
+    <p>
+      Several of these exercise provided code &mdash; the driver, the bound and determination checks
+      &mdash; but none of them can pass until your arms and <code>unify</code> feed that code what it
+      needs: the types recorded at the right spans, the bounds required at the right places. The
+      carried-over 40 re-checks every evaluator rule from M1&ndash;M4, so a regression in your evaluator
+      costs points here even though M5 does not ask you to change it.
+    </p>
+    <p>
+      A property is <strong>all-or-nothing</strong>: it is checked by several cases &mdash; some
+      <strong>visible</strong>, some <strong>hidden</strong> &mdash; and you earn its points only when
+      all of them pass. When a property fails, Gradescope reports <strong>which property</strong> it was
+      and states the rule it checks, so you know what behavior to fix. If the failing case is a visible
+      one, you also see a short description of it; if it is a hidden one, you see a hint about what kind of
+      case it is, but not the specific input. Because attempts are unlimited, the workflow is: submit, read
+      which properties failed, fix them, and resubmit.
+    </p>
+
+    <h2>The write-up: <code>Description.md</code></h2>
+    <p>
+      You may use generative AI on this project, and a coding assistant can likely solve M5 on its
+      own. That is fine &mdash; what I grade is not <em>only</em> that the code works, but that
+      <strong>you understand the code you submitted</strong>. The <code>Description.md</code> is how I
+      judge that. Write it yourself, in your own words, about the code you are actually turning in.
+    </p>
+    <p>Put a <code>Description.md</code> at the root of the repository that answers all of the following.</p>
+
+    <h3>Concept questions</h3>
+    <p>
+      A few sentences each, in your own words. These are about the code <em>you</em> wrote &mdash;
+      point at your own implementation where a question asks you to, rather than repeating the
+      textbook's answers.
+    </p>
+    <ol>
+      <li>
+        Under <code>--features m4</code>, <code>late.brg</code> (above) prints <code>start</code> and then
+        stops at the whole assignment; under <code>--features m5</code> it prints nothing and reports
+        <code>total</code>, with <em>expected ref&lt;_&gt;, found Int</em>. Using your
+        <code>Assign</code> arm and your <code>unify</code>, explain where the <code>ref&lt;_&gt;</code>
+        comes from, why the error lands on <code>total</code> rather than on the whole assignment, and why
+        <code>expected</code> and <code>found</code> come out in that order and not the reverse.
+      </li>
+      <li>
+        <code>[] ++ [true]</code> has type <code>[Bool]</code>, but <code>[] ++ []</code> is
+        <code>Ambiguous</code>. Trace both through your concatenation arm: what type the left operand
+        synthesizes, how the right operand is checked, and what type remains afterward. For
+        <code>[] ++ []</code>, is it your concatenation arm or the driver's determination rule that reports
+        <code>Ambiguous</code> (and when does the other one fire)? Why does a type have to be
+        <em>recorded</em> for the determination rule to judge it?
+      </li>
+      <li>
+        In one body, <code>id(1)</code> and <code>id("a")</code> both check for a generic
+        <code>fn id&lt;T&gt;(x: T) -&gt; T</code>, but in <code>|f| (f(1), f("a"))</code> the second call
+        is rejected. Point at the place in your <code>Var</code> arm where a type parameter becomes an
+        inference variable, and explain why the first program checks. What would go wrong if that variable
+        were made once per declaration instead of once per use? Why does the lambda's parameter
+        <code>f</code> not get the same treatment?
+      </li>
+      <li>
+        <code>{ let f = |x| x(x); () }</code> is <code>InfiniteType</code>. Walk through what your
+        <code>Lambda</code> and <code>Call</code> arms ask <code>unify</code> to do for <code>x(x)</code>,
+        and show where your occurs check fires. What would happen in your <code>unify</code> (and later, in
+        <code>resolve</code>) if you left the occurs check out?
+      </li>
+      <li>
+        <code>fn f() -&gt; Int { return 1; let y = []; println(y); 2 }</code> checks, although nothing fixes
+        the element type of <code>y</code>, while <code>fn f() -&gt; Int { return 1; 1 + true }</code> is
+        rejected. Using your <code>Block</code> arm, explain where you call <code>dead_after</code>, why
+        that call has to come <em>before</em> the remaining statements are checked, and why the second
+        program is still an error.
+      </li>
+    </ol>
+
+    <h3>How you implemented it</h3>
+    <ul>
+      <li>
+        Walk through your <code>Expr::Call</code> arm and your <code>unify</code> from start to finish.
+        For <code>Call</code>: how you get the callee's type, the three cases it can be in (a function
+        type, an unsolved variable, anything else), how you check the arguments, and what
+        <code>finish_call</code> does with the callee's bounds. For <code>unify</code>: the order of your
+        cases and how you report the innermost disagreement inside compound types. Naming the provided
+        tools you used (<code>check_callee</code>, <code>fresh_meta</code>, <code>resolve</code>,
+        <code>record</code>, <code>Ty::func</code>, <code>TyError</code>, <code>?</code>) is
+        encouraged.
+      </li>
+      <li>
+        Describe how your <code>check_expr</code> enforces the nesting bound and keeps
+        <code>self.depth</code> balanced when an arm fails, and whether you factored the shared ending of
+        every arm (Chk-Sub, <code>resolve</code>, <code>record</code>) into a method of your own.
+      </li>
+      <li>
+        Point out anything that was tricky, a bug you fixed, or a design choice you made &mdash; and if
+        you used an assistant, say what you had it do and how you checked its work.
+      </li>
+    </ul>
+
+    <div class="panel panel-warning">
+      <div class="panel-heading"><strong>Understanding what you submit</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The <code>Description.md</code> is worth up to <strong>10 points</strong>, graded by hand.
+          But it can also be scored <strong>negative</strong>: if your description does not actually
+          match the code you submitted &mdash; it describes an approach your code does not take, gets
+          the behavior wrong, or reads as though you cannot explain your own submission &mdash; you can
+          lose roughly <strong>20 points, and up to 40</strong>, as judged by the TA or instructor, who
+          may also ask you to explain your submission in person. Passing every test does not by itself
+          secure full credit.
+        </p>
+        <p style="margin-bottom:0">
+          You are welcome to use a coding assistant to <em>write</em> the code. You are responsible for
+          <em>understanding</em> it. Code you cannot explain will not earn full credit. This
+          expectation grows across the semester, and the type checker is the largest milestone so far
+          &mdash; it is worth understanding every arm.
+        </p>
+      </div>
+    </div>
+
+    <h2>Submitting</h2>
+    <p>
+      First write your <code>Description.md</code> at the root of the repository. Then, from inside the
+      project folder, check the code:
+    </p>
+    <pre><code>cd bridger-interpreter                       # the project root
+
+cargo m5                                     # all Milestone-5 tests pass (M4–M1 too)?
+cargo fmt                                    # format your code
+cargo clippy --all-targets -- -D warnings    # lint — fix any warnings</code></pre>
+    <p>
+      Then package <code>src/</code> and the root <code>.md</code> files into a <code>.zip</code>.
+      Run the command for your system from the project root.
+    </p>
+    <p><strong>macOS / Linux</strong> (Terminal):</p>
+    <pre><code>zip -r ../m5-submission.zip src *.md</code></pre>
+    <p><strong>Windows</strong> (PowerShell):</p>
+    <pre><code>Compress-Archive -Path src, *.md -DestinationPath ..\m5-submission.zip -Force</code></pre>
+    <p>
+      Either one writes <code>m5-submission.zip</code> in the folder just above the project, with
+      <code>src/</code> and <code>Description.md</code> at the top of the archive. The autograder
+      replaces <code>Cargo.toml</code>, <code>tests/</code>, and the frozen <code>src/</code> files with its
+      own copies, so any changes you make to them are discarded. New at M5: <strong>two</strong> files are
+      graded as your code, <code>src/interp/eval.rs</code> and <code>src/types/check.rs</code>. Any helper
+      functions you write &mdash; and the pasted-in helper module &mdash; must live in one of those two
+      files.
+    </p>
+    <p>
+      Upload <code>m5-submission.zip</code> to the <strong>Milestone M5</strong> assignment on
+      Gradescope (linked from Canvas). Some tests are visible, so you will get results back shortly and
+      can resubmit before the deadline; other tests are hidden, so passing every visible test does not
+      guarantee full credit.
+    </p>
+    <p class="text-muted" style="font-size:.92em">
+      No <code>zip</code> command on Linux? Install it (on Debian/Ubuntu,
+      <code>sudo apt install zip</code>). Alternatively, in Finder (macOS) or File Explorer (Windows),
+      select the <code>src</code> folder and the <code>.md</code> files inside the project folder (not
+      the project folder itself) and choose <strong>Compress</strong> /
+      <strong>Send to &rarr; Compressed (zipped) folder</strong>.
+    </p>
+    <p>
+      See the <strong>Course Project Policies</strong> on the
+      <a href="../../fall26.html">main course page</a> for the collaboration, generative-AI, and
+      late-work rules that apply to every milestone.
+    </p>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages &middot;
+      <a href="../../fall26.html">Course home</a>
+    </footer>
+
+  </div>
+</body>
+</html>
