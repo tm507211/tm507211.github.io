@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-3a6a8896.js";
+            window.path_to_searchindex_js = "../searchindex-172b7922.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -180,49 +180,353 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="unification"><a class="header" href="#unification">Unification</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Milestone M6 · lecture: Unification · spec §12.5.
-     Fixpoint-evaluation material split out into fixpoint.md so each lecture
-     owns whole chapters.
-     Status: placeholder — spine authored just-in-time.
+     Lecture: Unification (Wed of the Declarative Programming week). Milestone M6.
+     SEAM: datalog.md owns relations, rules, derivations, M(P, Δ), queries by example, add/clear.
+     It showed one derivation and its instantiation (x ↦ tom, y ↦ bob, z ↦ jim) without saying
+     how an interpreter finds instantiations: THIS chapter owns that. type-checker.md owns
+     Robinson 1965 (verified quotations), the general algorithm over types, and the occurs
+     check; this chapter points back and never re-quotes or re-derives them. fixpoint.md owns
+     repeating rule firings to closure (rounds, naive/semi-naive, termination); this chapter
+     fires a rule ONCE against a given set of facts and stops at "firing again finds
+     tom–jim". rules.md owns filters (non-relation conjuncts), safety, purity: here every body
+     conjunct is a relation atom (a generator), and sibling(ann, ann) is left as the pointer.
+     integration.md owns the query rules (E-Solutions etc.).
+     THROUGHLINE: one operation, matching an atom against a fact, both tests (a constant, an
+     already-bound variable) and binds (a fresh variable). Threading one substitution through
+     a body's atoms is what makes a shared variable mean "the same value"; carrying every
+     substitution at once finds every instantiation (a join). Datalog's facts are ground, so
+     unification is one-sided and needs no occurs check.
+     PRESENTATION: matching is given as a bullet list mirroring type-checker.md's unify list,
+     not as inference rules — Appendix D defines solutions via θ with Bθ ∈ M(P, Δ) and has no
+     matching judgment; the chapter does not invent one.
+     BUILD: Subst::unify (relations/unify.rs) is the student hole: described in prose only.
+     Shown code is provided: relations::Term, Subst's new/get/bind/apply, and unify's
+     signature from the stub. The engine that calls unify (relations/engine.rs) is also a
+     student file; only its behaviour is described.
+     EXAMPLES run 2026-10-25, reference interpreter, release --features m6, stdin </dev/null:
+       solutions parent(?x, ?x): []. sibling(x, y) :- parent(p, x) and parent(p, y), no
+       filter: [("ann", "ann"), ("ann", "pat"), ("bob", "bob"), ("bob", "liz"), ("jim", "jim"),
+       ("liz", "bob"), ("liz", "liz"), ("pat", "ann"), ("pat", "pat")]. solutions
+       ancestor(?a, ?d): the nine pairs. solutions parent(?p, ?): ["bob", "pat", "tom"].
+       toms(c) :- parent("tom", c): ["bob", "liz"]. Anc-Step with body reordered
+       (ancestor(y, z) and parent(x, y)): same nine pairs. grandparent from datalog.md.
+       The one-round firing table (3 new facts tom–ann, tom–pat, bob–jim) is computed by hand
+       from the five Anc-Parent facts; it is not interpreter output.
+     CITATIONS (Crossref 2026-10-25, no quotations made):
+       Knight, "Unification: a multidisciplinary survey," ACM Computing Surveys 21:1 (1989)
+         93-124, doi 10.1145/62029.62030.
+       Martelli & Montanari, "An Efficient Unification Algorithm," TOPLAS 4:2 (1982) 258-282,
+         doi 10.1145/357162.357169.
+       Robinson 1965; Kowalski 1974; Colmerauer & Roussel HOPL II: as in datalog.md /
+         type-checker.md.
+     WEAKER EVIDENCE (from knowledge, not checked against the artifact): resolution combining
+       a clause's atom with another clause's negated atom; unification as Prolog's parameter
+       passing (paraphrase of a standard reading); Prolog systems omitting the occurs check by
+       default and ISO's unify_with_occurs_check/2; Colmerauer's Prolog II and "Prolog and
+       Infinite Trees" (in Clark & Tärnlund eds., Logic Programming, Academic Press, 1982) —
+       cited in Further reading without a link; Prolog's append run backwards (no Prolog
+       installed); the cost of a direct implementation of Robinson's algorithm on shared
+       subterms (stated without a bound).
+     Status: draft authored 2026-10-25, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p>The <a href="datalog.html">previous chapter</a> gave the meaning of a set of rules as the facts that have
+derivations. One step of the derivation for <code>ancestor("tom", "jim")</code> used the second <code>ancestor</code>
+rule,</p>
+<pre><code class="language-text">rule ancestor(x, z) :- parent(x, y) and ancestor(y, z);
+</code></pre>
+<p>with <code>x</code> as tom, <code>y</code> as bob, and <code>z</code> as jim. The chapter wrote those values down without saying
+where they came from. An interpreter has only the rule and the facts it knows, and it has to find
+the values itself.</p>
+<p>Suppose the facts known so far are the five <code>parent</code> facts of the family and the five <code>ancestor</code>
+facts that the first rule gives from them, one for each parent pair. Firing the second rule means
+finding every assignment of values to <code>x</code>, <code>y</code>, and <code>z</code> under which both atoms of the body are
+known facts. A few attempts show what is involved:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>parent(x, y)</code> against</th><th>gives</th><th><code>ancestor(y, z)</code> against</th><th>gives</th></tr>
+</thead>
+<tbody>
+<tr><td><code>parent("bob", "pat")</code></td><td><code>x</code> bob, <code>y</code> pat</td><td><code>ancestor("pat", "jim")</code></td><td><code>z</code> jim</td></tr>
+<tr><td><code>parent("bob", "pat")</code></td><td><code>x</code> bob, <code>y</code> pat</td><td><code>ancestor("tom", "bob")</code></td><td>fails: <code>y</code> is pat</td></tr>
+<tr><td><code>parent("tom", "liz")</code></td><td><code>x</code> tom, <code>y</code> liz</td><td>any <code>ancestor</code> fact</td><td>fails: none starts with liz</td></tr>
+</tbody>
+</table>
+</div>
+<p>The first row succeeds, and the rule’s head with those values is a new fact,
+<code>ancestor("bob", "jim")</code>.</p>
+<p>The attempts raise these questions:</p>
+<ul>
+<li><strong>How is an atom with variables matched against a fact?</strong> In the first column, both of
+<code>parent(x, y)</code>’s variables take their values from the fact. In the third, <code>y</code> already has a value,
+and the fact has to agree with it.</li>
+<li><strong>What makes the two atoms of a body agree?</strong> <code>y</code> appears in both atoms of the body. The
+second row fails because the fact puts tom where <code>y</code> already stands for pat.</li>
+<li><strong>How are all the assignments found?</strong> One success gives one new fact. Firing the rule means
+finding every assignment, and the table above tried three.</li>
+</ul>
+<p>The operation in each cell, making an atom with variables identical to a fact by choosing values
+for the variables, has a name from automated theorem proving. Part VI used it on types.</p>
+<h2 id="unification-in-logic-programming"><a class="header" href="#unification-in-logic-programming">Unification in logic programming</a></h2>
+<p><a href="../types/type-checker.html#solving-for-types">A type checker</a> introduced J. A. Robinson’s
+unification algorithm (1965): given expressions containing variables, find a substitution for the
+variables that makes them identical. Robinson built it for <strong>resolution</strong>, his single inference
+step for proving theorems, which combines two clauses when an atom of one and a negated atom of
+the other can be made identical. Unification finds the substitution that makes them so, and the
+combined clause carries that substitution forward. Milner later used the same algorithm to solve
+equations between types, which is how Part VI’s checker infers them.</p>
+<p>Logic programming made unification the whole of its data handling. In Kowalski’s
+<a href="http://www.doc.ic.ac.uk/~rak/papers/IFIP%2074.pdf">procedural reading</a> of a clause, establishing
+a goal means unifying it with the head of a clause and then establishing the body. The unification
+does the work a function call’s parameter passing does elsewhere: values in the goal flow into the
+clause’s variables, and values the clause’s variables receive flow back out to the goal. A goal
+whose arguments are all values tests a fact. A goal with variables in some positions computes
+values for them. Which positions are inputs is settled by each goal and not fixed by the clause,
+and this is the source of the direction-free queries of the previous chapter.</p>
+<p><a href="https://doi.org/10.1145/154766.155362">Prolog</a> unifies at every step of its search, between
+terms that may contain variables on both sides and may be built from other terms. To keep that
+step fast, Prolog systems have generally left out the occurs check Part VI’s checker needed, and
+accepted the consequences. Datalog’s evaluation proceeds the other way round, from known facts to
+new ones. The facts contain no variables, so there unification always meets a variable on one side
+only.</p>
+<h2 id="substitutions"><a class="header" href="#substitutions">Substitutions</a></h2>
+<p>A <strong>substitution</strong> maps logic variables to values. Writing <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> for one, the first row of the
+table found</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8055em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord texttt">bob</span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7758em;vertical-align:-0.2222em;"></span><span class="mord text"><span class="mord texttt">pat</span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">jim</span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mclose">}</span></span></span></span></span></p>
+<p><strong>Applying</strong> a substitution to an atom replaces each variable it binds with its value, written
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">A</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>. For the second rule’s head, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathit">ancestor</span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span><span class="mclose">)</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> is
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathit">ancestor</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">bob</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">jim</span></span><span class="mclose">)</span></span></span></span>. An atom with no variables left is <strong>ground</strong>. Every
+fact is ground, and a substitution that binds all of a rule’s variables makes every atom of the rule
+ground.</p>
+<h3 id="matching-an-atom-against-a-fact"><a class="header" href="#matching-an-atom-against-a-fact">Matching an atom against a fact</a></h3>
+<p><strong>Matching</strong> an atom against a fact, under a substitution <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> that may already bind some of
+the atom’s variables, finds the substitution <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span> that extends <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> and makes the atom
+equal the fact, or fails. The atom and the fact must belong to the same relation, so they have the
+same number of positions, and matching compares them position by position:</p>
+<ul>
+<li>A <strong>constant</strong> in the atom must equal the fact’s value in that position.</li>
+<li>A <strong>variable already bound</strong> by the substitution must have the fact’s value in that position.</li>
+<li>A <strong>variable not yet bound</strong> becomes bound to the fact’s value in that position.</li>
+</ul>
+<p>If every position passes, the result is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> extended by the new bindings. The first two cases
+test and change nothing. The third binds and cannot fail. A single position is one or the other
+depending on the substitution it is matched under, and the atom says nothing about which.</p>
+<p>Matching <code>parent(x, y)</code> under the empty substitution binds both variables, so every <code>parent</code> fact
+matches and each gives a different substitution. The same atom matched under <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">pat</span></span><span class="mclose">}</span></span></span></span> binds only <code>x</code>, and only the facts with pat in the second position match:
+<code>parent("bob", "pat")</code>, giving <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8055em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord texttt">bob</span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">pat</span></span><span class="mclose">}</span></span></span></span>.</p>
+<p>A constant in a rule tests in the same way. In</p>
+<pre><code class="language-text">rule toms(c) :- parent("tom", c);
+</code></pre>
+<p>the first position of the body atom matches only facts whose parent is tom, so <code>toms</code> holds bob
+and liz.</p>
+<p>The cases also apply within a single atom. A variable written twice is bound at its first position
+and tested at its second. Matching <code>parent(x, x)</code> against <code>parent("tom", "bob")</code> binds <code>x</code> to tom
+in the first position and fails in the second, where <code>x</code> is tom and the fact has bob. Nobody in the
+family is their own parent, so no <code>parent</code> fact matches.</p>
+<h2 id="matching-a-rule-body"><a class="header" href="#matching-a-rule-body">Matching a rule body</a></h2>
+<p>A body’s atoms are matched one after another, each under the substitution the ones before it
+produced. That is how a variable shared between atoms comes to mean the same value in each. The
+first atom that contains it binds it, and every later atom tests it. In the table above,
+<code>parent(x, y)</code> bound <code>y</code>, and <code>ancestor(y, z)</code> then accepted only facts that agreed.</p>
+<p>To find every assignment, the interpreter carries a set of substitutions through the body instead of
+a single one. It starts with the set holding only the empty substitution. Each atom then builds a
+new set: for each substitution in the old set and each fact the atom matches under it, the extended
+substitution goes into the new set. A substitution under which the atom matches no fact drops out,
+and one under which it matches several facts gives several extensions. After the last atom, the set
+holds every assignment that makes the whole body true, and applying each to the head gives the facts
+the rule derives.</p>
+<p>For the second <code>ancestor</code> rule, with the five <code>parent</code> facts and the five <code>ancestor</code> facts the
+first rule gives, <code>parent(x, y)</code> turns the empty substitution into five:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>x</code></th><th><code>y</code></th><th>facts <code>ancestor(y, z)</code> matches</th><th>head</th></tr>
+</thead>
+<tbody>
+<tr><td>tom</td><td>bob</td><td><code>ancestor("bob", "ann")</code>, <code>ancestor("bob", "pat")</code></td><td><code>ancestor("tom", "ann")</code>, <code>ancestor("tom", "pat")</code></td></tr>
+<tr><td>tom</td><td>liz</td><td>none</td><td></td></tr>
+<tr><td>bob</td><td>ann</td><td>none</td><td></td></tr>
+<tr><td>bob</td><td>pat</td><td><code>ancestor("pat", "jim")</code></td><td><code>ancestor("bob", "jim")</code></td></tr>
+<tr><td>pat</td><td>jim</td><td>none</td><td></td></tr>
+</tbody>
+</table>
+</div>
+<p>Two of the five substitutions are extended by the second atom, the first in two ways and the fourth
+in one. That gives three complete substitutions and three <code>ancestor</code> facts that were not known
+before. One more is missing from the meaning: <code>ancestor("tom", "jim")</code> needs
+<code>ancestor("bob", "jim")</code>, which this firing has just produced. Firing the rule again, with the new
+facts included, finds it. <a href="fixpoint.html">Evaluating relations</a> repeats the
+firing until nothing new appears.</p>
+<p>Carrying a set of substitutions through a conjunction of atoms is, in database terms, a <strong>join</strong>:
+the rows of one relation are combined with the rows of another wherever they agree on a shared
+column, here <code>y</code>. The body’s order changes the work done and never the result. Matching
+<code>ancestor(y, z)</code> first binds <code>y</code> and <code>z</code> from every <code>ancestor</code> fact, and <code>parent(x, y)</code> then tests
+<code>y</code> and binds <code>x</code>, which leaves the same three complete substitutions at the end. A conjunction is
+the same in either order, and so is the set of substitutions that satisfies it.</p>
+<h3 id="queries"><a class="header" href="#queries">Queries</a></h3>
+<p>A query is matched in the same way, against the facts in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>. Its holes are variables,
+and its other arguments are evaluated to values and become constants. <code>ancestor(?a, "jim")</code> is the
+atom <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathit">ancestor</span></span><span class="mopen">(</span><span class="mord mathnormal">a</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">jim</span></span><span class="mclose">)</span></span></span></span>. Matched under the empty substitution against each
+<code>ancestor</code> fact, it binds <code>a</code> wherever the second position is jim, and each match is a solution. A
+hole written twice is one variable, so <code>parent(?x, ?x)</code> asks for the facts with the same value in
+both positions, and <code>solutions parent(?x, ?x)</code> is <code>[]</code>. An anonymous hole <code>?</code> is a variable that no
+other position shares and no solution reports. <code>solutions parent(?p, ?)</code> lists each parent once,
+<code>["bob", "pat", "tom"]</code>, though bob and tom have two children each.</p>
+<h2 id="bridgers-matching"><a class="header" href="#bridgers-matching">Bridger’s matching</a></h2>
+<p>Bridger’s matching is the one-sided case. Every value a variable can be bound to comes from a fact,
+and a fact holds values, never variables: the facts <code>add</code> records are ground, and every fact a rule
+derives is ground because every head variable is bound by its body, the condition that
+<a href="rules.html">Rule bodies and safety</a><!-- xref:rules.md --> calls safety. So a variable is only ever
+bound to a value, and never to another variable or to a term containing one.</p>
+<p>Set beside Part VI’s <code>unify</code>, the operation has the same cases with less in each:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th>types, in the checker</th><th>atoms, in the relations engine</th></tr>
+</thead>
+<tbody>
+<tr><td>the two sides</td><td>two types, either may hold variables</td><td>an atom with variables, a ground fact</td></tr>
+<tr><td>a constant</td><td>a base type, or a constructor with parts</td><td>a value, compared with <code>==</code></td></tr>
+<tr><td>a bound variable</td><td>unifies as its solution would</td><td>must equal the fact’s value</td></tr>
+<tr><td>an unbound variable</td><td>solved as the other side, after the occurs check</td><td>bound to the fact’s value</td></tr>
+</tbody>
+</table>
+</div>
+<p>Part VI’s checker needed the occurs check to stop <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span> from being solved as a type containing
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span>. A logic variable here is bound to a value, and a value contains no logic variables, so
+the binding can never refer back to the variable it binds. Bridger’s matching has no occurs check
+because nothing could fail it.</p>
+<p>Matching compares values with <code>==</code>. Every column type of a relation is one that admits equality,
+as <a href="datalog.html#declaring-relations">Declaring relations</a> required, and that requirement exists for
+this comparison.</p>
+<h3 id="building-it"><a class="header" href="#building-it">Building it</a></h3>
+<p>The engine’s terms and substitutions are provided. A <code>Term</code> is a logic variable or a constant
+value, the form both a rule’s atoms and a query’s arguments take once they reach the engine:</p>
+<pre><code class="language-rust ignore">enum Term {
+    Var(Name),   // a logic variable: x in a rule, ?x in a query
+    Val(Value),  // a constant: a literal, or an evaluated query argument
+}
 
-- **Datalog-style unification**: matching a rule's body atom against a known fact, binding the
-  rule's variables in the process — and why the Datalog case is so much simpler than the general
-  one.
-- Substitutions, and consistency across a whole rule body: a variable appearing twice must bind to
-  the same value both times.
-- Why unification is the right primitive here — the same operation both *tests* and *binds*, which
-  is what makes a rule body readable in either direction.
-
-*Design-space (woven):* full syntactic unification over compound terms as Prolog does it, and the
-occurs check it needs; why Bridger's ADT-free logic fragment does not need any of that (plan §5 —
-the Datalog choice is coupled to logic preceding ADTs).
--->
+impl Subst {
+    fn new() -&gt; Self;                         // the empty substitution
+    fn get(&amp;self, x: &amp;str) -&gt; Option&lt;&amp;Value&gt;; // x's value, if bound
+    fn bind(&amp;mut self, x: Name, v: Value);    // bind x (overwrites)
+    fn apply(&amp;self, t: &amp;Term) -&gt; Term;        // Aθ, one term at a time
+}</code></pre>
+<p>Matching is yours, as one method on <code>Subst</code>:</p>
+<pre><code class="language-rust ignore">pub fn unify(&amp;self, pattern: &amp;[Term], fact: &amp;[Value]) -&gt; Option&lt;Subst&gt; {
+    todo_m6!("Subst::unify: match terms against a ground tuple, …")
+}</code></pre>
+<p><code>pattern</code> is an atom’s arguments and <code>fact</code> a tuple of the relation. The method returns the
+extended substitution, or <code>None</code> when some position disagrees or the two have different lengths.
+It leaves <code>self</code> unchanged either way, so the caller can try the same substitution against the next
+fact, which is how one substitution becomes several. Within one call, a variable bound at one
+position counts as bound at every later position of the same atom, so <code>parent(x, x)</code> against
+<code>parent("tom", "bob")</code> binds <code>x</code> at the first position and fails at the second. <code>bind</code> overwrites,
+so a variable that is already bound has to be checked with <code>get</code> before anything is bound.</p>
+<p>Once a body has been matched, applying each complete substitution to the head’s terms, with
+<code>apply</code>, gives the tuple of the derived fact. A query’s anonymous holes reach the engine as
+variables too, each given a name that no other position uses, so it binds nothing that any other
+position tests and is left out of the solutions. The engine that carries the set of substitutions
+through a body and fires the rules is built in
+<a href="fixpoint.html">Evaluating relations</a>, and it calls <code>unify</code> for every pairing
+of an atom and a fact.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<h3 id="two-sided-unification"><a class="header" href="#two-sided-unification">Two-sided unification</a></h3>
+<p>Prolog unifies terms that have variables on both sides and that may be built from other terms. Its
+lists are compound terms, <code>[H|T]</code> for a list with head <code>H</code> and tail <code>T</code>, and appending two lists
+is two clauses:</p>
+<pre><code class="language-prolog">append([], L, L).
+append([H|T], L, [H|R]) :- append(T, L, R).
+</code></pre>
+<p>Asked <code>append([1], [2], X)</code>, Prolog binds <code>X</code> to <code>[1, 2]</code>. Asked <code>append(X, Y, [1, 2])</code>, it runs the
+other way and gives every way of splitting the list: <code>X = []</code> and <code>Y = [1, 2]</code>, then <code>X = [1]</code> and
+<code>Y = [2]</code>, then <code>X = [1, 2]</code> and <code>Y = []</code>. Each step unifies the goal with a clause head, binding
+variables to terms that themselves contain variables, such as <code>[1|R]</code>, to be filled in by later
+steps. This takes the full algorithm of Part VI applied to terms instead of types: two-sided,
+recursive through compound terms, and in need of the occurs check.</p>
+<p>When Bridger’s relations give up compound terms, they give up this power too. Without terms built
+from other terms, a variable meets only values, and matching is a loop over positions with a
+comparison in each. A list in Bridger is computed by functions, and a relation can hold one as a
+column value but cannot take it apart in a rule.</p>
+<h3 id="the-occurs-check"><a class="header" href="#the-occurs-check">The occurs check</a></h3>
+<p>Unifying <code>X</code> with <code>f(X)</code> would bind <code>X</code> to a term containing <code>X</code>. The occurs check rejects this, at
+a cost: before binding a variable to a term, it looks through the whole term, so binding a variable
+to a large term costs time proportional to the term’s size. Most Prolog systems skip the check by
+default and provide a separate, checked unification for when it matters; without it, <code>X = f(X)</code>
+succeeds and builds a term that contains itself. Colmerauer’s later Prolog II took that outcome as
+intended and treated such terms as infinite trees, which its unification was designed to handle.
+Robinson’s algorithm, Part VI’s checker, and checked unification in Prolog all reject the binding.
+Bridger never meets the case.</p>
+<p>General unification has a cost even with the check, since terms that share subterms can make a
+direct implementation of Robinson’s algorithm do far more work than the terms’ size suggests, and
+later algorithms, Martelli and Montanari’s among them, were designed to avoid it. One-sided
+matching against a fact costs one comparison per column.</p>
+<h3 id="which-atom-first"><a class="header" href="#which-atom-first">Which atom first</a></h3>
+<p>Since the order of a body’s atoms does not change its substitutions, an engine may choose the order.
+The choice decides how many facts are tried. In the firing above, starting with <code>parent(x, y)</code>
+binds <code>y</code>, after which <code>ancestor(y, z)</code> need consider only the <code>ancestor</code> facts whose first
+position is that value. An engine that keeps each relation indexed by column finds those facts
+directly instead of trying every one. Database systems choose join orders and indexes for each
+query; Prolog leaves the order to the programmer, who writes it; Bridger’s meaning ignores the
+order, and its engine is free to pick one.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Unification</strong>: Kevin Knight’s “<a href="https://doi.org/10.1145/62029.62030">Unification: A Multidisciplinary
+Survey</a>” (1989) follows unification through theorem proving,
+logic programming, type inference, and natural-language processing, and covers the algorithms and
+their costs. Alberto Martelli and Ugo Montanari’s “<a href="https://doi.org/10.1145/357162.357169">An Efficient Unification
+Algorithm</a>” (1982) presents unification as solving a set of
+equations by transformation rules and gives the efficient algorithm.</p>
+<p><strong>Unification without the occurs check</strong>: Alain Colmerauer’s “Prolog and Infinite Trees” (in
+<em>Logic Programming</em>, ed. Clark and Tärnlund, Academic Press, 1982) gives the theory behind treating
+the terms built by omitting the check as infinite trees.</p>
+<p><strong>Joins and their evaluation</strong>: Abiteboul, Hull, and Vianu’s <em>Foundations of Databases</em>, freely
+available <a href="http://webdam.inria.fr/Alice/">from the authors</a>, treats evaluating Datalog rules as
+joins in its chapter 13, “Evaluation of Datalog”.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>Match <code>parent(x, y)</code> against <code>parent("bob", "pat")</code> under the empty substitution, then under <code>{y ↦ ann}</code>. What does each produce?</summary>
+<p>Under the empty substitution, both variables are unbound, so both positions bind: the result is
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8055em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord texttt">bob</span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">pat</span></span><span class="mclose">}</span></span></span></span>. Under <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">ann</span></span><span class="mclose">}</span></span></span></span>, the first
+position binds <code>x</code> to bob, and the second position tests <code>y</code>, which is bound to ann against the
+fact’s pat, and fails. The same atom and the same fact give a match or a failure depending on what
+the substitution already binds.</p>
+</details>
+<details>
+<summary>Fire <code>rule grandparent(x, z) :- parent(x, y) and parent(y, z);</code> against the five <code>parent</code> facts. Which complete substitutions does it produce?</summary>
+<p><code>parent(x, y)</code> gives five substitutions, one per fact. <code>parent(y, z)</code> then needs a fact whose first
+position is the bound <code>y</code>: with <code>y</code> as bob it matches <code>parent("bob", "ann")</code> and
+<code>parent("bob", "pat")</code>; with <code>y</code> as pat it matches <code>parent("pat", "jim")</code>; with <code>y</code> as liz, ann, or
+jim it matches nothing. That gives three complete substitutions, which derive
+<code>grandparent("tom", "ann")</code>, <code>grandparent("tom", "pat")</code>, and <code>grandparent("bob", "jim")</code>: the
+three pairs <code>solutions grandparent(?g, ?c)</code> prints. Neither atom mentions <code>grandparent</code>, so one
+firing finds them all.</p>
+</details>
+<details>
+<summary><code>rule sibling(x, y) :- parent(p, x) and parent(p, y);</code> derives <code>sibling("ann", "ann")</code>. Which substitution produces it, and why does matching allow it?</summary>
+<p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8055em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord texttt">bob</span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7054em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord texttt">ann</span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">ann</span></span><span class="mclose">}</span></span></span></span>: the first atom
+matches <code>parent("bob", "ann")</code>, binding <code>p</code> and <code>x</code>, and the second atom matches the same fact,
+testing <code>p</code> and binding <code>y</code>. Nothing in the body says <code>x</code> and <code>y</code> differ, and two distinct variables
+may be bound to the same value. Ruling out the case takes a condition that is not a relation atom,
+<code>x != y</code>, which is the subject of <a href="rules.html">Rule bodies and safety</a><!-- xref:rules.md -->.</p>
+</details>
+<details>
+<summary>Why does Bridger's matching need no occurs check, when Part VI's unification did?</summary>
+<p>The occurs check stops a variable from being bound to something that contains it. In the type
+checker a variable <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span> could be solved as a type such as <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord texttt">fn</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span></span></span></span>, which
+contains <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span>. In Bridger’s relations, a logic variable is only ever bound to a value taken from
+a ground fact, and a value contains no logic variables. A binding that refers back to its own
+variable cannot be formed, so there is nothing for the check to find.</p>
+</details>
+<details>
+<summary>Prolog's <code>append</code> runs backwards, splitting a list into every pair of parts. What would Bridger's relations need before a rule could do the same?</summary>
+<p>Compound terms in rules, so that a rule could name a list’s head and tail as <code>[h|t]</code>, and two-sided
+unification, so that a variable could be bound to a term still containing variables, such as
+<code>[1|r]</code>, and filled in later. Both bring back the occurs check. Compound terms also let a rule
+build values the facts did not contain, which ends the guarantee from
+<a href="datalog.html#rules-that-build-values">Rules that build values</a> that <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> is finite.</p>
+</details>
 
                     </main>
 

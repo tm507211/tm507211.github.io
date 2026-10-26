@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-3a6a8896.js";
+            window.path_to_searchindex_js = "../searchindex-172b7922.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -266,7 +266,7 @@ and handing one store out:</p>
 leaves the store <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>. The environment goes in but does not come back — evaluating an
 expression cannot change what a name is bound to — while the store goes in <em>and</em> comes out, because
 evaluating an expression can change what a cell holds. (The reference’s full judgment threads one
-more component, the relation database <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> of <a href="../relations/datalog.html">Part VII</a><!-- xref:../relations/datalog.md -->,
+more component, the relation database <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> of <a href="../relations/datalog.html">Part VII</a>,
 and carries the extra outcome a <a href="../eval/error-handling.html"><code>return</code></a> produces; this part uses the
 env-and-store slice.)</p>
 <p>Every rule now threads the store, and the threading fixes the order in which subexpressions run. A

@@ -1,0 +1,8 @@
+import{H as e,L as t,T as n,X as r,Z as i,_ as a,_t as o,b as s,g as c,ht as l,y as u}from"./modules/shiki-B6CMAte1.js";import{Ct as d,it as f,rt as p}from"./index-3d6LUT6_.js";import{t as m}from"./slidev/default-B1qw2Z1F.js";var h={class:`grid`},g={class:`right`},_={class:`card`},v={class:`card`},y={class:`card me`},b=d({__name:`slides.md__slidev_23`,setup(d){let{$slidev:b,$nav:x,$clicksContext:S,$clicks:C,$page:w,$renderContext:T,$frontmatter:E}=f();return S.setup(),(d,f)=>{let b=e(`click`);return t(),a(m,o(n(l(p)(l(E),22))),{default:r(()=>[f[4]||=c(`h2`,null,`Where facts come from`,-1),c(`div`,h,[f[3]||=c(`div`,{class:`card`},[c(`div`,{class:`h`},`SQL · since 1999`),c(`pre`,{class:`sql`},`WITH RECURSIVE ancestor(anc, des) AS (
+    SELECT parent, child FROM parent
+  UNION
+    SELECT p.parent, a.des
+    FROM parent p JOIN ancestor a
+      ON p.child = a.anc
+)
+SELECT anc FROM ancestor WHERE des = 'jim';`),c(`div`,{class:`d`},`facts: tables, changed outside the query`)],-1),c(`div`,g,[i((t(),u(`div`,_,[...f[0]||=[c(`div`,{class:`h`},`Soufflé`,-1),c(`div`,{class:`d`},`facts read from input files, typed columns · program analysis`,-1)]])),[[b,1]]),i((t(),u(`div`,v,[...f[1]||=[c(`div`,{class:`h`},`Prolog`,-1),c(`div`,{class:`d`},[c(`code`,null,`assert`),s(` / `),c(`code`,null,`retract`),s(` change the database mid-search`)],-1)]])),[[b,2]]),i((t(),u(`div`,y,[...f[2]||=[c(`div`,{class:`h`},`Bridger`,-1),c(`div`,{class:`d`},[s(`host code computes and `),c(`code`,null,`add`),s(`s facts · answers return as a list, a Bool, a loop variable · facts only accumulate between `),c(`code`,null,`clear`),s(`s`)],-1)]])),[[b,3]])])])]),_:1},16)}}},[[`__scopeId`,`data-v-8e8775cd`]]);export{b as default};

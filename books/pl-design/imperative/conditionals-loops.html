@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-3a6a8896.js";
+            window.path_to_searchindex_js = "../searchindex-172b7922.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -262,7 +262,7 @@ takes the value <code>()</code>, since a loop runs for the effect its body has o
 result. What that chapter left open, and this one fixes, is what each evaluates to — the rules that
 pick a branch, and the rules that repeat one. The store threads through them as it threads through
 every form now, one store in and one store out, <code>env ⊢ ⟨e, σ⟩ ⇓ ⟨v, σ'⟩</code>. (The reference’s rules
-thread the relation database of <a href="../relations/datalog.html">Part VII</a><!-- xref:../relations/datalog.md -->
+thread the relation database of <a href="../relations/datalog.html">Part VII</a>
 and carry the outcome a <a href="../eval/error-handling.html"><code>return</code></a> produces; this part uses the
 env-and-store slice <a href="mutation.html">mutation.md</a> introduced.) The rules below are written with the
 keyword forms <code>if e then e else e</code> and <code>while e e</code>; the concrete syntax braces them, <code>if c { … }</code>
@@ -396,7 +396,7 @@ stuck.</p>
 <p>Because the list is finite and the walk shortens it by one each turn, a <code>for</code> over a list always
 stops — the property <code>while</code> gives up in exchange for looping on an arbitrary condition. The one
 other thing a Bridger program walks is the set of solutions to a relational query, written
-<code>for q { … }</code>; that form belongs with the <a href="../relations/datalog.html">relations</a><!-- xref:../relations/datalog.md -->
+<code>for q { … }</code>; that form belongs with the <a href="../relations/datalog.html">relations</a>
 of Part VII, where the queries it draws from are defined.</p>
 <h3 id="building-it-2"><a class="header" href="#building-it-2">Building it</a></h3>
 <p>The <code>for</code> arm matches the provided <a href="../foundations/ast.html"><code>Expr::For</code></a> node — the bound name, the

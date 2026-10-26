@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-3a6a8896.js";
+            window.path_to_searchindex_js = "../searchindex-172b7922.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -179,42 +179,492 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="declarative-thinking-and-datalog"><a class="header" href="#declarative-thinking-and-datalog">Declarative Thinking and Datalog</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
+<h1 id="declarative-programming"><a class="header" href="#declarative-programming">Declarative Programming</a></h1>
 <!-- AUTHORING NOTE (not rendered)
-     Milestone M6 · lectures: Declarative Programming · spec §12.
-     Status: placeholder — spine authored just-in-time.
+     Lecture: Declarative Programming (shares its week with Unification and Evaluating
+     Relations). Opens Part VII; Milestone M6.
+     SEAM: paradigms.md (Part I) already used graph reachability for the declarative branch
+     and gave Kowalski 1974 / Colmerauer-Roussel one sentence. This chapter uses the FAMILY
+     TREE (user call, 2026-10-25: reachability is spent). Later Part VII chapters may reuse
+     parent/ancestor; fixpoint.md needs a cyclic graph of its own for the termination story.
+     THIS chapter owns: relations as sets of tuples, facts, rules (Horn clauses, the logical
+     reading, body-only variables read as "some y"), rules as inference rules and derivation
+     trees, the meaning M(P, Δ) as the least closed set, EDB/IDB, typed `relation`
+     declarations, `rule`, program facts, `add`/`clear`, Δ in the judgment (E-AddFact,
+     E-Clear), and the three query forms shown by example only.
+     unification.md owns matching a body atom against a fact. fixpoint.md owns computing
+     M(P, Δ) (naive/semi-naive, termination proof, van Emden & Kowalski 1976 JACM
+     doi 10.1145/321978.321991 resolves). rules.md owns generators/filters, safety, purity,
+     negation/stratification, aggregates declined. integration.md owns E-Solutions,
+     E-Query-True/False, E-For-Query, the Call arm's relation case.
+     THROUGHLINE: the rules state what holds once, with no direction; their meaning is the
+     least set of facts closed under them, so a query can put its holes anywhere.
+     BUILD: student writes the Relation arm's add/clear cases in eval_expr and the name
+     resolution / arity check (helpers live in the student file relations/engine.rs in the
+     reference, absent from the stub) — so described in prose only. Shown code is provided:
+     Rel/Query/QArg from ast.md, Value::Relation, RelationDb::add/clear.
+     HOLE IN ADD: static TyError::HoleInAdd from M5 ("`add` takes a ground fact; a `?` hole
+       belongs in a query"); RuntimeError::HoleInAdd is the evaluator's own stuck state.
+     EXAMPLES run 2026-10-25, reference interpreter, release --features m6, stdin </dev/null:
+       ancestors fn: ["pat", "bob", "tom"]. Relational program: ["bob", "pat", "tom"] /
+       ["ann", "bob", "jim", "liz", "pat"] / true / false (jim, tom); for ancestor(?a, "ann")
+       prints bob then tom; len(solutions ancestor(?x, ?y)) = 9. Left-recursive variant
+       (ancestor(x, y) and parent(y, z)): identical output. Program facts tom->bob, bob->ann
+       plus add parent("ann", "sue"): ["ann", "bob", "tom"], after clear parent [] for sue and
+       ["bob", "tom"] for ann. grandparent: [("bob", "jim"), ("tom", "ann"), ("tom", "pat")].
+       rule nat(n + 1) :- nat(n): parse error "unexpected `+`; expected one of ), ,".
+       add parent("tom", 3): "type mismatch: expected String, found Int".
+       SQL WITH RECURSIVE query run in SQLite 3.45.1 (python sqlite3): bob, pat, tom.
+     CITATIONS (metadata confirmed via Crossref 2026-10-25; no quotations made, all paraphrase):
+       Robinson, "A Machine-Oriented Logic Based on the Resolution Principle," JACM 12:1
+         (1965) 23-41, doi 10.1145/321250.321253.
+       Horn, "On sentences which are true of direct unions of algebras," JSL 16 (1951) 14-21,
+         doi 10.2307/2268661.
+       Kowalski 1974 IFIP and 1979 CACM; Colmerauer & Roussel HOPL II: as verified in
+         paradigms.md's note.
+       Codd, "A relational model of data for large shared data banks," CACM 13:6 (1970)
+         377-387, doi 10.1145/362384.362685.
+       Aho & Ullman, "Universality of data retrieval languages," POPL '79, 110-119,
+         doi 10.1145/567752.567763.
+       Gallaire & Minker (eds.), Logic and Data Bases, Plenum 1978,
+         doi 10.1007/978-1-4684-3384-5.
+       Ceri, Gottlob, Tanca, "What you always wanted to know about Datalog (and never dared to
+         ask)," IEEE TKDE 1:1 (1989) 146-166, doi 10.1109/69.43410.
+       Green, Huang, Loo, Zhou, "Datalog and Recursive Query Processing," Foundations and
+         Trends in Databases 5 (2013) 105-195, doi 10.1561/1900000017.
+       Jordan, Scholz, Subotić, "Soufflé: On Synthesis of Program Analyzers," CAV 2016, LNCS,
+         422-430, doi 10.1007/978-3-319-41540-6_23.
+       Abiteboul, Hull, Vianu, Foundations of Databases (1995): authors' free copy at
+         webdam.inria.fr/Alice/ (chapters 12-15: Datalog, Evaluation of Datalog, Recursion and
+         Negation, Negation in Datalog — TOC read from the page).
+     WEAKER EVIDENCE (from knowledge, not checked against the artifact): the 1977 Toulouse
+       workshop behind Gallaire & Minker; EDB/IDB as deductive-database vocabulary; "Datalog"
+       in use by the mid-1980s (deliberately unattributed — coinage is disputed); Prolog's
+       origin in Marseille natural-language question answering (consistent with HOPL II, not
+       re-read); Aho-Ullman's result as "relational algebra cannot express transitive
+       closure" and its proposal of a fixpoint operator; the Green et al. list of
+       applications (networking, program analysis, security); WITH RECURSIVE entering the
+       standard in SQL:1999; Prolog's left-recursion non-termination (no Prolog installed to
+       run it); assert/retract; Soufflé reading facts from files.
+     OMITTED: magic-sets rewriting is described, never named (scope rule). Negation,
+       aggregates, stratification left to rules.md.
+     Status: draft authored 2026-10-25, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p><a href="../types/motivation.html">Part VI</a> checked programs before running them, but how a Bridger program
+computes has not changed since Part V: a function receives arguments and works out a result from
+them, step by step. The program below answers a question about a family. The family is a list of
+pairs <code>(p, c)</code>, each saying that <code>p</code> is a parent of <code>c</code>. <code>parents_of(family, c)</code> keeps the pairs
+whose second component is <code>c</code> and returns their first components. <code>ancestors(family, who)</code> collects
+<code>who</code>’s parents and, after each parent, that parent’s ancestors, in a list held in a <code>ref</code> cell:</p>
+<pre><code class="language-text">fn parents_of(family: [(String, String)], child: String) -&gt; [String] =
+    map(filter(family, |p| p.1 == child), |p| p.0);
 
-- Declarative thinking; relations, facts, and rules; the **EDB / IDB** split (spec §12).
-- Why Bridger takes a **terminating Datalog fragment** in place of full Prolog (no function symbols → guaranteed
-  termination).
+fn ancestors(family: [(String, String)], who: String) -&gt; [String] {
+    ref found = [];
+    for p in parents_of(family, who) {
+        found := deref found ++ [p] ++ ancestors(family, p);
+    }
+    deref found
+}
 
-*History (woven):* Prolog — Colmerauer & Kowalski.
--->
+fn main() {
+    let family = [("tom", "bob"), ("tom", "liz"), ("bob", "ann"),
+                  ("bob", "pat"), ("pat", "jim")];
+    println(ancestors(family, "jim"));
+}
+</code></pre>
+<p>It prints <code>["pat", "bob", "tom"]</code>: jim’s parent, that parent’s parent, and so on up.</p>
+<p><code>ancestors</code> answers one question, who a given person’s ancestors are. Asking for tom’s
+descendants takes a second function, which filters on the first component and recurses on the
+second. Asking whether tom is an ancestor of jim takes a third, or a search through the first
+function’s result. The family is the same in all three, and so is what it means to be an
+ancestor: a parent is an ancestor, and so is a parent’s ancestor. Each function encodes that
+definition again, walking the pairs in its own direction.</p>
+<p>Bridger’s relations let a program state the definition once. In the program below, <code>relation</code>
+declares a relation and the types of its columns, each <code>add</code> records one fact, and the two <code>rule</code>s
+define <code>ancestor</code>:</p>
+<pre><code class="language-text">relation parent   : (String, String);
+relation ancestor : (String, String);
+
+rule ancestor(x, y) :- parent(x, y);
+rule ancestor(x, z) :- parent(x, y) and ancestor(y, z);
+
+fn main() {
+    add parent("tom", "bob");
+    add parent("tom", "liz");
+    add parent("bob", "ann");
+    add parent("bob", "pat");
+    add parent("pat", "jim");
+
+    println(solutions ancestor(?a, "jim"));
+    println(solutions ancestor("tom", ?d));
+    println(ancestor("tom", "jim"));
+}
+</code></pre>
+<p>The rules read as sentences: <code>x</code> is an ancestor of <code>y</code> if <code>x</code> is a parent of <code>y</code>; <code>x</code> is an
+ancestor of <code>z</code> if <code>x</code> is a parent of some <code>y</code> and <code>y</code> is an ancestor of <code>z</code>. A query names a
+relation and marks the place an answer goes with a <strong>hole</strong>, <code>?a</code> or <code>?d</code>. <code>solutions</code> lists the
+values that fill the holes, and a query with no holes is a yes-or-no question. The program prints:</p>
+<pre><code class="language-text">["bob", "pat", "tom"]
+["ann", "bob", "jim", "liz", "pat"]
+true
+</code></pre>
+<p>One pair of rules answers all three questions. No line of the program chooses a person to visit
+first or a direction to walk the pairs in.</p>
+<p>Replacing the functions with rules raises these questions:</p>
+<ul>
+<li><strong>What does a rule mean, if it does not say how to compute anything?</strong> The rules state when a
+fact holds. Which facts does that make true, and how is it decided?</li>
+<li><strong>Why are these five people tom’s descendants, and no others?</strong> A relation that named everyone
+as an ancestor of everyone would satisfy both rules too. What picks out the answer the program
+printed?</li>
+<li><strong>How do facts and rules fit inside a language of expressions and a store?</strong> In the program
+above, ordinary code in <code>main</code> adds the facts, and the answers come back as ordinary values.</li>
+</ul>
+<p>Programming by stating what holds, and leaving a system to work out what follows, took shape in
+the early 1970s, where automated theorem proving met natural-language processing.</p>
+<h2 id="logic-as-a-program"><a class="header" href="#logic-as-a-program">Logic as a program</a></h2>
+<p>The theorem provers of the 1960s took a set of logical statements and searched for a proof that
+some further statement followed from them. J. A. Robinson’s
+<a href="https://doi.org/10.1145/321250.321253">resolution principle</a> (1965) gave them a single inference
+step to search with, together with the matching operation it depends on, the subject of the
+<a href="unification.html">next chapter</a>. A prover’s search was its own business: the statements said what
+was true, and the prover decided which inferences to try and in what order.</p>
+<p>In 1974, Robert Kowalski argued that a restricted form of such statements could be
+<a href="http://www.doc.ic.ac.uk/~rak/papers/IFIP%2074.pdf">read as a program</a>. The restriction is to
+clauses with a single conclusion and a conjunction of conditions, <em>B if A₁ and … and Aₙ</em>. Alfred
+Horn had <a href="https://doi.org/10.2307/2268661">studied that form</a> in 1951, and such clauses are called
+<strong>Horn clauses</strong> after him. Kowalski read the clause as a procedure: to establish <em>B</em>, establish
+<em>A₁</em>, then the rest. Over the same years Alain Colmerauer’s group in Marseille, building a system
+that answered questions put to it in French, wrote its reasoning as such clauses and
+<a href="https://doi.org/10.1145/154766.155362">built Prolog</a> (1972) to run them. Kowalski’s later
+“<a href="https://doi.org/10.1145/359131.359136">Algorithm = Logic + Control</a>” (1979) set out the division
+this made possible. A program’s logic states what is true, its control states how the search for
+consequences proceeds, and the two can be written and changed separately.</p>
+<p>Databases arrived at relations from a different direction. Edgar Codd’s
+<a href="https://doi.org/10.1145/362384.362685">relational model</a> (1970) stored data as relations, sets of
+rows of equal length, and asked queries by describing the rows wanted, leaving the system to find
+them. The query languages built on it could join, select, and project, but no query among them
+could compute an ancestor relation of unbounded depth. Alfred Aho and Jeffrey Ullman
+<a href="https://doi.org/10.1145/567752.567763">showed</a> (1979) that the relational algebra cannot express
+transitive closure, the very construction <code>ancestor</code> performs, and proposed adding a fixpoint
+operator to supply it.</p>
+<p>The two lines met in work on <strong>deductive databases</strong>, gathered in Hervé Gallaire and Jack Minker’s
+<a href="https://doi.org/10.1007/978-1-4684-3384-5"><em>Logic and Data Bases</em></a> (1978): stored relations as in
+Codd’s model, plus Horn-clause rules that derive further relations from them. The fragment of
+Prolog that suits this use keeps the rules but restricts their arguments to constants and
+variables, so a rule can relate values it is given and never constructs new ones. By the mid-1980s
+that fragment was called <strong>Datalog</strong>; Ceri, Gottlob, and Tanca’s
+<a href="https://doi.org/10.1109/69.43410">survey</a> (1989) collected what was known about it.</p>
+<h2 id="relations-facts-and-rules"><a class="header" href="#relations-facts-and-rules">Relations, facts, and rules</a></h2>
+<p>A <strong>relation</strong> is a set of tuples, all with the same number of components. <code>parent</code> is a relation
+with two columns, both strings, and the program above gave it five tuples:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>parent</th><th>child</th></tr>
+</thead>
+<tbody>
+<tr><td>tom</td><td>bob</td></tr>
+<tr><td>tom</td><td>liz</td></tr>
+<tr><td>bob</td><td>ann</td></tr>
+<tr><td>bob</td><td>pat</td></tr>
+<tr><td>pat</td><td>jim</td></tr>
+</tbody>
+</table>
+</div>
+<p>Each tuple is a <strong>fact</strong>: <code>parent("bob", "pat")</code> says that bob is a parent of pat. Because a
+relation is a set, its facts have no order, and recording the same fact twice leaves the relation
+as it was. A query’s answer is a set as well: in a family where two lines of descent meet at one
+person, <code>ancestors</code> would list that person once for each line, and a query lists them once.</p>
+<p>A <strong>rule</strong> derives facts from facts. It has a <strong>head</strong>, the atom to the left of <code>:-</code>, and a
+<strong>body</strong>, the conjunction of atoms to the right; read logically, the head holds whenever the body
+does. Each variable in a rule stands for every value at once, so the second <code>ancestor</code> rule says:
+for all <code>x</code>, <code>y</code>, and <code>z</code>, if <code>parent(x, y)</code> and <code>ancestor(y, z)</code> then <code>ancestor(x, z)</code>. The
+variable <code>y</code> appears in the body and not in the head, and the reading is the same as “if <code>x</code> is a
+parent of <em>some</em> <code>y</code>, and that <code>y</code> is an ancestor of <code>z</code>”. A rule is a Horn clause, with one
+conclusion and a conjunction of conditions.</p>
+<p>A rule has the shape of the inference rules used since <a href="../eval/big-step.html">Program semantics</a>:
+premises above a horizontal bar, the conclusion below it. Written that way, the two <code>ancestor</code>
+rules are:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.363em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathit">ancestor</span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathit">parent</span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">Anc-Parent</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:2em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathit">ancestor</span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span><span class="mclose">)</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathit">parent</span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mspace" style="margin-right:1em;"></span><span class="mord"><span class="mord mathit">ancestor</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span><span class="mclose">)</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">Anc-Step</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>and a fact is a rule with no premises. A fact holds when it has a derivation, a tree of rule
+instances whose leaves are facts. This is the tree for <code>ancestor("tom", "jim")</code>:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:5.015em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:4.079em;"><span style="top:-4.067em;"><span class="pstrut" style="height:4.753em;"></span><span class="mord"><span class="mord"><span class="mord mathit">ancestor</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">tom</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">jim</span></span><span class="mclose">)</span></span></span><span style="top:-4.983em;"><span class="pstrut" style="height:4.753em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-6.079em;"><span class="pstrut" style="height:4.753em;"></span><span class="mord"><span class="mord"><span class="mord mathit">parent</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">tom</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">bob</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:1em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:2.753em;"><span style="top:-2.741em;"><span class="pstrut" style="height:3.427em;"></span><span class="mord"><span class="mord"><span class="mord mathit">ancestor</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">bob</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">jim</span></span><span class="mclose">)</span></span></span><span style="top:-3.657em;"><span class="pstrut" style="height:3.427em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-4.753em;"><span class="pstrut" style="height:3.427em;"></span><span class="mord"><span class="mord"><span class="mord mathit">parent</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">bob</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">pat</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:1em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathit">ancestor</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">pat</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">jim</span></span><span class="mclose">)</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathit">parent</span></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">pat</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">jim</span></span><span class="mclose">)</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<p>Each step instantiates a rule: the bottom step is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord textsf">Anc-Step</span></span></span></span></span> with <code>x</code> as tom, <code>y</code> as bob,
+and <code>z</code> as jim. An evaluation derivation <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">e</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span> in Part II showed that an expression has a
+value. This one shows that a fact follows from the facts recorded and the rules.</p>
+<h3 id="the-facts-a-program-means"><a class="header" href="#the-facts-a-program-means">The facts a program means</a></h3>
+<p>The relational program’s meaning is the set of facts that have derivations. For the family, that
+is the five <code>parent</code> facts and nine <code>ancestor</code> facts: each of the five <code>parent</code> pairs, together with
+tom–ann, tom–pat, tom–jim, and bob–jim.</p>
+<p>The same set can be described without derivations, and the description answers the question of
+why the answer is exactly this set. Call a set of facts <strong>closed</strong> under the rules when every rule
+whose body holds in the set has its head in the set too. Many sets are closed. The set that
+contains every <code>parent</code> fact and every possible <code>ancestor</code> pair of the six people is closed, since
+it has every head a rule could ask for. It also holds <code>ancestor("jim", "tom")</code>, which no
+derivation produces. The meaning is the <strong>least</strong> closed set: the one that contains the recorded
+facts, is closed under the rules, and is contained in every other set with those two properties.</p>
+<p>The set of derived facts is that least closed set, and the argument has two halves. First, take
+any closed set that contains the recorded facts. A derivation starts from recorded facts, which are
+in the set, and each step applies a rule to facts already in the set, which a closed set answers
+with the rule’s head. So every derived fact is in every such set. Second, the set of derived facts
+is itself closed: if every premise of a rule instance has a derivation, placing the rule beneath
+those derivations gives one for its head. The derived facts form a closed set contained in every
+other, which makes them the least.</p>
+<p>Writing <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span></span></span></span> for a program’s rules and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> for its recorded facts, this least set is written
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>, as in the <a href="../appendix/language-reference.html#relations">language reference</a>. It is
+the meaning of the rules and facts together. Changing a rule or a fact can change it. The order of
+the rules, the order of the conditions in a body, and the order in which facts were recorded
+cannot. How an interpreter computes <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>, and why that computation always
+ends, is the subject of <a href="fixpoint.html">Evaluating relations</a>.</p>
+<h3 id="queries"><a class="header" href="#queries">Queries</a></h3>
+<p>A query asks about <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>. A query <code>ancestor(?a, "jim")</code> has one hole, and a <strong>solution</strong>
+is a value for the hole that makes the query a member of the set: <code>?a</code> as bob, as pat, or as tom.
+<code>ancestor("tom", ?d)</code> puts the hole in the other column and finds five solutions. A query with no
+holes, <code>ancestor("tom", "jim")</code>, has one solution with nothing to fill in when the fact is in the
+set and none when it is not, which makes it a yes-or-no question. The holes go wherever the
+question needs them, because <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> is a set of facts, and a set has no direction to
+walk it in.</p>
+<h3 id="stored-and-derived-relations"><a class="header" href="#stored-and-derived-relations">Stored and derived relations</a></h3>
+<p>The family program splits its relations two ways. <code>parent</code> holds facts recorded one at a time; it
+is defined by listing its members, its <em>extension</em>, and the recorded facts are called the
+<strong>extensional database</strong>, or <strong>EDB</strong>. <code>ancestor</code> holds facts derived by rules; it is defined by a
+condition its members meet, its <em>intension</em>, and the relations defined by rules are called the
+<strong>intensional database</strong>, or <strong>IDB</strong>. The terms come from the deductive-database work above.</p>
+<p>The rules for <code>ancestor</code> mention no person. Recording a different family’s <code>parent</code> facts and asking
+the same queries gives that family’s ancestors, with no change to the rules.</p>
+<h2 id="bridgers-relations"><a class="header" href="#bridgers-relations">Bridger’s relations</a></h2>
+<p>Bridger takes Datalog’s restriction and embeds the result in the rest of the language. Relations
+and rules are top-level definitions; facts arrive from ordinary code with <code>add</code>; and the answers to
+queries come back as ordinary values. The
+<a href="../appendix/grammar.html#the-relations-sublanguage">grammar</a> gives the forms.</p>
+<h3 id="declaring-relations"><a class="header" href="#declaring-relations">Declaring relations</a></h3>
+<p>A declaration names a relation and the types of its columns:</p>
+<pre><code class="language-text">relation parent : (String, String);
+</code></pre>
+<p>The types are checked like any other. <code>add parent("tom", 3)</code> is rejected before the program runs,
+with <code>type mismatch: expected String, found Int</code> at the <code>3</code>. Answering a query compares column
+values for equality, so a column’s type must be one that admits equality, which rules out a
+function type.
+Rule bodies are typed by the same checker, and
+<a href="rules.html">Rule bodies and safety</a><!-- xref:rules.md --> gives their rules.</p>
+<h3 id="rules-and-program-facts"><a class="header" href="#rules-and-program-facts">Rules and program facts</a></h3>
+<p>A rule is a top-level definition, so its position in the file does not matter, as for every other
+definition. Lowercase names in a rule are its <strong>logic variables</strong>; each <strong>term</strong>, an argument
+of an atom in a rule, is a logic variable or a literal and nothing else. A relation with several
+rules holds the facts derived by any of them, so two rules for one relation read as an “or”.</p>
+<p>Because a term is only a variable or a literal, a rule cannot compute a new value. The grammar has
+no place for <code>n + 1</code> as a term, and this rule is a parse error at the <code>+</code>:</p>
+<pre><code class="language-text">rule nat(n + 1) :- nat(n);
+</code></pre>
+<p>A rule with no body is a fact that belongs to the program. These two give the program a family to
+start from, with no <code>add</code> needed:</p>
+<pre><code class="language-text">rule parent("tom", "bob");
+rule parent("bob", "ann");
+</code></pre>
+<h3 id="adding-and-clearing-facts"><a class="header" href="#adding-and-clearing-facts">Adding and clearing facts</a></h3>
+<p>The arguments of <code>add</code> are ordinary expressions, unlike a rule’s terms: <code>add R(e₁, …, eₙ)</code>
+evaluates each <code>eᵢ</code>, which may be <code>n + 1</code> or a function call, and records the fact made of the
+resulting values. <code>clear R</code> removes the
+facts <code>add</code> recorded for <code>R</code>. A program’s own facts, from body-less rules, are part of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span></span></span></span>, and
+<code>clear</code> leaves them. With the two program facts above, this <code>main</code>:</p>
+<pre><code class="language-text">fn main() {
+    add parent("ann", "sue");
+    println(solutions ancestor(?a, "sue"));
+    clear parent;
+    println(solutions ancestor(?a, "sue"));
+    println(solutions ancestor(?a, "ann"));
+}
+</code></pre>
+<p>prints <code>["ann", "bob", "tom"]</code>, then <code>[]</code>, then <code>["bob", "tom"]</code>: once the added fact is gone, sue
+has no ancestors, and ann keeps the two that the program’s own facts give her.</p>
+<p>The recorded facts are the <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>: the <strong>relation database</strong>, which <code>add</code> and
+<code>clear</code> change and every query reads. It becomes a third component of the evaluation judgment,
+beside the store, going in and coming out of every rule:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">e</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0519em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span></span></p>
+<p>Every rule from earlier chapters passes <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> through unchanged, threading it in evaluation order
+as it threads the store. <code>add</code> and <code>clear</code> are the rules that change it:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.363em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">add</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∪</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mopen">{</span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)}⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2083em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:1em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">i</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-AddFact</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.686em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord text"><span class="mord texttt">clear</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨(</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∖</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mopen">{</span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="mopen">(</span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mclose">}⟩</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Clear</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>E-AddFact takes a union, so adding a fact already present changes nothing. Neither rule removes a
+single fact: between one <code>clear</code> and the next, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> only grows, and the facts a query can see
+are the facts recorded so far. A query reads <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> and never changes it.</p>
+<p>The relation database is kept apart from the store for that reason. A store cell holds one value
+at a time, and <code>:=</code> replaces it, so what a cell held earlier is gone. The facts in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span>
+accumulate, and the meaning of a query is a fixed set, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>, that the query’s own
+evaluation cannot alter.</p>
+<h3 id="asking-queries"><a class="header" href="#asking-queries">Asking queries</a></h3>
+<p>The family program used a query in each of the three places one may appear. <code>solutions q</code> is a list
+of the hole values of every solution, a single value for each solution when the query has one hole
+and a tuple when it has more. A hole whose value is not needed can be left unnamed, as a bare <code>?</code>:
+<code>ancestor("bob", ?)</code> asks whether bob has any descendant. A query where a <code>Bool</code> is expected is
+<code>true</code> when it has a solution. And <code>for q { … }</code> runs its body once for each solution with the holes
+bound as variables:</p>
+<pre><code class="language-text">for ancestor(?a, "ann") {
+    println(a ++ " is an ancestor of ann");
+}
+</code></pre>
+<p>prints bob’s line and then tom’s. The solutions come in a fixed <strong>canonical order</strong>, sorted by
+their hole values, which is why the family program printed <code>["bob", "pat", "tom"]</code> where the
+<code>ancestors</code> function printed <code>["pat", "bob", "tom"]</code>. A query’s meaning is a set, and the canonical
+order gives that set one listing that does not depend on the order the facts were added or derived.
+The rules for the three forms are in <a href="integration.html">Querying relations</a><!-- xref:integration.md -->.</p>
+<h3 id="building-it"><a class="header" href="#building-it">Building it</a></h3>
+<p>The query forms all need <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>, which <a href="fixpoint.html">Evaluating relations</a> computes. What
+can be built now is the relation database and the two forms that change it, <code>add</code> and <code>clear</code>. The
+provided runtime keeps <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> as a <code>RelationDb</code> on the interpreter, beside the store. Like the
+store, it is mutated in place, so its two operations <em>are</em> the step from <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>:</p>
+<pre><code class="language-rust ignore">impl RelationDb {
+    fn add(&amp;mut self, relation: &amp;str, tuple: Tuple) -&gt; bool; // E-AddFact
+    fn clear(&amp;mut self, relation: &amp;str);                     // E-Clear
+}</code></pre>
+<p>The relation forms reach <code>eval_expr</code> as the <code>Relation</code> variant of <a href="../foundations/ast.html"><code>Expr</code></a>,
+holding a <code>Rel</code>:</p>
+<pre><code class="language-rust ignore">enum Rel {
+    Add(Query),        // add R(a, …)
+    Clear(Name),       // clear R
+    Solutions(Query),  // solutions R(a, …)
+    Query(Query),      // a bare query R(a, …)
+}
+
+struct Query { name: Name, args: Vec&lt;QArg&gt; }   // R(a, …)
+
+enum QArg {
+    Expr(Expr),          // a ground argument
+    Hole(Option&lt;Name&gt;),  // a hole: ?x (named) or ? (anonymous)
+}</code></pre>
+<p>A relation’s name is resolved like any other name. The initial environment binds each declared
+relation to a <code>Value::Relation(name)</code>, so <code>add</code> and <code>clear</code> look the name up in the environment; a
+name bound to anything else is stuck, with <code>NotARelation</code>. <code>add</code> evaluates its arguments left to
+right as E-AddFact does. Because <code>Add</code> holds a <code>Query</code>, its arguments are <code>QArg</code>s, and one of them
+may be a hole. A hole has no value to record: the type checker rejects it before the program runs,
+and the evaluator, given one anyway, is stuck with <code>HoleInAdd</code>. When the number of arguments
+differs from the relation’s declared number of columns, the evaluator is stuck with
+<code>ArityMismatch</code>, the same error a function call with the wrong number of arguments gives. The
+<code>Add</code> and <code>Clear</code> cases each yield <code>Value::Unit</code>. The <code>Solutions</code>, <code>Query</code>, and <code>ForQuery</code> cases
+wait until <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> can be computed.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<h3 id="rules-that-build-values"><a class="header" href="#rules-that-build-values">Rules that build values</a></h3>
+<p>Prolog’s terms can be compound: a rule may build a structure from its variables, and a structure may
+appear inside a fact. Numbers in the style of Peano are two rules, one for zero and one for a
+successor:</p>
+<pre><code class="language-prolog">nat(z).
+nat(s(N)) :- nat(N).
+</code></pre>
+<p>The second rule derives <code>nat(s(z))</code> from <code>nat(z)</code>, then <code>nat(s(s(z)))</code>, and so on without end, so
+the set of facts these rules mean is infinite. Lists, trees, and every other data structure in
+Prolog are compound terms of this kind, which is what makes Prolog a general-purpose language.</p>
+<p>Datalog gives them up. Without compound terms, the only values a rule can put in a head are values
+already present in the facts, and finitely many facts contain finitely many values. A relation with
+two columns over six people can hold at most thirty-six facts, and so <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> is finite for
+every program. Bridger makes the same choice by limiting a term to a variable or a literal, which is
+why <code>rule nat(n + 1) :- nat(n);</code> does not parse: it would derive a new integer from each one it had.
+A program that needs a new value, such as the result of arithmetic, computes it in ordinary Bridger
+code, which can loop over a query’s solutions and <code>add</code> facts holding the results.</p>
+<h3 id="search-order"><a class="header" href="#search-order">Search order</a></h3>
+<p>Prolog runs a query by searching from the query backwards, trying the clauses for a relation in the
+order they are written and the conditions of a body from left to right. With the conditions of the
+second rule swapped, the logic is unchanged:</p>
+<pre><code class="language-prolog">ancestor(X, Y) :- parent(X, Y).
+ancestor(X, Z) :- ancestor(X, Y), parent(Y, Z).
+</code></pre>
+<p>Asked for tom’s descendants, Prolog finds each of them, and then, asked for one more, enters the
+second clause again, whose first condition is again an <code>ancestor</code> query with tom as its first
+argument. The search recurses until it runs out of stack. A query with no solution, such as whether
+jim is an ancestor of tom, never answers at all. In Kowalski’s terms, the logic is the same and the
+control has changed, and a Prolog programmer orders clauses and conditions so the search terminates.</p>
+<p>The same swap in Bridger, <code>rule ancestor(x, z) :- ancestor(x, y) and parent(y, z);</code>, prints exactly
+what the original printed. A query’s answer is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>, which the order of rules and
+conditions does not affect, and Bridger computes the whole set, which is finite. The cost is that it
+computes all of it: to answer whether tom is an ancestor of jim, it derives all nine <code>ancestor</code>
+facts, where a search backwards from the query visits only the people on the way up from jim.
+Datalog systems recover much of that saving by rewriting a program’s rules, given a query, so that
+computing the whole set derives only the facts relevant to that query.</p>
+<h3 id="where-the-facts-come-from"><a class="header" href="#where-the-facts-come-from">Where the facts come from</a></h3>
+<p>SQL, the query language of most relational databases, has been able since its 1999 standard to
+define a relation by recursion. This query, run against a <code>parent</code> table holding
+the family, returns bob, pat, and tom:</p>
+<pre><code class="language-sql">WITH RECURSIVE ancestor(anc, des) AS (
+    SELECT parent, child FROM parent
+  UNION
+    SELECT p.parent, a.des
+    FROM parent p JOIN ancestor a ON p.child = a.anc
+)
+SELECT anc FROM ancestor WHERE des = 'jim';
+</code></pre>
+<p>The <code>UNION</code> combines a base case and a recursive step, the two <code>ancestor</code> rules in another syntax.
+In SQL the facts live in a database, filled and changed by statements outside the query.</p>
+<p>Standalone Datalog systems such as <a href="https://doi.org/10.1007/978-3-319-41540-6_23">Soufflé</a> read
+their facts from input files and write derived relations out, and they declare a type for each
+column, as Bridger does. One of their main uses is program analysis: the facts describe a program’s
+statements, and the rules derive facts about how its values flow. Prolog keeps facts and rules in
+one database that a program can change while it runs, adding clauses with <code>assert</code> and removing
+them with <code>retract</code>, in the middle of a search that reads them.</p>
+<p>Bridger puts the facts in the hands of the host language. Imperative or functional code computes
+them and adds them; the rules are fixed when the program is written; and a query’s answer arrives
+as a list, a <code>Bool</code>, or a loop variable for the host code to keep working with. Facts accumulate
+between <code>clear</code>s, so a query is always asked of a fixed set.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Datalog</strong>: Ceri, Gottlob, and Tanca’s “<a href="https://doi.org/10.1109/69.43410">What You Always Wanted to Know About Datalog (and Never
+Dared to Ask)</a>” (1989) defines the language and its meaning and
+surveys the evaluation methods known at the time. Abiteboul, Hull, and Vianu’s <em>Foundations of
+Databases</em> (1995), which the authors make <a href="http://webdam.inria.fr/Alice/">freely available</a>, covers
+Datalog, its evaluation, and its extensions with negation in its chapters 12–15, alongside the
+relational model those chapters build on.</p>
+<p><strong>Datalog in use</strong>: Green, Huang, Loo, and Zhou’s “<a href="https://doi.org/10.1561/1900000017">Datalog and Recursive Query
+Processing</a>” (2013) covers evaluation techniques and the
+applications that revived Datalog after 2000, among them networking, program analysis, and
+security. Jordan, Scholz, and Subotić’s “<a href="https://doi.org/10.1007/978-3-319-41540-6_23">Soufflé</a>”
+(2016) describes a Datalog engine built for analysing large programs.</p>
+<p><strong>Logic programming</strong>: Sterling and Shapiro’s <em>The Art of Prolog</em> (2nd ed., MIT Press, 1994) teaches
+Prolog in full, with compound terms, its search order, and control constructs such as the cut.</p>
+<p><strong>The relational model</strong>: Codd’s “<a href="https://doi.org/10.1145/362384.362685">A Relational Model of Data for Large Shared Data
+Banks</a>” (1970) introduces relations as the structure of a
+database and the operations on them.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>Add <code>ancestor("liz", "jim")</code> to the fourteen facts the family program means. Is the new set closed under both rules? Why is it not the program's meaning?</summary>
+<p>It is closed. The only rule that could use the new fact is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord textsf">Anc-Step</span></span></span></span></span>, with
+<code>ancestor("liz", "jim")</code> as its second premise, and it needs a <code>parent</code> of liz: tom. Its head,
+<code>ancestor("tom", "jim")</code>, is already in the set. So the set contains the recorded facts and is
+closed, but it is not the least such set: the set without <code>ancestor("liz", "jim")</code> is closed too and
+smaller. No derivation ends in <code>ancestor("liz", "jim")</code>, and the meaning holds only facts that have
+one.</p>
+</details>
+<details>
+<summary>Write a rule for <code>grandparent(x, z)</code> over <code>parent</code>. Which pairs does it give for the family, and is <code>grandparent</code> part of the EDB or the IDB?</summary>
+<pre><code class="language-text">rule grandparent(x, z) :- parent(x, y) and parent(y, z);
+</code></pre>
+<p><code>solutions grandparent(?g, ?c)</code> is <code>[("bob", "jim"), ("tom", "ann"), ("tom", "pat")]</code>, in canonical
+order. The rule is not recursive: a grandparent is exactly two <code>parent</code> steps up. <code>grandparent</code> is
+defined by a rule, so it is part of the IDB; <code>parent</code>, whose facts are added, is the EDB.</p>
+</details>
+<details>
+<summary>Swapping the conditions of the second <code>ancestor</code> rule changes nothing in Bridger and sends Prolog into unbounded recursion. What does each language take the order of conditions to mean?</summary>
+<p>To Prolog, the order is control: conditions are tried left to right, so
+<code>ancestor(X, Y), parent(Y, Z)</code> starts by asking a new <code>ancestor</code> query with the same first
+argument, which starts the same way, without end. To Bridger, the order means nothing: a body is a
+conjunction, a query’s answer is the least closed set <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>, and a conjunction is the same
+in either order. Bridger pays for that by computing the whole of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>; Prolog’s search,
+when it terminates, visits only what the query leads it to.</p>
+</details>
+<details>
+<summary>Bridger rejects <code>rule nat(n + 1) :- nat(n);</code> at parse time. What guarantee would accepting it give up?</summary>
+<p>That every query has finitely many solutions and the computation of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> ends. With
+<code>rule nat(0);</code> as a program fact, the rule would derive <code>nat(1)</code>, then <code>nat(2)</code>, and so on, a new
+fact each round, so <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> would be infinite and <code>solutions nat(?n)</code> would never return.
+With terms limited to variables and literals, every value in a derived fact already appears in the
+program’s facts or rules, and a finite set of values can be arranged into only finitely many facts.</p>
+</details>
+<details>
+<summary><code>ancestors</code> returned <code>["pat", "bob", "tom"]</code>, while <code>solutions ancestor(?a, "jim")</code> returned <code>["bob", "pat", "tom"]</code>. Why does Bridger sort solutions rather than list them in the order they were found?</summary>
+<p>The order a function returns is the order its code visits the pairs. A query has no code of its
+own: its answer is the set <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>, and the order in which facts are derived depends on how
+an interpreter computes that set, and on the order the facts were added, neither of which changes
+the set. Sorting by hole values gives every correct interpreter the same list for the same facts, so
+the order a program prints in, and anything it computes from that order, depends on the facts alone.</p>
+</details>
 
                     </main>
 

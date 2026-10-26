@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 8 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 8 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lectures 23&ndash;24 and their textbook
+      chapters: declarative programming with relations and rules, and unification. Evaluating
+      relations (Lecture 25: rounds, fixpoints, semi-naive evaluation) is <em>not</em> on this
+      quiz. Answers are short: a sentence or two, in your own words, earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 20 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions. Some give you a small Bridger
+            program with relations and rules &mdash; say what it prints, and why. One asks you to
+            draw a derivation tree from rules written as inference rules. Others ask you to match
+            atoms against facts by hand, or to compare how Bridger and Prolog answer the same
+            query.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.
+            You may name a rule (<code>E-AddFact</code>, <code>E-Clear</code>) if it helps, but you
+            are never required to.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Declarative programming
+      <small class="text-muted">Lecture 23</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/relations/datalog.html">Declarative programming</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-23/index.html">Lecture 23</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Read a rule as logic: its head holds whenever its body does, and each variable stands for
+        every value. Read a variable that appears only in the body as &ldquo;for
+        <em>some</em>&rdquo; value, and two rules for one relation as an &ldquo;or&rdquo;.</li>
+      <li>Write a rule as an inference rule (body above the bar, head below), and draw the
+        derivation tree for a fact: rule instances at each step, recorded facts at the leaves.
+        Say which values each step gives the rule's variables.</li>
+      <li>Explain the meaning of a program, <em>M(P, &Delta;)</em>: the least set of facts that
+        contains the recorded facts and is closed under the rules. Say why a closed set can be too
+        big, and why the set of derivable facts is exactly the least one.</li>
+      <li>Say what does and does not change <em>M(P, &Delta;)</em>: changing a rule or a fact can;
+        the order of rules, of a body's atoms, or of <code>add</code>s cannot.</li>
+      <li>Answer a query by hand: a solution is a value for each hole that makes the query a member
+        of <em>M(P, &Delta;)</em>. Use each place a query can appear: <code>solutions q</code> (a
+        list, of tuples when there are several named holes), a query in <code>Bool</code> position
+        (is there a solution?), and <code>for q { &hellip; }</code> (once per solution, holes bound
+        as variables).</li>
+      <li>Predict a query's output: a set, so each solution appears once; listed in canonical
+        (sorted) order; an anonymous hole <code>?</code> is matched but not reported.</li>
+      <li>Trace <code>add</code> and <code>clear</code>: <code>add</code> evaluates ordinary
+        expressions and records a fact (adding one already present changes nothing);
+        <code>clear R</code> removes the facts <code>add</code> recorded for <code>R</code>, but not
+        the program's own facts from body-less rules. Derived facts follow whatever is recorded
+        now.</li>
+      <li>Distinguish stored and derived relations (EDB and IDB), and say why the relation database
+        <em>&Delta;</em> is kept apart from the store: facts accumulate between clears, and a query
+        reads <em>&Delta;</em> without changing it.</li>
+      <li>Explain why a rule's terms are only variables and literals (<code>rule nat(n + 1) :-
+        nat(n);</code> does not parse), why that keeps <em>M(P, &Delta;)</em> finite, and how a
+        program computes new values instead (ordinary code that loops and calls
+        <code>add</code>).</li>
+      <li>Recognize the design space: Prolog's compound terms (a general-purpose language, with
+        possibly infinite meanings); Prolog's search from the query, which depends on rule and atom
+        order and can recurse forever when a body starts with an atom of the relation being
+        defined; SQL's recursive queries
+        (<code>WITH RECURSIVE</code>), which define a relation by recursion inside a
+        database.</li>
+    </ul>
+
+    <h2>Unification
+      <small class="text-muted">Lecture 24</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/relations/unification.html">Unification</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-24/index.html">Lecture 24</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Write a substitution <em>&theta;</em> and apply it to an atom (<em>A&theta;</em>). Say
+        when an atom is ground.</li>
+      <li>Match an atom against a fact under a substitution, position by position: a constant must
+        equal the fact's value; a variable already bound must have the fact's value; an unbound
+        variable is bound to it. Give the extended substitution, or say which position fails.</li>
+      <li>Explain why one position can test under one substitution and bind under another, and why
+        a variable written twice in one atom (<code>parent(x, x)</code>) is bound at its first
+        position and tested at its second.</li>
+      <li>Match a rule body by carrying a <em>set</em> of substitutions through its atoms: start
+        from the empty substitution; each atom drops the substitutions it matches no fact under,
+        and extends the others once per matching fact. Apply what remains to the head to get the
+        derived facts.</li>
+      <li>Explain how a variable shared between atoms comes to mean &ldquo;the same value&rdquo;
+        (the first atom binds it, later ones test it), and why this is a join.</li>
+      <li>Say why reordering a body's atoms changes the work done but never the result.</li>
+      <li>Treat a query the same way: holes are variables, other arguments are evaluated and become
+        constants, a repeated hole is one variable, and an anonymous hole shares with
+        nothing.</li>
+      <li>Contrast Bridger's matching with the type checker's unification from Part VI:
+        one-sided (facts are ground), no compound terms, no occurs check needed.</li>
+      <li>Recognize the design space: Prolog's two-sided unification over compound terms
+        (<code>append</code> run &ldquo;backwards&rdquo; to split a list); the occurs check and why
+        most Prologs skip it by default; choosing which atom to match first, and indexing a
+        relation by column.</li>
+    </ul>
+
+    <h2>Sample questions
+      <small class="text-muted">Practice</small></h2>
+    <p>
+      These are the same kind and size of question as the quiz, on different programs. No answers
+      are given: work each one by hand first, then, if you have the interpreter built through M6,
+      run the program to check yourself.
+    </p>
+
+    <ol class="objectives">
+      <li>
+        <p><strong>Recording facts.</strong> What does <code>main</code> print? Explain each line
+          in terms of the facts the program means at that point.</p>
+<pre>relation owns : (String, String);   relation pet_owner : (String);
+rule owns("ann", "cat");
+rule pet_owner(p) :- owns(p, "cat");
+rule pet_owner(p) :- owns(p, "dog");
+
+fn main() {
+    add owns("bob", "dog");  add owns("ann", "dog");  add owns("cy", "fish");
+    println(solutions owns(?, ?pet));
+    println(solutions pet_owner(?p));
+    clear owns;
+    add owns("cy", "dog");
+    for pet_owner(?p) { println(p ++ " has a pet"); }
+    println(owns("ann", ?));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Derivations.</strong> A program records <code>edge("a", "b")</code>,
+          <code>edge("b", "c")</code>, <code>edge("c", "d")</code>, and
+          <code>edge("a", "c")</code>. Its two rules for <code>path</code>, written as inference
+          rules, are:</p>
+<pre>   edge(x, y)                   edge(x, y)    path(y, z)
+  ------------  (Path-Edge)     ------------------------  (Path-Step)
+   path(x, y)                          path(x, z)</pre>
+        <p>The fact <code>path(a, d)</code> has two different derivation trees. Draw both, and
+          label each step with its rule and the values of its variables.</p>
+      </li>
+      <li>
+        <p><strong>Matching.</strong> Match each atom against its fact under <em>&theta;</em>. Give
+          the extended <em>&theta;&prime;</em>, or <em>fails</em> and why.</p>
+        <table class="table table-bordered table-condensed" style="max-width:44rem">
+          <thead><tr><th>atom</th><th>&theta;</th><th>fact</th><th>&theta;&prime;, or fails and why</th></tr></thead>
+          <tbody>
+            <tr><td><code>edge(x, "c")</code></td><td>{}</td><td><code>edge("a", "c")</code></td><td></td></tr>
+            <tr><td><code>edge(x, y)</code></td><td>{x &#8614; b}</td><td><code>edge("a", "c")</code></td><td></td></tr>
+            <tr><td><code>path(y, y)</code></td><td>{}</td><td><code>path("c", "c")</code></td><td></td></tr>
+            <tr><td><code>edge("a", z)</code></td><td>{x &#8614; a}</td><td><code>edge("a", "b")</code></td><td></td></tr>
+            <tr><td><code>path(x, z)</code></td><td>{z &#8614; d}</td><td><code>path("b", "c")</code></td><td></td></tr>
+          </tbody>
+        </table>
+      </li>
+      <li>
+        <p><strong>Joins.</strong> What does <code>main</code> print? Explain by listing the
+          substitutions that remain after matching each atom of <code>colleague</code>'s body, in
+          order. Is everyone in the output someone you would call a colleague?</p>
+<pre>relation works_in  : (String, String);   // works_in(e, d): e works in department d
+relation colleague : (String, String);
+rule colleague(a, b) :- works_in(a, d) and works_in(b, d);
+
+fn main() {
+    add works_in("ann", "sales");  add works_in("bob", "sales");
+    add works_in("cy", "legal");
+    println(solutions colleague(?a, ?b));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Search order.</strong> What does <code>main</code> print? Prolog searches
+          backwards from a query, trying a relation's rules in order and a body's atoms left to
+          right, each as a new query. What happens if <code>reach("a", "b")</code> is answered that
+          way, even though it has a solution? What change to the rules would let the search
+          answer it, and why does that change not matter to Bridger?</p>
+<pre>relation edge : (String, String);   relation reach : (String, String);
+rule reach(x, z) :- reach(x, y) and edge(y, z);
+rule reach(x, y) :- edge(x, y);
+
+fn main() {
+    add edge("a", "b");  add edge("b", "c");
+    println(reach("a", "b"));
+    println(solutions reach(?from, "c"));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Rules that build values.</strong> Bridger rejects this program at the
+          <code>+</code>. What would <code>nat</code> mean if the rule were allowed, and why does
+          that conflict with how Bridger answers a query? Rewrite <code>main</code> so that
+          <code>nat</code> holds 0 through 10.</p>
+<pre>relation nat : (Int);
+rule nat(0);
+rule nat(n + 1) :- nat(n);
+fn main() { println(solutions nat(?n)); }</pre>
+      </li>
+    </ol>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Beyond that: write a
+        few facts about your own family, friends, or courses, and a recursive rule over them;
+        draw the derivation tree for one derived fact; fire one rule by hand, writing out the table
+        of substitutions after each body atom; ask the same query with the holes in different
+        places; and <code>clear</code> a relation that also has program facts and predict what
+        remains. If you have the interpreter built, run your programs and check yourself.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>declarative vs. imperative</li>
+        <li>relation / fact / tuple</li>
+        <li>rule: head and body</li>
+        <li>atom</li>
+        <li>Horn clause</li>
+        <li>logic variable</li>
+        <li>term</li>
+        <li>derivation (tree)</li>
+        <li>closed set of facts</li>
+        <li>least closed set, <em>M(P, &Delta;)</em></li>
+        <li>program fact (body-less rule)</li>
+        <li>relation database (<em>&Delta;</em>)</li>
+        <li><code>E-AddFact</code> / <code>E-Clear</code></li>
+        <li>stored vs. derived relation (EDB / IDB)</li>
+        <li>query, hole, solution</li>
+        <li>anonymous hole</li>
+        <li>canonical order</li>
+        <li>Datalog</li>
+        <li>compound term</li>
+        <li>substitution (<em>&theta;</em>)</li>
+        <li>applying a substitution (<em>A&theta;</em>)</li>
+        <li>ground</li>
+        <li>matching (one-sided unification)</li>
+        <li>two-sided unification</li>
+        <li>join</li>
+        <li>occurs check</li>
+        <li>search from the query (Prolog)</li>
+        <li>rule and atom order in Prolog's search</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>
