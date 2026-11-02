@@ -1,0 +1,11 @@
+import{H as e,L as t,Q as n,T as r,Z as i,_ as a,b as o,g as s,gt as c,vt as l,x as u,y as d}from"./modules/shiki-uekAutbu.js";import{nt as f,rt as p,yt as m}from"./index-BdDrX4g8.js";import{t as h}from"./slidev/default-CPcgyN2v.js";import{t as g}from"./slidev/CodeBlockWrapper-Dfwx5ncO.js";import{t as _}from"./FamilyTree-2xUbFpxp.js";var v={class:`two`},y={class:`side`},b={class:`term`},x={class:`ask`},S=m({__name:`slides.md__slidev_2`,setup(m){let{$slidev:S,$nav:C,$clicksContext:w,$clicks:T,$page:E,$renderContext:D,$frontmatter:O}=p();return w.setup(),(p,m)=>{let S=g,C=_,w=e(`click`);return t(),a(h,l(r(c(f)(c(O),1))),{default:i(()=>[m[4]||=s(`h2`,null,`The family`,-1),s(`div`,v,[s(`div`,null,[u(S,{title:``,ranges:[]},{default:i(()=>[...m[0]||=[s(`pre`,{class:`shiki shiki-themes vitesse-dark vitesse-light slidev-code`,style:{"--shiki-dark":`#dbd7caee`,"--shiki-light":`#393a34`,"--shiki-dark-bg":`#121212`,"--shiki-light-bg":`#ffffff`}},[s(`code`,{class:`language-text`},[s(`span`,{class:`line`},[s(`span`,null,`relation parent  : (String, String);`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`relation sibling : (String, String);`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`add parent("tom", "bob");`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`add parent("tom", "liz");`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`add parent("bob", "ann");`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`add parent("bob", "pat");`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`add parent("pat", "jim");`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`rule sibling(x, y) :-`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`    parent(p, x) and parent(p, y);`)])])],-1)]]),_:1})]),s(`div`,y,[u(C,{width:240}),m[3]||=s(`div`,{class:`cap`},`arrow: parent → child`,-1),n((t(),d(`div`,b,[...m[1]||=[s(`div`,{class:`q`},`solutions sibling(?x, ?y)`,-1),s(`div`,{class:`ok`},`[("ann", "ann"), ("ann", "pat"), …,`,-1),s(`div`,{class:`ok`},[o(`\xA0("pat", "pat")] `),s(`span`,{class:`dim`},`// 9 pairs`)],-1)]])),[[w,1]]),n((t(),d(`div`,x,[...m[2]||=[o(`ann is ann's own sibling. How do we say `,-1),s(`b`,null,`x and y differ`,-1),o(`?`,-1)]])),[[w,2]])])])]),_:1},16)}}},[[`__scopeId`,`data-v-fbc2d99e`]]);export{S as default};

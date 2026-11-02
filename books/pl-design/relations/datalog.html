@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-172b7922.js";
+            window.path_to_searchindex_js = "../searchindex-0391d4de.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -448,7 +448,7 @@ with <code>type mismatch: expected String, found Int</code> at the <code>3</code
 values for equality, so a column’s type must be one that admits equality, which rules out a
 function type.
 Rule bodies are typed by the same checker, and
-<a href="rules.html">Rule bodies and safety</a><!-- xref:rules.md --> gives their rules.</p>
+<a href="rules.html">Rule bodies and safety</a> gives their rules.</p>
 <h3 id="rules-and-program-facts"><a class="header" href="#rules-and-program-facts">Rules and program facts</a></h3>
 <p>A rule is a top-level definition, so its position in the file does not matter, as for every other
 definition. Lowercase names in a rule are its <strong>logic variables</strong>; each <strong>term</strong>, an argument
@@ -651,11 +651,13 @@ when it terminates, visits only what the query leads it to.</p>
 </details>
 <details>
 <summary>Bridger rejects <code>rule nat(n + 1) :- nat(n);</code> at parse time. What guarantee would accepting it give up?</summary>
-<p>That every query has finitely many solutions and the computation of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> ends. With
-<code>rule nat(0);</code> as a program fact, the rule would derive <code>nat(1)</code>, then <code>nat(2)</code>, and so on, a new
-fact each round, so <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> would be infinite and <code>solutions nat(?n)</code> would never return.
-With terms limited to variables and literals, every value in a derived fact already appears in the
-program’s facts or rules, and a finite set of values can be arranged into only finitely many facts.</p>
+<p>That the values in the program’s facts and rules limit how many facts can be derived, and so how
+long computing <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> takes. With <code>rule nat(0);</code> as a program fact, the rule would derive
+<code>nat(1)</code>, then <code>nat(2)</code>, and so on, a new fact each round. Bridger’s integers wrap at <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">64</span></span></span></span></span></span></span></span></span></span></span></span>, so
+the rounds would end only after about <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">64</span></span></span></span></span></span></span></span></span></span></span></span> of them, and <code>solutions nat(?n)</code> would not return in
+any practical sense. With terms limited to variables and literals, every value in a derived fact
+already appears in the program’s facts or rules, and a finite set of values can be arranged into
+only finitely many facts.</p>
 </details>
 <details>
 <summary><code>ancestors</code> returned <code>["pat", "bob", "tom"]</code>, while <code>solutions ancestor(?a, "jim")</code> returned <code>["bob", "pat", "tom"]</code>. Why does Bridger sort solutions rather than list them in the order they were found?</summary>
@@ -701,22 +703,6 @@ the order a program prints in, and anything it computes from that order, depends
         <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
         <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script>
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
         <script>

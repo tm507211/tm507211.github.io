@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-172b7922.js";
+            window.path_to_searchindex_js = "../searchindex-0391d4de.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -179,44 +179,579 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
-<h1 id="facts-rules-and-safety"><a class="header" href="#facts-rules-and-safety">Facts, Rules, and Safety</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
+<h1 id="rule-bodies-and-safety"><a class="header" href="#rule-bodies-and-safety">Rule Bodies and Safety</a></h1>
 <!-- AUTHORING NOTE (not rendered)
-     Milestone M6 · lecture: Rule Bodies & Safety · spec §12.2–§12.3.
-     Status: placeholder — spine authored just-in-time.
+     Lecture: Rule Bodies & Safety. Milestone M6.
+     SEAM: unification.md left sibling("ann", "ann") and "every derived fact is ground" as pointers
+     here. fixpoint.md owns T_P, rounds, and the termination count; it deferred filters in the
+     rounds, absence in a body, and why reusing the closure is invisible. functional-programming.md
+     promised the purity judgment. THIS chapter owns generators/filters, T_P with filters, range
+     restriction, purity and totality, rule typing, and the declined forks (negation/stratification,
+     computed values, aggregates). integration.md owns E-Solutions etc. and aggregating over
+     `solutions`; `clear` as a reset belongs to datalog.md, despite the old stub. Match guards reuse
+     the judgment; M7's chapters own them.
+     THROUGHLINE: a generator supplies values and a filter only tests them. Range restriction keeps
+     every value traceable to the facts; purity keeps T_P a function of its fact set; positive
+     generators keep it monotone. Together they give the least fixpoint fixpoint.md computes.
+     BUILD: check_generators / check_range_restriction / check_pure (relations/check.rs),
+     Checker::check_rule (types/check.rs), and the engine's filter step are student holes: prose
+     only. Shown code is provided: Rule from ast.md, the three stub signatures. check_guards is M7.
+     FILTER ORDER: left to right per substitution, stopping at the first false (Appendix D,
+     Relations); order can decide whether a query gets stuck, never which facts are derived.
+     EXAMPLES run 2026-11-01, reference interpreter, release --features m6, stdin </dev/null:
+       every Bridger program and output below, except the marked hypotheticals. Which function a
+       Recursive error names on a mutual cycle depends on HashSet order, so it is not printed.
+     HAND-COMPUTED: the impure-set steps; the childless rounds (negation is rejected, so they cannot
+       run); the stays/leaves closed sets; the hypothetical count facts (from fixpoint.md's rounds);
+       the doubling person facts.
+     SQLITE 3.45.1 (python sqlite3): an aggregate over the recursive reference gives "recursive
+       aggregate queries not supported"; a recursive reference inside NOT IN gives "circular
+       reference: a".
+     SOURCES READ: Abiteboul, Hull, Vianu ch. 5, 12, 15 (authors' PDFs). Ch. 5 notes: Kuhns 1967 as
+       appearing to be the first database paper on domain independence, Di Paola 1969
+       undecidability, the classes safe [Ull82b], range separable [Cod72b], range restricted
+       [Nic82], and Van Gelder-Topor 1991 as evaluable = range restricted. Ch. 12 p. 289: head
+       variables must appear in the body. Ch. 12 notes: arithmetic safety first studied in
+       [RBS87]. Ch. 15 notes:
+       stratification proposed independently [CH85, ABW88, Lif88, VanG86]; independence from the
+       chosen stratification [ABW88]; negation as failure initiated in [Cla78].
+     CITATIONS (Crossref 2026-11-01, no quotations made):
+       Di Paola, JACM 16:2 (1969) 324-327, doi 10.1145/321510.321524.
+       Nicolas, "Logic for improving integrity checking in relational data bases," Acta Informatica
+         18:3 (1982), doi 10.1007/BF00263192.
+       Van Gelder & Topor, "Safety and translation of relational calculus," TODS 16:2 (1991)
+         235-278, doi 10.1145/114325.103712.
+       Clark, "Negation as Failure," Logic and Data Bases (1978) 293-322,
+         doi 10.1007/978-1-4684-3384-5_11. Reiter, "On Closed World Data Bases," same volume, 55-76,
+         doi 10.1007/978-1-4684-3384-5_3.
+       Chandra & Harel, "Horn clause queries and generalizations," J. Logic Programming 2:1 (1985)
+         1-15, doi 10.1016/0743-1066(85)90002-0.
+       Apt, Blair, Walker, "Towards a Theory of Declarative Knowledge," Foundations of Deductive
+         Databases and Logic Programming (1988) 89-148, doi 10.1016/B978-0-934613-40-8.50006-3.
+       Van Gelder, Ross, Schlipf, "The well-founded semantics for general logic programs," JACM 38:3
+         (1991) 619-649, doi 10.1145/116825.116838.
+       Ramakrishnan, Bancilhon, Silberschatz, "Safety of recursive Horn clauses with infinite
+         relations," PODS 1987, 328-339, doi 10.1145/28659.28694.
+       Ross & Sagiv, "Monotonic aggregation in deductive databases," PODS 1992, 114-126,
+         doi 10.1145/137097.137852.
+       Madsen, Yee, Lhoták, "From Datalog to Flix," PLDI 2016, 194-208, doi 10.1145/2908080.2908096.
+       Arntzenius & Krishnaswami, "Datafun: a functional Datalog," ICFP 2016, 214-227,
+         doi 10.1145/2951913.2951948.
+     WEAKER EVIDENCE (from knowledge, not checked against the artifact): the content of Kuhns, Codd
+       1972, Ullman's Principles of Database Systems (2nd ed., 1982; title from memory), and Nicolas
+       beyond Abiteboul et al.'s description; closed-world reading of Reiter; Clark's rule (absent =
+       failed search), from the paper's reputation and ch. 15.5; Prolog behaviour of \=, is, \+, and
+       write on backtracking (no Prolog installed); Soufflé rejecting
+       ungrounded variables and unstratifiable negation, offering aggregates, binding with =, and
+       computing values in heads; SQL requiring stratified negation in recursion beyond SQLite's
+       behaviour; Haskell recording effects in types; Ross-Sagiv, Flix, and Datafun summaries, from
+       the papers' stated aims, not re-read.
+     OMITTED: "definite", "domain independence", "well-founded", and "stable model" are described,
+       never named, in the body (scope rule); well-founded is named once in Further reading.
+     Status: draft authored 2026-11-01, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p><a href="unification.html">Unification</a> ended with a <code>sibling</code> rule that listed ann as ann’s own sibling.
+Nothing in the rule said that its two people had to differ, and a relation atom has no way to say
+it. The program below adds that condition. <code>age(p, a)</code> records that person <code>p</code> is <code>a</code> years old, and
+each rule ends with a condition that is an ordinary Bridger expression:</p>
+<pre><code class="language-text">relation parent  : (String, String);
+relation age     : (String, Int);
+relation sibling : (String, String);
+relation adult   : (String);
 
-- Rule bodies under a **filters-only** discipline: **generators** (relation atoms) bind, **filters**
-  (comparisons) constrain.
-- Safety / range-restriction; the `clear` EDB reset that makes relation-building code reusable
-  (spec §12.3).
+rule sibling(x, y) :- parent(p, x) and parent(p, y) and x != y;
+rule adult(p)      :- age(p, a) and a &gt;= 18;
 
-*Design-space (woven):* negation + **stratification**, value-generating bodies, and why aggregates
-were **declined** — each a design fork with a further-reading pointer.
--->
+fn main() {
+    add parent("tom", "bob");  add parent("tom", "liz");
+    add parent("bob", "ann");  add parent("bob", "pat");
+    add parent("pat", "jim");
+    add age("tom", 71);  add age("bob", 44);  add age("liz", 40);
+    add age("pat", 19);  add age("ann", 17);  add age("jim", 1);
+
+    println(solutions sibling(?x, ?y));
+    println(solutions adult(?p));
+}
+</code></pre>
+<p>It prints:</p>
+<pre><code class="language-text">[("ann", "pat"), ("bob", "liz"), ("liz", "bob"), ("pat", "ann")]
+["bob", "liz", "pat", "tom"]
+</code></pre>
+<p>If a body can hold any expression, other rules come to mind. <code>note</code> below prints a name and returns
+<code>true</code>. With <code>next_age</code>, <code>related</code>, <code>noted</code>, and <code>childless</code> declared as relations, these rules all
+parse, but Bridger rejects each of them before <code>main</code> runs:</p>
+<pre><code class="language-text">fn note(p: String) -&gt; Bool { println(p); true }
+
+rule next_age(p, b)  :- age(p, a) and b == a + 1;
+rule related(x, y)   :- parent(x, z);
+rule noted(p)        :- age(p, a) and note(p);
+rule childless(p)    :- age(p, a) and not parent(p, ?);
+</code></pre>
+<p><code>next_age</code> is rejected because logic variable <code>b</code> “is not bound by any generator in this rule”, and
+<code>related</code> with the same message for <code>y</code>. <code>noted</code> and <code>childless</code> are rejected with “this filter is
+not pure”. These rejections raise the following questions:</p>
+<ul>
+<li><strong>What gives a variable its values?</strong> <code>x != y</code> uses values that <code>parent(p, x)</code> and <code>parent(p, y)</code>
+found. <code>b == a + 1</code> looks as if it could supply a value for <code>b</code>, yet it is rejected.</li>
+<li><strong>What would a rule mean if a head variable had no source of values?</strong> <code>related</code> says nothing
+about <code>y</code>, so which facts would it derive?</li>
+<li><strong>What may a condition do?</strong> A condition can run many times, in an order and a number of rounds
+that the engine chooses. What would a program see if a condition printed or read a <code>ref</code> cell?</li>
+<li><strong>Why can a body ask for a fact to be present and never for one to be absent?</strong> Whether someone is
+childless looks like a simple question to ask of <code>parent</code>.</li>
+</ul>
+<p>The problem with <code>related</code> first surfaced in logic-based database query languages, before
+Datalog-style rules were introduced.</p>
+<h2 id="queries-with-no-finite-answer"><a class="header" href="#queries-with-no-finite-answer">Queries with no finite answer</a></h2>
+<p>A query written in the predicate calculus describes the values it wants. Nothing in the notation
+limits what that description may be, so it can ask for every <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> that is not a parent:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∣</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">¬∃</span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mord">.</span><span class="mspace"> </span><span class="mord"><span class="mord mathit">parent</span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mclose">}</span></span></span></span></span></p>
+<p>If <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> ranges over all strings, the answer is infinite. If <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> ranges over the values in the
+database, the answer is finite but depends on facts unrelated to the question: recording the age of
+a new person adds that person to the answer. Abiteboul, Hull, and Vianu’s <a href="http://webdam.inria.fr/Alice/"><em>Foundations of
+Databases</em></a> trace this concern in the database literature back at
+least to Kuhns’s work of 1967, which studied the formulas whose answers depend only on the stored
+relations.</p>
+<p>No test can pick out exactly those formulas. Di Paola <a href="https://doi.org/10.1145/321510.321524">proved in
+1969</a> that the question is undecidable. The response was a
+series of syntactic conditions, each accepting only formulas with the property and each turning away
+some others that have it too. Codd’s relational calculus of 1972 restricted its variables to ranges
+over stored relations. Jeffrey Ullman’s <em>Principles of Database Systems</em> defined <strong>safe</strong> formulas.
+Jean-Marie <a href="https://doi.org/10.1007/BF00263192">Nicolas</a>’s <strong>range-restricted</strong> formulas (1982)
+require each variable to be tied to a relation in a form that can be read off the formula. Allen Van
+Gelder and Rodney Topor <a href="https://doi.org/10.1145/114325.103712">compared several of these classes</a>
+in 1991 and gave translations from the formulas they accept into the relational algebra.</p>
+<p>Datalog’s definition carries the same idea. Each variable in a rule’s head must also appear in its
+body, so a rule with no body must have a ground head. The word <em>safety</em> has stayed attached to
+conditions of this kind.</p>
+<h2 id="generators-and-filters"><a class="header" href="#generators-and-filters">Generators and filters</a></h2>
+<p>A conjunct in a rule body is one of two things. A <strong>generator</strong> is a relation atom, such as
+<code>parent(p, x)</code>. Matching it against the facts binds its variables, as in
+<a href="unification.html#matching-a-rule-body">Unification</a>. A <strong>filter</strong> is any other expression, such as <code>x != y</code>. It is evaluated under a substitution and yields <code>true</code> or <code>false</code>, which keeps or drops that
+substitution. A filter binds no variable, whatever its shape, and that is why <code>b == a + 1</code> leaves
+<code>b</code> without a value. Here <code>==</code> is the comparison it is everywhere else in the language: it needs
+both sides to have values already.</p>
+<p>Firing a rule therefore works as it did in the last two chapters, with one extra step. Carry the
+substitutions through the generators, then keep the ones under which every filter is <code>true</code>. The
+operator from <a href="fixpoint.html#one-round-of-consequences">Evaluating relations</a> gains one condition.
+Writing a rule’s generators as <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">G</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> and its filters as <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9694em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span>:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.13889em;">P</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∪</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∣</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord">a rule of </span></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mord text"><span class="mord"> has head </span></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord">each </span></span><span class="mord"><span class="mord mathnormal">G</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0361em;vertical-align:-0.2861em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord">each </span></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mord text"><span class="mord"> is </span></span><span class="mord text"><span class="mord texttt">true</span></span><span class="mord text"><span class="mord"> under </span></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mclose">}</span></span></span></span></span></p>
+<p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">]</span></span></span></span> is the program’s top-level environment extended by the substitution. For <code>sibling</code>,
+the generators produce nine substitutions, ann paired with ann among them, and <code>x != y</code> keeps the
+four whose two people differ. Applying each to the head gives the four facts the program printed.</p>
+<p>The filter does not disturb the argument for <a href="fixpoint.html#one-round-of-consequences">monotonicity</a>.
+If <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8193em;vertical-align:-0.136em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊆</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>, a substitution that finds its generators’ facts in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> finds them in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>. A
+filter’s result depends on <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> and nothing else, so a filter that accepted <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> for <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span>
+accepts it for <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>. Every fact derived from <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> is derived from <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.13889em;">P</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is still monotone.
+This argument assumes that a filter’s result depends only on <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span>, a requirement that
+<a href="#purity">Purity</a> enforces.</p>
+<p>Binding belongs to the body as a whole, and the position of a filter does not limit what it can see.
+This rule has the filter first and derives the same four facts:</p>
+<pre><code class="language-text">rule sibling(x, y) :- x != y and parent(p, x) and parent(p, y);
+</code></pre>
+<p>Wherever <code>x != y</code> sits in the body, the generators supply the substitutions before any filter runs.
+The order of filters among themselves can still matter when one of them can get stuck, as <a href="#conjunct-order">Conjunct
+order</a> shows.</p>
+<h2 id="safety"><a class="header" href="#safety">Safety</a></h2>
+<p>A rule is <strong>range-restricted</strong> when every variable in its head and every variable in its filters is
+bound by a generator of that rule. A filter may also refer to top-level constants and functions,
+which are visible everywhere. Writing <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord mathit">bound</span></span></span></span></span> for the variables a rule’s generators
+mention, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8095em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathit">top</span></span></span></span></span> for the top-level names, the conditions are:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathit">vars</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊆</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0361em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathit">bound</span></span><span class="mspace" style="margin-right:2em;"></span><span class="mspace" style="margin-right:2em;"></span><span class="mord"><span class="mord mathit">free</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊆</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord"><span class="mord mathit">bound</span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∪</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.9805em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathit">top</span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord text"><span class="mord">for each filter </span></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span></span></p>
+<p>A rule that meets them is <strong>safe</strong>. <code>related</code> fails the first condition: <code>y</code> appears in the head but
+in no generator. <code>rule big(n) :- n &gt; 100;</code> fails it too, and so does a rule with no body and a
+variable in its head, <code>rule everyone(x);</code>.</p>
+<h3 id="what-an-unsafe-rule-would-mean"><a class="header" href="#what-an-unsafe-rule-would-mean">What an unsafe rule would mean</a></h3>
+<p>Reading <code>related(x, y) :- parent(x, z)</code> logically gives: for all <code>x</code>, <code>y</code>, and <code>z</code>, if <code>x</code> is a
+parent of <code>z</code> then <code>related(x, y)</code>. Taken at its word, <code>related("tom", y)</code> holds for every string
+<code>y</code>, so the relation would have infinitely many facts, which <code>solutions</code> cannot list.</p>
+<p>Limiting <code>y</code> to the strings in the database makes the set finite, but at the price the calculus
+query paid: unrelated facts change the answer. <code>add age("sue", 3)</code> would then add <code>related("tom", "sue")</code>, <code>related("bob", "sue")</code>, and <code>related("pat", "sue")</code>, from a fact about someone’s age in a
+rule that mentions neither ages nor sue.</p>
+<p>An engine computing <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.13889em;">P</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> has a more immediate problem. Applying a substitution to <code>related(x, y)</code>
+leaves <code>y</code> in place, but <a href="unification.html#bridgers-matching">Bridger’s matching</a> depends on every
+fact being ground.</p>
+<h3 id="what-safety-guarantees"><a class="header" href="#what-safety-guarantees">What safety guarantees</a></h3>
+<p>Take a safe rule and any substitution that satisfies its body. Every variable in the head is bound
+by a generator, so it has a value taken from a fact. Every other term in the head is a literal. So
+the derived fact is ground, and each value in it was already in a fact or written in the program. By
+induction over the rounds, every value in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> appears in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> or in the head of a
+rule.</p>
+<p>That is the premise of the count in <a href="fixpoint.html#why-the-rounds-stop">Why the rounds stop</a>: finitely
+many values, so finitely many possible facts, so finitely many rounds. Filters add nothing to the
+count, since they contribute no values. The bound comes from the rule’s shape, and it holds for any
+facts the program may add while it runs.</p>
+<h2 id="purity"><a class="header" href="#purity">Purity</a></h2>
+<p>The <a href="datalog.html#the-facts-a-program-means">meaning of a query</a> is a set determined by <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span></span></span></span> and
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span>. The engine is free to compute it in naive or semi-naive rounds, to choose the order of a
+body’s generators, and to reuse a closure until the next <code>add</code> or <code>clear</code>. Each of those freedoms
+relies on filters having no effect and depending on nothing except the substitution.</p>
+<p>Suppose this rule were accepted, with <code>limit</code> a top-level <code>ref</code>:</p>
+<pre><code class="language-text">ref limit = 18;
+rule adult(p) :- age(p, a) and a &gt;= deref limit;
+</code></pre>
+<p>After <code>limit := 65</code>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span></span></span></span> is unchanged. An engine that reuses its closure would give the old
+answer, while one that recomputes for every query would give a new one. Since the filter’s result
+depends on the store, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.13889em;">P</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is no longer a function of its set of facts. A filter that printed would
+print once for each substitution the strategy happened to try. The <a href="fixpoint.html#naive-and-semi-naive-evaluation">previous
+chapter</a> counted 31 rule instances for naive rounds and
+9 for semi-naive ones on the same rules, and an effect in a filter would turn that difference into
+visible output.</p>
+<p>A filter must therefore be <strong>pure</strong>: free of effects, and a deterministic function of the variables
+the generators bind.</p>
+<h3 id="the-purity-judgment"><a class="header" href="#the-purity-judgment">The purity judgment</a></h3>
+<p>The judgment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6389em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">e</span><span class="mspace"> </span><span class="mord"><span class="mord mathbf">pure</span></span></span></span></span> reads: given the set <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Φ</span></span></span></span> of functions known to be
+pure, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">e</span></span></span></span> is pure. Literals and variables are pure, an operator is pure when its operands are, and a
+call is pure when it names a function in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Φ</span></span></span></span> and its arguments are pure:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.2519em;vertical-align:-0.8804em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">n</span><span class="mspace"> </span><span class="mord"><span class="mord mathbf">pure</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">P-Lit</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:2em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.677em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">x</span><span class="mspace"> </span><span class="mord"><span class="mord mathbf">pure</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">P-Var</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:2em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊕</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord"><span class="mord mathbf">pure</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord"><span class="mord mathbf">pure</span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord"><span class="mord mathbf">pure</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">P-Op</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.363em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace"> </span><span class="mord"><span class="mord mathbf">pure</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord">Φ</span><span class="mspace" style="margin-right:1em;"></span><span class="mord">Φ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord"><span class="mord mathbf">pure</span></span><span class="mspace" style="margin-right:1em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">i</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">P-Call</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The other effect-free forms, such as <code>if</code>, <code>match</code>, tuples, and field access, are pure when their
+parts are. Some forms have no purity rule, so any expression containing one is impure: <code>ref</code>,
+<code>deref</code>, <code>:=</code>, <code>while</code>, <code>for</code>, <code>add</code>, <code>clear</code>, <code>solutions</code>, and a query. Calls to input and output
+primitives are impure as well, and so is <code>to_string</code>, because converting a <code>ref</code> cell to a string
+reads its current contents. A call through a parameter, a local, or a computed closure has no
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord textsf">P-Call</span></span></span></span></span> instance, because the analysis cannot tell what it will run. The <a href="../appendix/language-reference.html#purity-and-effects">language
+reference</a> has the complete list.</p>
+<h3 id="which-functions-are-pure"><a class="header" href="#which-functions-are-pure">Which functions are pure</a></h3>
+<p><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Φ</span></span></span></span> comes from the program. Let <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span> be the smallest set of function names such that <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span>
+whenever <code>f</code>’s body contains a form with no purity rule, or calls a function in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span>; <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Φ</span></span></span></span> is every
+function outside it. This is another least fixpoint: start from the empty set, add what the
+condition requires, and stop when nothing changes. Take these functions:</p>
+<pre><code class="language-text">fn plain(a: Int) -&gt; Bool = a &gt; 1;
+fn note(p: String) -&gt; Bool { println(p); true }
+fn check(p: String) -&gt; Bool = note(p);
+fn both(a: Int, p: String) -&gt; Bool = plain(a) and check(p);
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>step</th><th>added to <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span></th><th>because</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td><code>note</code></td><td>its body calls <code>println</code></td></tr>
+<tr><td>2</td><td><code>check</code></td><td>it calls <code>note</code></td></tr>
+<tr><td>3</td><td><code>both</code></td><td>it calls <code>check</code></td></tr>
+<tr><td>4</td><td>none</td><td>stop</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>plain</code> stays out, so <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Φ</span></span></span></span> holds only <code>plain</code>, and <code>a &gt; 1</code> and <code>plain(a)</code> are acceptable filters.
+A rule whose filter is <code>both(a, x)</code> is rejected, and the error follows the calls that put <code>both</code> in
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span>:</p>
+<pre><code class="language-text">the effect is reached through `both` → `check` → `note` → `println`
+</code></pre>
+<p>The steps in the table are the rounds of a relational program. <code>has_effect</code> records the functions
+whose bodies directly contain an impure form, as <code>note</code>’s contains <code>println</code>, and <code>calls</code> records
+the call graph. The rules have the same shape as <code>ancestor</code>:</p>
+<pre><code class="language-text">relation calls      : (String, String);
+relation has_effect : (String);
+relation impure     : (String);
+
+rule impure(f) :- has_effect(f);
+rule impure(f) :- calls(f, g) and impure(g);
+
+fn main() {
+    add has_effect("note");
+    add calls("check", "note");
+    add calls("both", "plain");
+    add calls("both", "check");
+    println(solutions impure(?f));
+}
+</code></pre>
+<p>It prints <code>["both", "check", "note"]</code>, the set in the table. Datalog’s use in <a href="datalog.html#where-the-facts-come-from">program
+analysis</a> rests on this correspondence. The checker you build
+computes the same set directly and also keeps the path for the error.</p>
+<h3 id="filters-must-finish"><a class="header" href="#filters-must-finish">Filters must finish</a></h3>
+<p>A pure function can still run forever. <code>fn spin(n: Int) -&gt; Bool = spin(n);</code> has no effects, but
+calling it in a filter would hang the engine, whose rounds rely on every filter returning. So no
+function a filter reaches may recurse, directly or through others, and Bridger rejects this filter
+with <code>is recursive, so a filter calling it might not terminate</code>:</p>
+<pre><code class="language-text">fn is_even(n: Int) -&gt; Bool = if n == 0 { true } else { is_odd(n - 1) };
+fn is_odd(n: Int) -&gt; Bool = if n == 0 { false } else { is_even(n - 1) };
+
+rule even_aged(x) :- age(x, a) and is_even(a);
+</code></pre>
+<p>Like the conditions in the calculus, this check accepts only some of the programs that would work.
+On the ages above, <code>is_even</code> always returns, but on a negative argument it counts away from zero.
+The check looks at the call graph and never at the arguments. <code>a % 2 == 0</code> tests the same thing with
+no recursion. For the same reason, a filter may not reach a function that takes a function-typed
+parameter, since the analysis cannot follow what such a function will call. The prelude’s own <code>map</code>,
+<code>filter</code>, <code>fold</code>, and the functions written over them are trusted to finish.</p>
+<p>A filter can still get stuck: <code>100 / (a - 1) &gt; 0</code> divides by zero when <code>a</code> is 1. Termination and
+reaching a value are separate properties, and these checks establish only the first. A filter that
+gets stuck makes the query, and the program, stuck.</p>
+<h2 id="bridgers-rule-bodies"><a class="header" href="#bridgers-rule-bodies">Bridger’s rule bodies</a></h2>
+<h3 id="telling-generators-from-filters"><a class="header" href="#telling-generators-from-filters">Telling generators from filters</a></h3>
+<p><code>parent(p, x)</code> and <code>is_adult(a)</code> have the same syntax, so the parser cannot sort them. The
+distinction comes from name resolution: a conjunct is a generator when it is a whole call whose
+callee names a declared relation, and every other conjunct is a filter. Bridger’s single namespace
+for top-level names guarantees that no name is both a relation and a function.</p>
+<p>A body is its <code>and</code>-chain however it is bracketed, so <code>age(x, a) and (parent(x, y) and a &gt; 18)</code> has
+three conjuncts. A generator’s arguments must be variables or literals, as a head’s must, so <code>age(p, a - 1)</code> is rejected with <code>a relation's argument in a rule body must be a variable or a literal</code>.</p>
+<p>A relation applied anywhere else is a query, and a query is impure. So a body reads the database
+only through generators standing as whole conjuncts. <code>(a &lt; 18 or a &gt;= 65)</code> is a good filter, and
+with the facts above it selects ann, jim, and tom. <code>parent(x, y) or parent(y, x)</code> is a single
+conjunct and therefore a filter, with no generator to bind <code>x</code>. Two rules say the same thing and are
+accepted, since a relation with several rules <a href="datalog.html#rules-and-program-facts">reads as an
+“or”</a>:</p>
+<pre><code class="language-text">rule related(x, y) :- parent(x, y);
+rule related(x, y) :- parent(y, x);
+</code></pre>
+<h3 id="what-a-filter-can-see"><a class="header" href="#what-a-filter-can-see">What a filter can see</a></h3>
+<p>A rule is a top-level definition and closes over the top-level environment, as a <code>fn</code> body does. It
+sees the variables its generators bind and the program’s top-level names, but never the locals where
+a query is asked:</p>
+<pre><code class="language-text">let voting_age = 18;
+rule adult(p) :- age(p, a) and a &gt;= voting_age;
+</code></pre>
+<p>Moving <code>voting_age</code> into <code>main</code> as a <code>let</code> makes the rule an error, since no generator binds
+<code>voting_age</code>. If a rule could read a query’s locals, one set of facts and rules could have a
+different meaning at each query site. A generator-bound variable of the same name as a top-level
+definition shadows it inside the rule.</p>
+<h3 id="typing-a-rule"><a class="header" href="#typing-a-rule">Typing a rule</a></h3>
+<p>Rules are checked by the same type checker as the rest of the program. A generator gives each of its
+variables the type of that column. Where a variable appears in several columns, those types must
+agree, so <code>age(x, a) and parent(x, a)</code> is rejected at the second <code>a</code> with <code>type mismatch: expected String, found Int</code>. The column’s declared type is the <code>expected</code> type, and the type <code>a</code> already has
+in the rule’s context is the <code>found</code> type. Head terms are checked against the head relation’s
+columns. Each filter is checked against <code>Bool</code> with the rule’s variables in the context, so <code>a &gt; "ten"</code> and a filter of <code>a + 1</code> are both type errors.</p>
+<h3 id="conjunct-order"><a class="header" href="#conjunct-order">Conjunct order</a></h3>
+<p>Generators and filters can be written in any order without changing which facts a body derives.
+Filters evaluate left to right, as operands do everywhere else in the language: for each
+substitution the generators produce, the <a href="../appendix/language-reference.html#relations">language
+reference</a> runs a rule’s filters in the order written
+and stops at the first that yields <code>false</code>. Since a substitution that fails one filter derives
+nothing, this order makes no difference when no filter gets stuck. It does matter when one can. With
+jim at age 1, this rule finds its answer, because <code>a != 1</code> removes jim before the division runs:</p>
+<pre><code class="language-text">rule r(x) :- age(x, a) and a != 1 and 100 / (a - 1) &gt; 0;
+</code></pre>
+<p>With the two filters swapped, the query is stuck with <code>division by zero</code>.</p>
+<h3 id="building-it"><a class="header" href="#building-it">Building it</a></h3>
+<p>The checks are yours, in <code>relations/check.rs</code>. The provided driver calls them once per rule when the
+program is loaded, before <code>main</code>:</p>
+<pre><code class="language-rust ignore">struct Rule { head: Atom, body: Vec&lt;Expr&gt;, span: Span }
+
+pub fn check_generators(program: &amp;Program, rule: &amp;Rule)
+    -&gt; Result&lt;Vec&lt;bool&gt;, RuleError&gt;;
+pub fn check_range_restriction(program: &amp;Program, rule: &amp;Rule, generators: &amp;[bool])
+    -&gt; Result&lt;(), RuleError&gt;;
+pub fn check_pure(program: &amp;Program, rule: &amp;Rule, generators: &amp;[bool])
+    -&gt; Result&lt;(), RuleError&gt;;</code></pre>
+<p><code>body</code> holds every conjunct as an ordinary <code>Expr</code>, so a generator is an <code>Expr::Call</code> that has not
+yet been recognised as one. <code>check_generators</code> classifies the conjuncts, answering with one <code>bool</code>
+per conjunct, and checks that the head and each generator name a declared relation with the right
+number of arguments and that each generator’s arguments are terms. The driver hands that answer to
+the other two checks, so neither has to resolve relation names again. <code>check_range_restriction</code>
+collects the variables the generators bind and compares the head’s and the filters’ variables
+against them. <code>check_pure</code> computes the impure set over the program’s call graph, then judges each
+filter, and also rejects a filter that reaches a recursive function or one with a function-typed
+parameter. The failures are the <code>RuleError</code> variants in the <a href="../appendix/language-reference.html#purity-and-effects">language
+reference</a>. <code>Checker::check_rule</code>, in
+<code>types/check.rs</code>, gives the rule its types as in <a href="#typing-a-rule">Typing a rule</a>.</p>
+<p>The engine from <a href="fixpoint.html#building-it">Evaluating relations</a> gains the filter step. After the
+generators have been joined, the filters are evaluated by <code>eval_expr</code> left to right for each
+remaining substitution, in the program’s root environment (<code>env.root()</code>) extended with that
+substitution’s bindings. <code>true</code> moves on to the next filter, and <code>false</code> drops the substitution
+without evaluating the filters after it. A rule with filters and no generators starts from the one
+empty substitution, so <code>rule r(1) :- 2 &gt; 1;</code> derives its fact once; a join that began with no
+substitutions at all would derive nothing. Filters read no facts, so semi-naive rounds choose a
+delta among a rule’s generators alone.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<h3 id="absence-in-a-body"><a class="header" href="#absence-in-a-body">Absence in a body</a></h3>
+<p>Bridger’s rejected <code>childless</code> rule asks for a fact to be absent. To see what that does to the
+rounds, suppose <code>person</code> holds recorded facts for the six people, and suppose this version were
+accepted:</p>
+<pre><code class="language-text">rule has_child(x) :- parent(x, y);
+rule childless(x) :- person(x) and not has_child(x);
+</code></pre>
+<p>Run the rounds of the previous chapter on the family:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>round</th><th>new <code>has_child</code> facts</th><th>new <code>childless</code> facts</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>tom, bob, pat</td><td>all six: <code>has_child</code> is still empty when the body reads it</td></tr>
+<tr><td>2</td><td>none</td><td>none</td></tr>
+</tbody>
+</table>
+</div>
+<p>The rounds stop with <code>childless("tom")</code> in the set beside <code>has_child("tom")</code>. Rounds only add, so
+nothing withdraws the fact derived too early. <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.13889em;">P</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> has lost its monotonicity: a larger set of facts
+can give fewer consequences, and the chain <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0576em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊆</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0576em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊆</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.313em;"></span><span class="minner">⋯</span></span></span></span> no longer leads to
+the intended meaning.</p>
+<p>Some programs lose the meaning itself. With a person named tom, consider:</p>
+<pre><code class="language-text">rule stays(x)  :- person(x) and not leaves(x);
+rule leaves(x) :- person(x) and not stays(x);
+</code></pre>
+<p>The set holding <code>person("tom")</code> and <code>stays("tom")</code> is closed: tom stays, so the second rule does not
+fire. The set holding <code>person("tom")</code> and <code>leaves("tom")</code> is closed for the mirror-image reason.
+Neither contains the other, and the only set inside both, <code>person("tom")</code> alone, is not closed,
+since it fires both rules. With two minimal closed sets and nothing closed inside both, these rules
+have no least closed set to serve as <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span>.</p>
+<p><strong>Stratification</strong> separates the two programs. Give each relation a layer number such that a rule’s
+head is in a layer at least as high as each relation it uses positively, and strictly higher than
+each relation it negates. <code>childless</code> can go above <code>has_child</code>. <code>stays</code> would have to be above
+<code>leaves</code> and <code>leaves</code> above <code>stays</code>, so no numbering exists for them. A program with a numbering is
+<strong>stratified</strong>: a cycle among its relations never passes through a negation. Evaluation computes one
+layer at a time, each to its own least fixpoint, so a negated relation is complete before anything
+reads its absence. Several researchers proposed this independently in the 1980s, among them <a href="https://doi.org/10.1016/0743-1066(85)90002-0">Chandra
+and Harel</a> and <a href="https://doi.org/10.1016/B978-0-934613-40-8.50006-3">Apt, Blair, and
+Walker</a>, who showed that the meaning does not
+depend on which numbering is chosen. Negated atoms also need safety: <code>x</code> must be bound by a positive
+generator, or <code>not has_child(x)</code> asks for every string that has no child, the calculus query from
+the start of this chapter.</p>
+<p>Reading absence as falsehood was itself a decision. Keith Clark’s <a href="https://doi.org/10.1007/978-1-4684-3384-5_11">negation as
+failure</a> and Raymond Reiter’s <a href="https://doi.org/10.1007/978-1-4684-3384-5_3">closed-world
+assumption</a>, both published in 1978, examine when a
+system may conclude that what it cannot derive is false. Prolog’s <code>\+</code> succeeds when the search for
+its goal fails. Datalog systems such as Soufflé offer stratified negation and reject a program with
+no numbering. SQL restricts recursion in a similar direction: SQLite, for example, rejects a
+recursive query that refers to itself inside <code>NOT IN</code>. Other semantics assign a meaning to programs
+like <code>stays</code> and <code>leaves</code>, at the cost of a meaning that is no longer a plain least fixpoint.</p>
+<p>Bridger leaves negation over relations out of rules, but a host program can do the layering itself.
+A query in ordinary code is free to be negated, because the closure it reads is complete by the time
+it is asked:</p>
+<pre><code class="language-text">relation person    : (String);
+relation has_child : (String);
+relation childless : (String);
+
+rule person(x)    :- age(x, a);
+rule has_child(x) :- parent(x, y);
+
+fn find_childless() {
+    clear childless;
+    for person(?x) {
+        if not has_child(x) { add childless(x); }
+    }
+}
+</code></pre>
+<p>After <code>find_childless()</code>, <code>solutions childless(?x)</code> is <code>["ann", "jim", "liz"]</code>. Host code’s
+statement order is exactly the order between layers. The result is a snapshot: after <code>add parent("jim", "sue")</code> the query still lists jim, until <code>find_childless()</code> runs again and gives
+<code>["ann", "liz"]</code>. A stratified rule would stay current by itself. The host version keeps every
+rule’s meaning a least fixpoint and places the sequencing where a program already has sequence.</p>
+<h3 id="computing-values-in-a-body"><a class="header" href="#computing-values-in-a-body">Computing values in a body</a></h3>
+<p><code>next_age</code> asks a body to compute a value. Datalog systems such as Soufflé read something like <code>b == a + 1</code> as a binding, with <code>=</code> giving a new variable the result of the arithmetic. That reading gives
+up the bound on values. From the single fact <code>person("tom")</code>, this rule, were it allowed, would
+derive <code>"tomtom"</code>, then <code>"tomtomtomtom"</code>, doubling the string each round until memory ran out:</p>
+<pre><code class="language-text">rule person(x) :- person(y) and x == y ++ y;
+</code></pre>
+<p>Arithmetic gives a slower version of the same problem: <code>b == a + 1</code> would add a new integer each
+round, stopping only when the 64-bit integers wrapped around. A filter that limited the string’s
+length would make the rule stop, but telling those two apart is a harder problem than checking that
+a variable appears in a generator. <a href="https://doi.org/10.1145/28659.28694">Ramakrishnan, Bancilhon, and
+Silberschatz</a> (1987) studied conditions under which recursive
+rules over such computed relations are safe. Prolog’s <code>is</code> evaluates arithmetic during the search
+and leaves termination to the programmer, as with its other control.</p>
+<p>Bridger’s terms remain variables and literals, and the computation happens in host code:</p>
+<pre><code class="language-text">for age(?p, ?a) { add next_age(p, a + 1); }
+</code></pre>
+<p>That <code>for</code> runs once over a fixed set of solutions and adds six facts. A host loop around it could
+still run forever, but that keeps non-termination in the part of the language where it already
+exists. The rules themselves keep <a href="fixpoint.html#why-the-rounds-stop">the guarantee</a>.</p>
+<h3 id="aggregates"><a class="header" href="#aggregates">Aggregates</a></h3>
+<p>A rule that counted a person’s descendants would run into both of the preceding problems. Suppose a
+rule could hold <code>count</code> in its head, and watch tom’s descendants arrive in the <a href="fixpoint.html#rounds">rounds of the
+previous chapter</a>: two after round 1, four after round 2, five after round 3.
+Facts are never withdrawn, so <code>descendants("tom", 2)</code>, <code>descendants("tom", 4)</code>, and
+<code>descendants("tom", 5)</code> would all hold. A count of a set that can grow is not monotone unless the
+count waits for the set to be complete. The counts are also values no fact contains, so they fall
+outside the finite set of values safety establishes.</p>
+<p>Systems that allow aggregates usually place them under the layering discipline, so that a counted
+relation is complete first. SQL’s <code>GROUP BY</code> works over a complete input, and SQLite rejects an
+aggregate over a query’s own recursive reference with <code>recursive aggregate queries not supported</code>.
+Other work keeps recursion through an aggregate by asking which aggregates can be treated as
+growing. Kenneth Ross and Yehoshua Sagiv’s <a href="https://doi.org/10.1145/137097.137852">monotonic
+aggregation</a> (1992) gave such an account, and
+<a href="https://doi.org/10.1145/2908080.2908096">Flix</a> lets rules compute over ordered values that climb
+toward a fixed point, alongside sets of facts. <a href="https://doi.org/10.1145/2951913.2951948">Datafun</a>
+records monotonicity in its types, so that a checker can confirm a recursive definition grows.</p>
+<p>Bridger declines aggregates in rules and computes them in host code over a finished answer:
+<code>len(solutions ancestor("tom", ?d))</code> is <code>5</code>. <a href="integration.html">Querying
+relations</a><!-- xref:integration.md --> covers that style.</p>
+<h3 id="when-order-decides-safety"><a class="header" href="#when-order-decides-safety">When order decides safety</a></h3>
+<p>Prolog has no static check of this kind, and the order of a clause’s conditions determines whether
+they have values to work with. These two clauses differ only in order:</p>
+<pre><code class="language-prolog">sibling(X, Y) :- parent(P, X), parent(P, Y), X \= Y.
+sibling(X, Y) :- X \= Y, parent(P, X), parent(P, Y).
+</code></pre>
+<p>The first behaves like Bridger’s rule. In the second, <code>X \= Y</code> runs first, on two unbound variables,
+and it succeeds only when they cannot be unified. Unbound variables can, so the clause finds nothing
+and reports no error. <code>N is M + 1</code> with <code>M</code> unbound raises an error at run time. Prolog programmers
+learn which conditions need which variables bound.</p>
+<p>Bridger’s check is made once, before the program runs, and asks only whether a generator somewhere
+binds the variable. In return, a query that finishes derives the same facts wherever its filters are
+written; reordering them can only change whether a stuck filter is reached. The check also rejects
+more than Prolog would: a program cannot use <code>==</code> to bind.</p>
+<h3 id="tracking-effects"><a class="header" href="#tracking-effects">Tracking effects</a></h3>
+<p>Prolog’s clause bodies may call <code>write</code>, and a condition re-run on backtracking prints again.
+Programmers use this for tracing, and accept that the output describes the search. Bridger’s
+analysis takes the opposite position for rule bodies, and its form is a choice too. Function types
+<a href="../functions/functional-programming.html">record no effects</a>, so the checker works out purity from
+the whole program’s call graph, for the one place the semantics needs it. Languages such as Haskell
+record effects in types, which makes purity visible at every call and requires every signature in a
+chain to say so. Bridger’s <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span> needs no annotations and reports a witness path, though a programmer
+reading a signature cannot tell from it whether the function may be used in a filter.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Safety in query languages</strong>: Abiteboul, Hull, and Vianu’s <em>Foundations of Databases</em>, freely
+available <a href="http://webdam.inria.fr/Alice/">from the authors</a>, treats the problem and its syntactic
+conditions in chapter 5, “Adding Negation: Algebra and Calculus”, whose exercises work through
+several of the classes. Van Gelder and Topor’s “<a href="https://doi.org/10.1145/114325.103712">Safety and Translation of Relational
+Calculus</a>” (1991) compares the conditions and translates
+accepted queries into the algebra.</p>
+<p><strong>Negation</strong>: chapter 15 of <em>Foundations of Databases</em> develops stratified semantics and the
+well-founded semantics, which gives a meaning to programs with no stratification, using three truth
+values. Clark’s “<a href="https://doi.org/10.1007/978-1-4684-3384-5_11">Negation as Failure</a>” and Reiter’s
+“<a href="https://doi.org/10.1007/978-1-4684-3384-5_3">On Closed World Data Bases</a>” both appear in Gallaire
+and Minker’s <em>Logic and Data Bases</em> (1978).</p>
+<p><strong>Beyond sets of facts</strong>: Madsen, Yee, and Lhoták’s “<a href="https://doi.org/10.1145/2908080.2908096">From Datalog to
+Flix</a>” (2016) defines rules over lattices and applies them
+to program analysis. Arntzenius and Krishnaswami’s “<a href="https://doi.org/10.1145/2951913.2951948">Datafun: A Functional
+Datalog</a>” (2016) combines a typed functional language with
+least fixed points, tracking monotonicity in the type system.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>In <code>rule elder_sibling(x, y) :- parent(p, x) and parent(p, y) and age(x, a) and age(y, b) and a &gt; b;</code>, which conjuncts bind which variables, and what does the rule derive for the family?</summary>
+<p>The four relation atoms are generators: they bind <code>p</code>, <code>x</code>, <code>y</code>, <code>a</code>, and <code>b</code>. <code>a &gt; b</code> is a filter,
+which binds nothing but reads two variables the generators bound. The head’s <code>x</code> and <code>y</code> are bound,
+so the rule is safe. It derives <code>("bob", "liz")</code>, since 44 is greater than 40, and <code>("pat", "ann")</code>,
+since 19 is greater than 17. The filter also removes each person paired with themselves, so no <code>x != y</code> is needed.</p>
+</details>
+<details>
+<summary>Bridger rejects <code>rule copy(x) :- parent(y, z) and x == y;</code>, even though <code>x</code> could only ever equal <code>y</code>. What could be accepted instead, and what would it take to accept this form?</summary>
+<p><code>rule copy(y) :- parent(y, z);</code> says the same thing and is safe. To accept the original, the check
+would have to treat an equality with one bound side as a binding. For a plain variable that is
+sound, since the value still comes from a fact, and some Datalog systems do it. The same reading for
+<code>x == y ++ y</code>, however, lets a rule produce values no fact contains, so a language that adopts it
+must decide where to draw the line and how to keep the guarantee that <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">M</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mclose">)</span></span></span></span> is finite.
+Bridger keeps one reading of <code>==</code>, as a test.</p>
+</details>
+<details>
+<summary>In a program, <code>f</code> calls <code>g</code>, <code>g</code> calls <code>f</code> and <code>println</code>, and <code>h</code> calls nothing. Compute <i>I</i>. Which error would each be in a filter?</summary>
+<p>Step one adds <code>g</code>, whose body calls <code>println</code>. Step two adds <code>f</code>, which calls <code>g</code>. The next step
+adds nothing, so <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mclose">}</span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Φ</span></span></span></span> holds <code>h</code>. A filter calling <code>f</code> or <code>g</code> is reported as not
+pure, with a witness path ending at <code>println</code>, while <code>h</code> is accepted. Had <code>g</code> not called <code>println</code>,
+the same two functions would be outside <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span>, since the least fixpoint adds only what an effect
+forces in, and the filter would then be rejected for recursion. Purity and termination are separate
+conditions on a filter.</p>
+</details>
+<details>
+<summary>Can the relations <code>person</code>, <code>has_child</code>, <code>childless</code> be given layer numbers? Can <code>stays</code> and <code>leaves</code>? What does the answer say about the existence of a meaning?</summary>
+<p>The first can: <code>person</code> and <code>has_child</code> in layer 0, <code>childless</code> in layer 1, since it negates
+<code>has_child</code>. Computing layer 0 to its fixpoint and then layer 1 gives one answer. <code>stays</code> negates
+<code>leaves</code> and <code>leaves</code> negates <code>stays</code>, so each would have to be strictly above the other, and no
+numbering exists. Those rules have two minimal closed sets, neither contained in the other, so there
+is no least one. Stratification picks out programs for which a layer-by-layer meaning exists. A
+language that accepts the others needs a semantics of a different kind.</p>
+</details>
+<details>
+<summary><code>find_childless</code> gives a stale answer after an <code>add</code>, and a stratified rule would not. What does Bridger get in exchange for making programmers do the layering themselves?</summary>
+<p>Every rule set keeps a single least-fixpoint meaning, which the rounds compute with no analysis of
+dependencies between relations, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.13889em;">P</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> stays monotone, which is what lets an engine continue from
+a closure after an <code>add</code>. The non-monotone step is visible in the program as a <code>not</code> in ordinary
+code, in a sequence the programmer wrote. The cost is that the programmer must rerun that step
+whenever its inputs change, which a stratified engine would do by itself, and that the answer is
+held as stored data, apart from any rule that defines it.</p>
+</details>
 
                     </main>
 
@@ -253,22 +788,6 @@ were **declined** — each a design fork with a further-reading pointer.
         <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
         <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script>
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
         <script>
