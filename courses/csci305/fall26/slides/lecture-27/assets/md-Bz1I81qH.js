@@ -1,0 +1,17 @@
+import{H as e,L as t,Q as n,T as r,Z as i,_ as a,b as o,g as s,gt as c,vt as l,x as u,y as d}from"./modules/shiki-uekAutbu.js";import{nt as f,rt as p,yt as m}from"./index-CcG3sxmt.js";import{t as h}from"./slidev/default-WpAJc3TH.js";import{t as g}from"./Catalogue-DOHb0eVI.js";import{t as _}from"./slidev/CodeBlockWrapper-BX6w-FLZ.js";var v={class:`two`},y={class:`tag`},b={class:`tag`},x={class:`tag`},S=m({__name:`slides.md__slidev_13`,setup(m){let{$slidev:S,$nav:C,$clicksContext:w,$clicks:T,$page:E,$renderContext:D,$frontmatter:O}=p();return w.setup(),(p,m)=>{let S=_,C=g,w=e(`click`);return t(),a(h,l(r(c(f)(c(O),12))),{default:i(()=>[m[7]||=s(`h2`,null,`A degree plan`,-1),s(`div`,v,[s(`div`,null,[u(S,{title:``,ranges:[]},{default:i(()=>[...m[0]||=[s(`pre`,{class:`shiki shiki-themes vitesse-dark vitesse-light slidev-code`,style:{"--shiki-dark":`#dbd7caee`,"--shiki-light":`#393a34`,"--shiki-dark-bg":`#121212`,"--shiki-light-bg":`#ffffff`}},[s(`code`,{class:`language-text`},[s(`span`,{class:`line`},[s(`span`,null,`relation semester : (String, Int);`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`fn ready(c: String) -> Bool =`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`    not semester(c, ?)`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`      and filter(solutions requires(c, ?p),`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`                 |p| not semester(p, ?)) == [];`)])])],-1)]]),_:1}),u(C,{width:290,credits:!1}),m[1]||=o(),m[2]||=s(`div`,{class:`cap`},`earliest semester: 1 + the latest requirement`,-1)]),s(`div`,null,[u(S,{title:``,ranges:[]},{default:i(()=>[...m[3]||=[s(`pre`,{class:`shiki shiki-themes vitesse-dark vitesse-light slidev-code`,style:{"--shiki-dark":`#dbd7caee`,"--shiki-light":`#393a34`,"--shiki-dark-bg":`#121212`,"--shiki-light-bg":`#ffffff`}},[s(`code`,{class:`language-text`},[s(`span`,{class:`line`},[s(`span`,null,`fn schedule() {`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`    clear semester;`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`    ref n = 1;`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`    while len(solutions semester(?c, ?))`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`        < len(solutions credits(?c, ?)) {`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`      for c in filter(solutions credits(?c, ?),`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`                      ready) {`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`        add semester(c, deref n);`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`      }`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`      n := deref n + 1;`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`    }`)]),o(`
+`),s(`span`,{class:`line`},[s(`span`,null,`}`)])])],-1)]]),_:1}),n((t(),d(`div`,y,[...m[4]||=[s(`code`,null,`not`,-1),o(` absence: a rule may not test it`,-1)]])),[[w,1]]),n((t(),d(`div`,b,[...m[5]||=[s(`code`,null,`deref n`,-1),o(` a computed value in a fact: a rule may not do it`,-1)]])),[[w,2]]),n((t(),d(`div`,x,[...m[6]||=[s(`code`,null,`solutions`,-1),o(` the rules' set, as a list to filter`,-1)]])),[[w,3]])])])]),_:1},16)}}},[[`__scopeId`,`data-v-4082803d`]]);export{S as default};

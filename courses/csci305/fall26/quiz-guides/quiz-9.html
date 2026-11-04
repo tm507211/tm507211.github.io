@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 9 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 9 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lectures 25&ndash;27 and their textbook
+      chapters: evaluating relations by rounds, rule bodies with their safety and purity checks, and
+      querying relations from ordinary code. Answers are short: a sentence or two, in your own
+      words, earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 20 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions, each asking one thing. Most
+            give you a small Bridger program &mdash; say what it prints or why it is rejected, and
+            why. Others ask you to trace evaluation round by round, or to decide which functions are
+            impure.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.
+            You may name a rule (<code>E-For-Query</code>, <code>P-Call</code>) if it helps, but you
+            are never required to.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Evaluating relations
+      <small class="text-muted">Lecture 25</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/relations/fixpoint.html">Evaluating Relations</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-25/index.html">Lecture 25</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Say what the immediate-consequence operator <em>T<sub>P</sub></em> computes from a set of
+        facts: the recorded facts plus every head that one rule step derives. Read
+        &ldquo;closed&rdquo; (firing the rules adds nothing) and &ldquo;fixed point&rdquo; in terms
+        of it, and say what makes it monotone.</li>
+      <li>Run the rounds by hand: start from the recorded and program facts, apply the rules, and
+        list the facts each round adds. Stop at the first round that adds nothing.</li>
+      <li>Relate a fact's round to its derivation: a fact enters in round <em>i</em> when its
+        shortest derivation needs <em>i</em> rule steps.</li>
+      <li>Explain why the rounds stop, even on a cycle: rule terms are variables and literals, so
+        every value in a derived fact was already in the program or <em>&Delta;</em>. That leaves
+        finitely many possible facts, and each round before the last adds at least one.</li>
+      <li>Explain why the facts the rounds stop at are exactly <em>M(P, &Delta;)</em>.</li>
+      <li>Say which rule instances semi-naive evaluation fires, those with a premise that was new in
+        the previous round, and why it cannot miss a fact.</li>
+      <li>Say why an engine can continue from its closure after an <code>add</code>, and why it
+        cannot after a <code>clear</code>.</li>
+      <li>Recognize the design space: Prolog's search from the query, which keeps only its current
+        path and can run forever on a cycle, compared with rounds, which keep every fact derived and
+        compute all of them whatever the query asks.</li>
+    </ul>
+
+    <h2>Rule bodies and safety
+      <small class="text-muted">Lecture 26</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/relations/rules.html">Rule Bodies and Safety</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-26/index.html">Lecture 26</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Sort a rule's conjuncts into generators (relation atoms, which bind variables by matching
+        facts) and filters (any other expression, which tests values it already has and binds
+        nothing).</li>
+      <li>Fire a rule by hand: each generator grows or shrinks the set of substitutions, each filter
+        only keeps or drops them, and what remains gives the derived facts.</li>
+      <li>State the safety condition, that a generator of the same rule binds every head variable
+        and every variable a filter reads, and use it to say why a rule is rejected. A filter may
+        also name a top-level definition, but a rule never sees a query's locals.</li>
+      <li>Explain what would go wrong without it: <code>==</code> binding a variable lets a rule
+        produce values no fact contains, so the rounds might never stop, and a head variable with no
+        source leaves a fact that is not ground.</li>
+      <li>Explain why a filter must be pure, using each case: hidden state (two correct engines
+        could disagree), effects (the evaluation strategy would become visible in the output), and
+        queries (asking for a fact's absence breaks monotonicity, so the rounds can stop at the wrong
+        answer).</li>
+      <li>Apply the purity judgment: literals, variables, operators over pure operands, and calls to
+        functions in <em>&Phi;</em>. Name forms that have no purity rule, such as <code>deref</code>,
+        <code>add</code>, <code>solutions</code>, and queries.</li>
+      <li>Compute the set <em>I</em> of impure functions as a least fixpoint on the call graph: start
+        empty, add a function whose body has an effect or calls a function already in <em>I</em>, and
+        stop when nothing changes. Say why a cycle with no effect stays out of <em>I</em>.</li>
+      <li>Explain why purity is not enough: a filter must also finish, so no function it reaches may
+        recurse. Say why these are two separate checks on the same call graph.</li>
+      <li>Say when the order of a body's filters matters: only when a filter can get stuck, such as a
+        division by zero that an earlier filter would have guarded.</li>
+      <li>Recognize the design space: stratified negation, layer numbers, and why
+        <code>stays</code> and <code>leaves</code> have none; systems that let <code>==</code> bind
+        computed values; aggregates inside a rule language.</li>
+    </ul>
+
+    <h2>Querying relations
+      <small class="text-muted">Lecture 27</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/relations/integration.html">Querying Relations from the
+      Host Language</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-27/index.html">Lecture 27</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Use each place a query can appear: where a <code>Bool</code> is expected (is there a
+        solution?), <code>solutions q</code> (a list of hole values), and <code>for q { &hellip; }</code>
+        (once per solution, with the holes bound in the body).</li>
+      <li>Say what a solution is: an assignment to the distinct named holes, with each distinct
+        assignment counted once. An anonymous hole <code>?</code> requires a value to exist and does
+        not record it, and a hole named twice is one variable.</li>
+      <li>Predict the result of projecting: why dropping a name from a query can shrink the list, and
+        why that changes a total computed from it. To sum a column across rows, keep a key among the
+        named holes.</li>
+      <li>Give a query's type from its form: no named holes gives <code>[()]</code>, one gives a list
+        of that column's type, two or more give a list of tuples, and a bare query is a
+        <code>Bool</code> whatever its holes. Say why type errors in a query are caught before
+        <code>main</code>.</li>
+      <li>Explain how a value reaches a query: an argument is evaluated where the query is asked, then
+        acts as a constant, and it is the only thing a query takes from its surroundings.</li>
+      <li>Trace hole scope: a hole introduces a new name in a <code>for</code> body, which can shadow a
+        local of the same name. Say why a bare query binds nothing, so using its hole afterward is an
+        <code>unbound variable</code> error.</li>
+      <li>Trace a walk that changes its own relation: a <code>for</code> reads its solutions once, from
+        the facts present when it starts, while a query inside the body reads the current facts. A
+        list from <code>solutions</code> is an ordinary value and holds still in the same way.</li>
+      <li>Work across the boundary: use ordinary code for what a rule cannot do, namely computing new
+        values, testing for absence, and aggregating (<code>len</code>, <code>fold</code>). Say why
+        rules always stop while a host <code>while</code> over the same facts might not.</li>
+      <li>Recognize the design space: the Halloween problem and why a single SQL <code>UPDATE</code>
+        separates the rows it finds from its scan; loops elsewhere that change what they walk
+        (Python's dict raises an error, its list keeps walking); SQL's bags compared with Bridger's
+        sets. From the reading: queries embedded in a language compared with queries sent as strings,
+        including SQL injection and queries built at run time.</li>
+    </ul>
+
+    <h2>Sample questions
+      <small class="text-muted">Practice</small></h2>
+    <p>
+      These are the same kind and size of question as the quiz, on different programs. No answers
+      are given: work each one by hand first, then, if you have the interpreter built through M6,
+      run the program to check yourself. The rounds and the purity questions you check by reasoning.
+    </p>
+
+    <ol class="objectives">
+      <li>
+        <p><strong>Rounds.</strong> Which <code>route</code> facts does each round of evaluation add,
+          and how do you know when to stop?</p>
+<pre>relation road  : (String, String);   relation route : (String, String);
+rule route(x, y) :- road(x, y);
+rule route(x, z) :- route(x, y) and road(y, z);
+
+fn main() {
+    add road("a", "b");  add road("b", "a");  add road("b", "c");
+    println(solutions route(?x, ?y));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Semi-naive evaluation.</strong> Round 2 of this program adds
+          <code>path("a", "c")</code> and <code>path("b", "d")</code>. Which instances of the second
+          rule does semi-naive evaluation fire in round 3, and why is it safe to skip the others?</p>
+<pre>relation edge : (String, String);   relation path : (String, String);
+rule path(x, y) :- edge(x, y);
+rule path(x, z) :- path(x, y) and edge(y, z);
+
+fn main() {
+    add edge("a", "b");  add edge("b", "c");  add edge("c", "d");
+    println(solutions path(?x, ?y));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Safety.</strong> Why does Bridger reject this rule, and what could it mean if it
+          were allowed?</p>
+<pre>relation person : (String);   relation knows : (String, String);
+rule knows(x, y) :- person(x);
+
+fn main() {
+    add person("ann");
+    println(solutions knows(?x, ?y));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Purity.</strong> Which functions are impure, and why?</p>
+<pre>fn log(x: Int) -> Int { println(x); x }
+fn twice(x: Int) -> Int = log(x) + log(x);
+fn square(x: Int) -> Int = x * x;
+fn ping(x: Int) -> Bool = pong(x);
+fn pong(x: Int) -> Bool = ping(x);
+
+fn main() { println(square(3)); }</pre>
+      </li>
+      <li>
+        <p><strong>Filters must finish.</strong> <code>ping</code> and <code>pong</code> have no
+          effects. Why does Bridger still reject this rule?</p>
+<pre>relation num : (Int);   relation r : (Int);
+fn ping(x: Int) -> Bool = pong(x);
+fn pong(x: Int) -> Bool = ping(x);
+rule r(x) :- num(x) and ping(x);
+
+fn main() { println(solutions r(?x)); }</pre>
+      </li>
+      <li>
+        <p><strong>Hidden state.</strong> Reading a <code>ref</code> changes nothing, yet Bridger
+          rejects this filter. What could go wrong if it were allowed?</p>
+<pre>relation score : (String, Int);   relation passed : (String);
+ref cutoff = 60;
+rule passed(s) :- score(s, n) and n >= deref cutoff;
+
+fn main() {
+    add score("ann", 70);
+    println(solutions passed(?s));
+    cutoff := 80;
+    println(solutions passed(?s));
+}</pre>
+      </li>
+      <li>
+        <p><strong>A fixed walk.</strong> What does <code>main</code> print, and why?</p>
+<pre>relation guest : (String);
+
+fn main() {
+    add guest("ann");  add guest("bob");
+    for guest(?g) {
+        add guest(g ++ "+1");
+        println(g);
+        println(len(solutions guest(?x)));
+    }
+    let found = solutions guest(?x);
+    add guest("cy");
+    println(len(found));
+    println(len(solutions guest(?x)));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Projection.</strong> What does <code>main</code> print, and why?</p>
+<pre>relation score : (String, String, Int);
+
+fn main() {
+    add score("ann", "q1", 8);  add score("ann", "q2", 9);
+    add score("bob", "q1", 8);  add score("bob", "q2", 7);
+    println(len(solutions score(?who, ?quiz, ?n)));
+    println(len(solutions score(?, ?quiz, ?n)));
+    println(len(solutions score(?who, ?, ?)));
+    println(solutions score(?, ?, ?));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Hole scope.</strong> What does <code>main</code> print, and why?</p>
+<pre>relation team : (String, String);
+
+fn main() {
+    add team("ann", "red");  add team("bob", "blue");  add team("cy", "red");
+    let t = "red";
+    for team(?t, t) { println(t); }
+    println(t);
+}</pre>
+      </li>
+      <li>
+        <p><strong>Across the boundary.</strong> The first <code>println</code> runs and prints a
+          result, but the program then never finishes. Why does the rule's evaluation stop when the
+          <code>while</code> does not?</p>
+<pre>relation needs  : (String, String);   // needs(a, b): a needs b first
+relation before : (String, String);
+relation done   : (String);
+rule before(b, a) :- needs(a, b);
+rule before(b, a) :- needs(a, c) and before(b, c);
+
+fn ready(s: String) -> Bool =
+    not done(s) and filter(solutions needs(s, ?b), |b| not done(b)) == [];
+
+fn main() {
+    add needs("bake", "mix");  add needs("mix", "bake");
+    println(before(?s, ?s));
+    let steps = ["mix", "bake"];
+    while len(solutions done(?d)) &lt; len(steps) {
+        for s in filter(steps, ready) { add done(s); }
+    }
+}</pre>
+      </li>
+    </ol>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Beyond that: write a
+        small relation with a cycle and list its facts round by round; change a filter until Bridger
+        rejects it and read the error it gives; draw the call graph of a few functions and compute
+        <em>I</em> by hand; ask one query with its holes named, then anonymous, and predict each list;
+        and write a <code>for</code> whose body adds to the relation it walks. If you have the
+        interpreter built, run your programs and check yourself.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>immediate-consequence operator (<em>T<sub>P</sub></em>)</li>
+        <li>round</li>
+        <li>fixed point / least fixed point</li>
+        <li>monotone</li>
+        <li>naive vs. semi-naive evaluation</li>
+        <li>delta (a round's new facts)</li>
+        <li>closure of a set of facts</li>
+        <li>generator</li>
+        <li>filter</li>
+        <li>safe rule</li>
+        <li>ground</li>
+        <li>pure function</li>
+        <li>effect</li>
+        <li>hidden state</li>
+        <li>purity judgment (<em>&Phi;</em> &vdash; <em>e</em> pure)</li>
+        <li>impure set (<em>I</em>)</li>
+        <li>witness path</li>
+        <li>call graph</li>
+        <li>stratification</li>
+        <li>query position (<code>Bool</code>, <code>solutions</code>, <code>for</code>)</li>
+        <li>named hole / anonymous hole</li>
+        <li>solution</li>
+        <li>projection</li>
+        <li>canonical order</li>
+        <li>fixed walk (<code>E-For-Query</code>)</li>
+        <li>Halloween problem</li>
+        <li>set vs. bag</li>
+        <li>SQL injection</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>
