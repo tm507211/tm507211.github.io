@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Milestone M6 — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 100rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    h3 { margin-top: 1.4rem; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    pre { font-size: .9em; }
+    table code { white-space: nowrap; }
+    .grade-table td:first-child { white-space: nowrap; }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Milestone M6 <small>Relations</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      In this milestone you build the logic language inside Bridger. A program declares relations, adds
+      facts to them, states rules about them, and asks queries. A query's answer is the least fixpoint of
+      the rules over the facts. You write the matcher that unifies one atom with one fact, the engine that
+      computes the fixpoint and answers queries, the evaluator and checker arms for the query forms, and
+      the static checks that every rule must pass before the program runs. From now on the rule checks
+      run beside the type checker, and a program that fails either one prints nothing.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>At a glance</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>Due</dt><dd>Friday, November 13, at 11:59&nbsp;PM.</dd>
+          <dt>Submit</dt><dd>Through Gradescope, linked from the course Canvas page.</dd>
+          <dt>Attempts</dt><dd><strong>Unlimited.</strong> Resubmit as many times as you like before
+            the deadline. Only your last submission is graded.</dd>
+          <dt>Deliverables</dt><dd>A single <code>.zip</code> containing your <code>src/</code>
+            folder and the <code>.md</code> files from the project root, including your
+            <code>Description.md</code>.</dd>
+          <dt>Reading</dt><dd>The textbook's
+            <a href="../../../../books/pl-design/milestones/m6.html">Milestone M6</a> chapter is the
+            full specification. This page adds the course-specific rules: how to submit and how it is
+            graded.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>What to build <small class="text-muted">the specification</small></h2>
+    <p class="refs text-muted">
+      Full specification:
+      <a href="../../../../books/pl-design/milestones/m6.html">Textbook &mdash; Milestone M6: relations</a>
+      &nbsp;|&nbsp; Previous milestone:
+      <a href="m5.html">Milestone M5: the type checker</a>
+    </p>
+    <p>
+      Read the <a href="../../../../books/pl-design/milestones/m6.html">Milestone M6 chapter</a> before
+      you start. It is the authoritative specification. Its two tables, one for the query forms and one
+      for the rule checks, are the checklist your code is measured against. The rules themselves are in
+      the <a href="../../../../books/pl-design/appendix/language-reference.html">language reference</a>
+      appendix (under evaluation, typing, and purity and effects). The &ldquo;Building it&rdquo; sections
+      of the Part VII chapters, from
+      <a href="../../../../books/pl-design/relations/unification.html">Unification</a> through
+      <a href="../../../../books/pl-design/relations/integration.html">Querying relations</a>, describe
+      the algorithms. The work is spread over more files than before:
+    </p>
+    <pre><code>// src/interp/eval.rs
+Expr::Relation(..) =&gt; todo_m6!("E-Add / E-Clear / E-Solutions / E-Query"),
+Expr::ForQuery(..) =&gt; todo_m6!("E-ForQuery (iterate a query's solutions)"),
+
+// src/types/check.rs
+Expr::Relation(..) =&gt; todo_m6!("T-Add / T-Clear / T-Solutions / T-Query"),
+Expr::ForQuery(..) =&gt; todo_m6!("T-ForQuery"),
+pub fn check_rule(&amp;mut self, rule: &amp;Rule) -&gt; Result&lt;(), TyError&gt;
+
+// src/relations/unify.rs, engine.rs, check.rs   (new at M6)
+pub fn unify(&amp;self, pattern: &amp;[Term], fact: &amp;[Value]) -&gt; Option&lt;Subst&gt;
+pub fn solutions(&amp;mut self, q: &amp;Query, span: Span, env: &amp;Env) -&gt; Result&lt;Vec&lt;Subst&gt;, Control&gt;
+pub fn check_generators(..)         // the head, then each conjunct: generator or filter?
+pub fn check_range_restriction(..)  // every variable bound by a generator
+pub fn check_pure(..)               // every filter pure, first-order, non-recursive</code></pre>
+    <p>
+      Two changes have no <code>todo_m6!</code> marker. In the <code>Call</code> arm of both the
+      evaluator and the checker, a call whose callee is a relation is a hole-free query. In the checker's
+      <code>Var</code> arm, a relation's name used as a value is <code>RelationNotAValue</code>. The
+      chapter spells out the contracts the tests hold each file to. These are the ones that most often
+      cause trouble:
+    </p>
+    <ul>
+      <li><strong>Solutions are distinct and in canonical order.</strong> Each match is cut down to the
+        query's named holes, duplicates are removed, and the rest are sorted with the provided
+        <code>compare</code>, first hole first. The answer depends on the facts and rules alone, never on
+        the order the facts were added or the order the engine derived them.</li>
+      <li><strong>Anonymous holes are distinct variables.</strong> Each <code>?</code> becomes a fresh
+        variable no identifier can spell. Give them all one name and <code>needs(?, ?)</code> silently
+        requires both columns to be equal.</li>
+      <li><strong>The database is untouchable during a fixpoint.</strong> A query, <code>add</code>, or
+        <code>clear</code> reached from a filter is stuck with <code>QueryInFilter</code>. Set
+        <code>materializing</code> before the rounds and clear it <em>before</em> any error from them is
+        returned. This is the same trap as M4's call depth and M5's nesting bound: a <code>?</code> before
+        the reset leaves every later query stuck.</li>
+      <li><strong>Arguments run once, left to right</strong>, after the relation's name is resolved and
+        before the argument count is judged, so an argument's effect happens even when the form then has
+        the wrong arity.</li>
+      <li><strong>The checks stop at the first failure, in source order.</strong> The head is checked
+        before the body and the conjuncts left to right. For each filter, purity checks
+        <code>HigherOrder</code>, then <code>Impure</code>, then <code>Recursive</code>. An
+        <code>Impure</code> error carries a <em>witness</em>, the path of names from the filter to the
+        first effect, and the tests check that path.</li>
+    </ul>
+    <p>
+      Everything outside the holes is provided. That includes the relation database
+      (<code>add</code>, <code>clear</code>, <code>facts</code>), <code>Subst</code>, the driver that
+      binds each declared relation in the root environment and runs the rule checks and the type checker
+      before <code>main</code>, and the <code>RelationColumn</code> check on column types. The chapter
+      lists the provided runtime the M6 files use.
+    </p>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>First: paste in the helper module</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The starter leaves out a module of helpers that the rule checks use: <code>subexprs</code>,
+          <code>query_exprs</code>, <code>free_vars</code>, and <code>bound_names</code>. The chapter's
+          <a href="../../../../books/pl-design/milestones/m6.html#the-helper-module">helper module</a>
+          section prints it in full. Copy it, unchanged, to the <strong>end of
+          <code>src/relations/check.rs</code></strong>, and import what you use, as in
+          <code>use helpers::{free_vars, subexprs};</code>.
+        </p>
+        <ul style="margin-bottom:0">
+          <li><strong>It must live in <code>src/relations/check.rs</code>.</strong> Only the submitted
+            files are collected, so a helper you put in a new file of your own is not part of what is
+            graded, and your submission will not compile on Gradescope.</li>
+          <li>It is a <code>pub mod helpers</code> with its own <code>use</code> lines, so it cannot clash
+            with your imports, and a helper you have not called yet raises no clippy warning.</li>
+          <li>You may read and use it freely, but you do not need to change it. The rest of
+            <code>check.rs</code> is your work: the impure set, the witness, the recursion and
+            higher-order checks, and the classification of conjuncts into generators and filters.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Getting the code and running the tests</h2>
+    <p>
+      M6 builds directly on your M1&ndash;M5 code. Because the milestones are
+      <strong>cumulative</strong>, <code>cargo m6</code> runs every M5, M4, M3, M2, and M1 test too, and
+      the provided-test gate (below) will fail the whole milestone if any of them fail. <strong>Finish
+      <a href="m5.html">Milestone M5</a> first</strong>, and keep working in the same clone with your
+      completed evaluator and checker in place. Every program that uses a relation goes through your
+      M5 checker before it runs, and the bodies of filters are ordinary expressions your M1&ndash;M4
+      evaluator runs.
+    </p>
+    <p>
+      The toolchain, the clone, and the layout of the codebase are the ones from
+      <a href="m1.html#getting-the-code-and-running-the-tests">Milestone M1</a>. That setup is done once,
+      and this milestone does not change it. If you are starting fresh, follow the M1 page to install
+      <a href="https://rustup.rs"><code>rustup</code></a>, clone
+      <a href="https://github.com/chaluli/bridger-interpreter"><code>bridger-interpreter</code></a>, and
+      complete M1 through M5. Then pick up the same loop, with the milestone number advanced:
+    </p>
+    <pre><code>cargo m6                                    # run the Milestone-6 tests
+cargo fmt                                   # format your code
+cargo clippy --all-targets -- -D warnings   # lint</code></pre>
+    <p>
+      <code>cargo m6</code> is short for <code>cargo test --features m6</code>, and runs the M6 tests
+      <em>and</em> every earlier milestone's. To list the milestone-tagged holes at any time:
+    </p>
+    <pre><code>grep -rn 'todo_m6!' src</code></pre>
+    <p>
+      The holes for constructors, <code>match</code>, <code>?</code>, structs, and methods, along with
+      <code>check_guards</code> in <code>src/relations/check.rs</code>, stay <code>todo!</code>s until
+      their own milestones.
+    </p>
+    <p>
+      A suggested order: write <code>Subst::unify</code> first, since the engine calls it for every
+      pairing of an atom and a fact. Then write the engine and the evaluator's arms. Many provided tests
+      run whole programs <em>without</em> the static checks, so you can get the engine right before the
+      checker knows anything about relations. The checker's arms and the rule checks can follow in either
+      order.
+    </p>
+
+    <h3>Running a program</h3>
+    <p>
+      With <code>--features m6</code>, <code>cargo run</code> runs the rule checks and the type checker
+      before <code>main</code>. <code>deps.brg</code> builds a dependency graph with an ordinary loop and
+      asks the relation what it implies:
+    </p>
+    <pre><code>$ cat deps.brg
+relation needs : (String, String);
+relation uses : (String, String);
+
+rule uses(a, b) :- needs(a, b);
+rule uses(a, c) :- needs(a, b) and uses(b, c);
+
+fn main() {
+    let edges = [("app", "ui"), ("ui", "gfx"), ("app", "net"), ("net", "io")];
+    for e in edges { add needs(e.0, e.1); }
+    println(solutions uses("app", ?m));
+    println(uses("io", "app"));
+    for uses(?m, "io") { println(m); }
+}
+
+$ cargo run -q --features m6 -- deps.brg
+["gfx", "io", "net", "ui"]
+false
+app
+net</code></pre>
+    <p>
+      In <code>hops.brg</code> a filter calls a function that recurses. The function always returns, but
+      the purity check reads the call graph, never the arguments, so the program never starts. Not even
+      <code>start</code> is printed, and the exit status is <code>1</code>:
+    </p>
+    <pre><code>$ cat hops.brg
+relation link : (String, String);
+relation near : (String, String);
+
+fn hops(n: Int) -&gt; Bool = if n &lt;= 0 { true } else { hops(n - 1) };
+
+rule near(a, b) :- link(a, b) and hops(2);
+
+fn main() {
+    println("start");
+    add link("a", "b");
+    println(solutions near(?a, ?b));
+}
+
+$ cargo run -q --features m6 -- hops.brg
+  × `hops` is recursive, so a filter calling it might not terminate
+   ╭─[hops.brg:6:35]
+ 5 │
+ 6 │ rule near(a, b) :- link(a, b) and hops(2);
+   ·                                   ───┬───
+   ·                                      ╰── here
+ 7 │
+   ╰────</code></pre>
+    <p>
+      Because the checker runs first, no program that uses a relation runs under
+      <code>--features m6</code> until the checker's relation arms are written. The first
+      <code>todo_m6!</code> it meets stops the run.
+    </p>
+
+    <h3>A few examples</h3>
+    <p>After <code>deps.brg</code>'s four <code>add</code>s, these queries have these values:</p>
+    <pre><code>solutions uses("app", ?m)                    ["gfx", "io", "net", "ui"]
+solutions uses(?a, "gfx")                    ["app", "ui"]
+solutions needs(?a, ?)                       ["app", "net", "ui"]
+solutions uses("app", "io")                  [()]
+uses(?m, "app")                              false
+solutions uses(?m, ?m)                       []
+{ clear needs; solutions uses(?a, ?b) }      []</code></pre>
+    <p>Forms and rules that are <em>rejected</em> before the program runs, with the error and where it is
+      reported (see the chapter for the declarations these assume):</p>
+    <pre><code>add uses("app", ?m)                          HoleInAdd, at the whole form
+solutions uses(1, ?m)                        Mismatch (expected String, found Int), at 1
+{ let f = uses; f("a", "b") }                RelationNotAValue (uses), at uses
+rule uses(a, c) :- needs(a, b);              Unbound (c), at the head
+rule leaf(a) :- size(a, n + 1);              ArgumentNotATerm, at n + 1
+rule leaf(a) :- size(a, n) and m &gt; cap;      Unbound (m), at the filter
+rule leaf(a) :- size(a, n) and note(a);      Impure, witness [note, println]
+rule leaf(a) :- size(a, n) and n;            Mismatch (expected Bool, found Int)</code></pre>
+    <p>
+      The provided tests come in four kinds. Some call <code>Subst::unify</code> directly on terms and
+      values. Some run a whole program with <code>run_program</code>, which skips the static checks, so
+      the engine meets filters the checks would have refused. Some run <code>check_rules</code> alone on a
+      loaded program, and some run the type checker on one. A rejection is tested by its
+      <code>RuleError</code> or <code>TyError</code> variant and, where it matters, by its payload (the
+      name in <code>Unbound</code>, the path in <code>Impure</code>), never by the text of its message.
+      When <code>cargo m6</code> is all green, your implementation is very likely correct.
+    </p>
+
+    <h2>How M6 is graded</h2>
+    <p>M6 is worth <strong>100 points</strong>:</p>
+    <div class="table-responsive">
+      <table class="table table-bordered grade-table">
+        <thead>
+          <tr><th>Item</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Auto-graded tests</td>
+            <td><strong>80</strong>, split <strong>40 / 40</strong>: <strong>40</strong> on the new M6
+              behavior (eight properties, <strong>5 points each</strong>) and <strong>40</strong> on
+              carried-over regression tests for the past milestones (M1 through M5), since M6 is
+              cumulative. The carried-over 40 is divided <strong>evenly among M1, M2, M3, M4, and
+              M5</strong> (8 points each), then across each milestone's properties, so a regression in
+              any one of them is weighted against that milestone's own share. These are held-back tests,
+              run on Gradescope against the public interface, separate from the provided tests you run
+              locally with <code>cargo m6</code>.</td>
+          </tr>
+          <tr>
+            <td>Formatting &amp; linting</td>
+            <td><strong>10</strong>: <strong>5</strong> for <code>cargo fmt</code> (checked on your
+              submitted files) and <strong>5</strong> for <code>cargo clippy</code> (checked with
+              <code>-D warnings</code>). Run both before submitting. The starter is clean on a fresh
+              clone, so a warning means something you introduced.</td>
+          </tr>
+          <tr>
+            <td><code>Description.md</code></td>
+            <td><strong>10</strong>, human-graded (see below).</td>
+          </tr>
+          <tr class="danger">
+            <td>Does not compile</td>
+            <td><strong>0</strong> for the entire milestone. The autograder builds your files against its
+              own copies of the frozen files, so make sure your code builds with those files
+              unmodified.</td>
+          </tr>
+          <tr class="danger">
+            <td>Fails any provided test</td>
+            <td><strong>0</strong> for the entire milestone. The provided (visible) tests are a hard
+              gate: you must pass all of them, the M6 tests <em>and</em> the carried-over M5&ndash;M1
+              tests, before any of the 80 auto-graded points are counted.</td>
+          </tr>
+          <tr class="danger">
+            <td>Description does not match your code</td>
+            <td>The <code>Description.md</code> can be scored <strong>negative</strong>, roughly
+              <strong>&minus;20</strong> and up to <strong>&minus;40</strong>, at the discretion of the TA
+              or instructor (see below). Passing every test does not by itself secure full credit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The two <strong>0 gates</strong> come first. Code that does not compile, or that fails any of the
+      tests shipped with the repository, earns no credit for the milestone regardless of anything else.
+      Because M6 is cumulative, a change that breaks an earlier milestone's test trips this gate too.
+      Only after both gates pass are the 80 auto-graded points, the 10 style points, and the 10
+      description points assessed.
+    </p>
+    <p>
+      Each of the 80 points is tied to one <strong>property</strong>, a single rule your implementation
+      must obey. Eight properties cover the new M6 behavior:
+    </p>
+    <ul>
+      <li><strong>Unification</strong>: <code>Subst::unify</code> matches a pattern against a fact. A
+        variable's first sighting binds it, a repeat must agree, a constant must equal the fact's value,
+        and the lengths must match. A success extends the substitution, and neither a success nor a
+        failure changes the original.</li>
+      <li><strong>Queries</strong>: a query computes the least fixpoint of the rules over the facts,
+        including recursive and mutually recursive rules and cyclic data. A hole-free query tests
+        membership, <code>solutions</code> collects the named holes' values, and a query with holes in
+        boolean position tests existence.</li>
+      <li><strong>Relational <code>for</code></strong>: a <code>for</code> over a query walks every
+        solution in canonical order, binding its holes, so the body's effects accumulate across the
+        matches.</li>
+      <li><strong>Add and clear</strong>: <code>add</code> inserts a ground fact and <code>clear</code>
+        removes one relation's facts, and later queries see the change, derived facts included. A fact
+        with a hole is <code>HoleInAdd</code>.</li>
+      <li><strong>Filters</strong>: a rule's filters narrow what it derives, in any position in the body,
+        and a filter may read a top-level constant or call a pure function.</li>
+      <li><strong>Rule structure</strong>: the static checks accept a well-formed rule, and reject a head
+        that names no declared relation (<code>NotARelation</code>), a generator of the wrong arity
+        (<code>Arity</code>), an argument that is not a term (<code>ArgumentNotATerm</code>), and a
+        variable no generator binds (<code>Unbound</code>).</li>
+      <li><strong>Rule purity</strong>: a filter that reaches an effect, directly or several calls away,
+        is <code>Impure</code> with the right witness path. One that reaches a recursive function is
+        <code>Recursive</code>, even when the recursion would stop, and one that reaches a function with a
+        function-typed parameter is <code>HigherOrder</code>. Reading a relation from a filter is an
+        effect.</li>
+      <li><strong>Rule typing and the stuck state</strong>: a rule's terms are typed by their columns and
+        a filter must be <code>Bool</code>. In a program run without the checks, a query,
+        <code>add</code>, or <code>clear</code> reached during a fixpoint is a clean
+        <code>QueryInFilter</code>, not a loop.</li>
+    </ul>
+    <p>
+      A property is <strong>all-or-nothing</strong>. It is checked by several cases, some
+      <strong>visible</strong> and some <strong>hidden</strong>, and you earn its points only when all
+      of them pass. When a property fails, Gradescope reports <strong>which property</strong> it was and
+      states the rule it checks, so you know what behavior to fix. If the failing case is a visible one,
+      you also see a short description of it. If it is a hidden one, you see a hint about what kind of
+      case it is, but not the specific input. Because attempts are unlimited, the workflow is: submit, read
+      which properties failed, fix them, and resubmit.
+    </p>
+
+    <h2>The write-up: <code>Description.md</code></h2>
+    <p>
+      You may use generative AI on this project, and a coding assistant can likely solve M6 on its
+      own. That is fine. What I grade is not <em>only</em> that the code works, but that
+      <strong>you understand the code you submitted</strong>. The <code>Description.md</code> is how I
+      judge that. Write it yourself, in your own words, about the code you are actually turning in.
+    </p>
+    <p>Put a <code>Description.md</code> at the root of the repository that answers all of the following.</p>
+
+    <h3>Concept questions</h3>
+    <p>
+      A few sentences each, in your own words. These are about the code <em>you</em> wrote. Point at
+      your own implementation where a question asks you to, rather than repeating the textbook's answers.
+    </p>
+    <ol>
+      <li>
+        <code>solutions uses("app", ?m)</code> in <code>deps.brg</code> (from above) is
+        <code>["gfx", "io", "net", "ui"]</code>. Using your engine, explain how
+        <code>uses("app", "io")</code> gets derived: which round of your fixpoint first produces it,
+        which rule fires, and what substitution your <code>unify</code> builds for each generator.
+        How does your loop decide that it has reached the fixpoint? Why does the same loop terminate on a
+        graph with a cycle, such as an extra fact <code>needs("io", "app")</code>?
+      </li>
+      <li>
+        <code>solutions needs(?a, ?)</code> is <code>["app", "net", "ui"]</code>, three values from four
+        facts. Point at where your engine cuts each match down to the named holes, removes duplicates, and
+        sorts. Why must the anonymous hole be cut away <em>before</em> duplicates are removed? Why does
+        each <code>?</code> need a fresh variable name, and what would <code>solutions needs(?, ?)</code>
+        return if your engine gave every anonymous hole the same name?
+      </li>
+      <li>
+        <code>rule leaf(a) :- size(a, n) and m &gt; cap;</code> is <code>Unbound (m)</code>, but
+        <code>n &gt; cap</code> is accepted, and so is <code>{ let m = n * 2; m &gt; cap }</code>. Walk
+        through your <code>check_range_restriction</code> on all three: which names
+        <code>free_vars</code> gives for each filter, and which test lets each name through or rejects
+        it. Why does the language insist that every <em>head</em> variable be bound by a generator? What
+        would a rule like <code>rule uses(a, c) :- needs(a, b);</code> have to mean if it were
+        allowed?
+      </li>
+      <li>
+        <code>hops.brg</code> (above) is rejected as <code>Recursive</code>, although
+        <code>hops(2)</code> always returns. Show where your <code>check_pure</code> finds the cycle and
+        why it reports <code>Recursive</code> rather than <code>Impure</code>. Then, for the filter
+        <code>note(a)</code>, where <code>note</code> calls <code>println</code>, explain how your code
+        builds the witness <code>[note, println]</code>, and how it computes the impure set
+        <code>I</code> as a least fixpoint over the program's functions.
+      </li>
+      <li>
+        The purity check already rejects every filter that queries, yet your engine also keeps a
+        <code>materializing</code> flag. Point at where you set and clear it in
+        <code>solutions</code>, and explain why it must be cleared before an error from the rounds is
+        returned. Using the textbook's <code>p</code>/<code>q</code>/<code>r</code> program from the
+        chapter's design problems, describe what your engine would do, run without the checks, if the flag
+        were not there.
+      </li>
+    </ol>
+
+    <h3>How you implemented it</h3>
+    <ul>
+      <li>
+        Walk through your <code>solutions</code> from start to finish: how you turn the query's arguments
+        into terms, how you compute the fixpoint (the starting facts, one round, and firing one rule
+        through its generators and filters), and how you build the answer. Say how your
+        <code>Subst::unify</code> handles a variable already bound, and how it leaves the original
+        substitution unchanged on failure. Naming the provided tools you used (<code>RelationDb</code>,
+        <code>Subst</code>, <code>compare</code>, <code>type_of</code>, <code>env.root()</code>,
+        <code>Control</code>) is encouraged.
+      </li>
+      <li>
+        Describe how your <code>check_pure</code> decides what a call reaches: how you tell a local from
+        a top-level function or a native, how you treat <code>map</code>, <code>filter</code>, and
+        <code>fold</code> callbacks, and which of the provided helpers (<code>subexprs</code>,
+        <code>free_vars</code>, <code>bound_names</code>) you used and where.
+      </li>
+      <li>
+        Point out anything that was tricky, a bug you fixed, or a design choice you made. If you used an
+        assistant, say what you had it do and how you checked its work.
+      </li>
+    </ul>
+
+    <div class="panel panel-warning">
+      <div class="panel-heading"><strong>Understanding what you submit</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The <code>Description.md</code> is worth up to <strong>10 points</strong>, graded by hand.
+          But it can also be scored <strong>negative</strong>. If your description does not match the code
+          you submitted (it describes an approach your code does not take, gets the behavior wrong, or
+          reads as though you cannot explain your own submission), you can lose roughly <strong>20
+          points, and up to 40</strong>, as judged by the TA or instructor, who may also ask you to explain
+          your submission in person. Passing every test does not by itself secure full credit.
+        </p>
+        <p style="margin-bottom:0">
+          You are welcome to use a coding assistant to <em>write</em> the code. You are responsible for
+          <em>understanding</em> it. Code you cannot explain will not earn full credit. This expectation
+          grows across the semester. M6 spans more files than any milestone so far, so make sure you can
+          explain each of them.
+        </p>
+      </div>
+    </div>
+
+    <h2>Submitting</h2>
+    <p>
+      First write your <code>Description.md</code> at the root of the repository. Then, from inside the
+      project folder, check the code:
+    </p>
+    <pre><code>cd bridger-interpreter                       # the project root
+
+cargo m6                                     # all Milestone-6 tests pass (M5–M1 too)?
+cargo fmt                                    # format your code
+cargo clippy --all-targets -- -D warnings    # lint — fix any warnings</code></pre>
+    <p>
+      Then package <code>src/</code> and the root <code>.md</code> files into a <code>.zip</code>.
+      Run the command for your system from the project root.
+    </p>
+    <p><strong>macOS / Linux</strong> (Terminal):</p>
+    <pre><code>zip -r ../m6-submission.zip src *.md</code></pre>
+    <p><strong>Windows</strong> (PowerShell):</p>
+    <pre><code>Compress-Archive -Path src, *.md -DestinationPath ..\m6-submission.zip -Force</code></pre>
+    <p>
+      Either one writes <code>m6-submission.zip</code> in the folder just above the project, with
+      <code>src/</code> and <code>Description.md</code> at the top of the archive. The autograder
+      replaces <code>Cargo.toml</code>, <code>tests/</code>, and the frozen <code>src/</code> files with its
+      own copies, so any changes you make to them are discarded. New at M6: <strong>five</strong> files are
+      graded as your code:
+    </p>
+    <ul>
+      <li><code>src/interp/eval.rs</code></li>
+      <li><code>src/types/check.rs</code></li>
+      <li><code>src/relations/unify.rs</code></li>
+      <li><code>src/relations/engine.rs</code></li>
+      <li><code>src/relations/check.rs</code></li>
+    </ul>
+    <p>
+      Any helper functions you write, and the pasted-in helper module, must live in one of those five
+      files.
+    </p>
+    <p>
+      Upload <code>m6-submission.zip</code> to the <strong>Milestone M6</strong> assignment on
+      Gradescope (linked from Canvas). Some tests are visible, so you will get results back shortly and
+      can resubmit before the deadline. Other tests are hidden, so passing every visible test does not
+      guarantee full credit.
+    </p>
+    <p class="text-muted" style="font-size:.92em">
+      No <code>zip</code> command on Linux? Install it (on Debian/Ubuntu,
+      <code>sudo apt install zip</code>). Alternatively, in Finder (macOS) or File Explorer (Windows),
+      select the <code>src</code> folder and the <code>.md</code> files inside the project folder (not
+      the project folder itself) and choose <strong>Compress</strong> /
+      <strong>Send to &rarr; Compressed (zipped) folder</strong>.
+    </p>
+    <p>
+      See the <strong>Course Project Policies</strong> on the
+      <a href="../../fall26.html">main course page</a> for the collaboration, generative-AI, and
+      late-work rules that apply to every milestone.
+    </p>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages &middot;
+      <a href="../../fall26.html">Course home</a>
+    </footer>
+
+  </div>
+</body>
+</html>

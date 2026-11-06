@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-19f00df0.js";
+            window.path_to_searchindex_js = "../searchindex-b73242dc.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -182,66 +182,884 @@
 <h1 id="milestone-m6"><a class="header" href="#milestone-m6">Milestone M6</a></h1>
 <p class="chapter-subtitle">Relations</p>
 
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Closes Part VII. Course offering: due Fri Nov 13.
-     Sources: spec §12
-     Status: placeholder — spine authored just-in-time.
-     Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
-     satisfy, worked examples, self-check tests). Grading, deadlines, submission
-     and autograder mechanics stay in the syllabus and never appear here.
+     Closes Part VII. SPEC ONLY (plan §9.5): what to build, the checklist, worked
+     examples, self-check; NO grading, deadlines, submission, or autograder text,
+     and no course/institution names in rendered prose.
+     TEMPLATE: M5's shape (to-dos -> checklist tables -> contracts -> implementing ->
+     running -> worked examples -> cargo mN -> design problems). The checklist DEFERS
+     the rules to Appendix D ("Relations" under evaluation and under typing,
+     "Purity and effects") and the algorithms to the Part VII "Building it"
+     sections. NO arm or function bodies printed (feedback: no milestone
+     solutions); the guidance is prose, at the level of the contracts a test holds.
+     HELPERS (user, 2026-11-05): the walker and the free-variable computations are
+     provided as a paste-in module at the end of src/relations/check.rs: subexprs,
+     query_exprs, free_vars, bound_names. Everything else in check.rs (the impure
+     fixpoint, witness, recursion and higher-order checks, generator
+     classification) stays student work. Facts behind the module's shape:
+       - `pub mod helpers`: clippy --tests -D warnings is clean with every helper
+         unused, at m6 and m8. Lines <= 85, and stable under rustfmt at width 100
+         (one-statement match arms keep their braces with a trailing `;`).
+       - free_vars returns a Vec in order of first appearance (the reference's
+         HashSet would make the Unbound variable named for a filter with several
+         unbound names depend on hash order). bound_names stays a HashSet.
+       - free_vars skips a direct call's callee, so an undeclared name called in a
+         body is check_generators' NotARelation, never range restriction's Unbound.
+     VERIFIED 2026-11-05: (1) assembled starter + module appended: fmt --check and
+       clippy --tests -D warnings clean at m6 and m8; (2) the reference's own
+       subexprs / query_exprs / free_vars / bound_names deleted and check.rs rewired
+       onto the module: every provided test passes at m6, m7, m8, and the held-back
+       M6, M7, M8 suites pass.
+     SCOPE: purity is specified over the M1–M6 forms. Method calls, `?`, match
+       guards (check_guards), and the trust given to the prelude's Bridger-written
+       functions belong to M7/M8 (the stub's doc comment on check_pure already
+       describes them; no M6 test, provided or held back, uses them). prelude.brg
+       defines no functions before M8.
+     REPO FACTS: holes are todo_m6! in eval.rs (Relation, ForQuery), types/check.rs
+       (Relation, ForQuery, check_rule), relations/unify.rs, engine.rs, and three in
+       relations/check.rs. The Var and Call arms of both eval.rs and check.rs also
+       change, with no hole of their own. `relation_of` / `check_relation_arity`
+       are the reference's own (student-side) helpers in engine.rs; the starter does
+       not provide them. Interpreter fields db, program, materializing are
+       pub(crate); native_names() is pub(crate) in interp::prelude; compare is
+       pub in interp::value. Interpreter::check runs check_rules and the type
+       checker from m6, reporting the earliest error across both (provided).
+       RelationColumn is the provided driver's (types/mod.rs).
+     CONTRACTS read off the reference: engine.rs (materializing flag around the
+       fixpoint, reset before `?`; filters in env.root() + subst; Return in a filter
+       -> ReturnOutsideFunction; non-Bool -> TypeError at the filter); eval.rs
+       (Add/Clear QueryInFilter check first; HoleInAdd at the form; arity after the
+       arguments); types/check.rs (relation_sig order: ctx -> NotARelation; other
+       decl -> NotARelation; native -> NotARelation; none -> UndeclaredRelation;
+       RelationArity before the arguments; repeated hole unifies at the form span;
+       check_rule: generators, then head at head span, then filters vs Bool);
+       relations/check.rs (head before conjuncts; arity before terms; per filter
+       HigherOrder, then Impure, then Recursive; witness rules).
+     EXAMPLES run 2026-11-05 on reference release builds --features m6, stdin
+       </dev/null. deps.brg prints ["gfx", "io", "net", "ui"] / false / app / net.
+       hops.brg: no output, the Recursive transcript as printed, exit 1. noisy.brg:
+       Impure, witness far → note → println; its transcript was left out because
+       the help line is 94 columns. Query values and rejections in "Worked
+       examples" pasted from the runs. Design problems: within/step program prints
+       ("a", Some(2)) / ("b", Some(1)) / ("c", Some(1)); `n == m + 1` is Unbound n
+       at the rule's head; `m + 1` in a head does not parse; to_string(n) == "3"
+       is Impure with witness to_string.
+     HIDDEN TESTS: never use or name a case from milestones/m6/tests/graded.rs's
+       hidden tests: mdBook passes HTML comments through to the page source.
+     Course offering (instructor note, not rendered): due Fri Nov 13.
+     Status: draft authored 2026-11-05, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-Everything in Part VII has been building toward one thing: an interpreter that actually runs these
-programs. This chapter says what yours should do now, and how to know it works.
+<p>Part VII added a second language inside Bridger. A program declares relations, states facts and
+rules about them, and asks queries whose answers are the least fixpoint of the rules over the facts.
+The <a href="../relations/unification.html">unification</a> chapter matched a rule’s atoms against facts, and
+<a href="../relations/fixpoint.html">the fixpoint</a> repeated that matching in rounds until nothing new
+appeared. <a href="../relations/rules.html">Rule bodies</a> separated generators from filters and required
+filters to be pure, and <a href="../relations/integration.html">the host-language forms</a> let ordinary code
+ask queries, walk their solutions, and change the facts. This milestone builds all of it. Every
+M1–M5 test must still pass.</p>
+<p>The work spreads across more files than before. The evaluator in <code>src/interp/eval.rs</code> and the
+checker in <code>src/types/check.rs</code> gain the relation forms. Three files are new:
+<code>src/relations/unify.rs</code> matches one atom against one fact, <code>src/relations/engine.rs</code> computes the
+fixpoint and answers queries, and <code>src/relations/check.rs</code> holds the static checks on rules. From
+this milestone on, the interpreter runs the rule checks and the type checker before <code>main</code>, and a
+program that fails either prints nothing. <a href="#the-helper-module">The helper module</a> below provides
+the walker over expressions and the free-variable computation. Paste it at the end of
+<code>src/relations/check.rs</code>.</p>
+<h2 id="to-dos"><a class="header" href="#to-dos">To-dos</a></h2>
+<p><code>grep -rn 'todo_m6!' src</code> lists the holes. Each names the rules it implements:</p>
+<pre><code class="language-rust ignore">// src/interp/eval.rs
+Expr::Relation(..) =&gt; todo_m6!("E-Add / E-Clear / E-Solutions / E-Query"),
+Expr::ForQuery(..) =&gt; todo_m6!("E-ForQuery (iterate a query's solutions)"),
 
-## What you build
+// src/types/check.rs
+Expr::Relation(..) =&gt; todo_m6!("T-Add / T-Clear / T-Solutions / T-Query"),
+Expr::ForQuery(..) =&gt; todo_m6!("T-ForQuery"),
+pub fn check_rule(&amp;mut self, rule: &amp;Rule) -&gt; Result&lt;(), TyError&gt;
 
-The Datalog fragment: relation declarations, facts, rules, safety checking, least-fixpoint evaluation, and querying relations from ordinary code.
+// src/relations/unify.rs, engine.rs, check.rs
+pub fn unify(&amp;self, pattern: &amp;[Term], fact: &amp;[Value]) -&gt; Option&lt;Subst&gt;
+pub fn solutions(&amp;mut self, q: &amp;Query, span: Span, env: &amp;Env)
+    -&gt; Result&lt;Vec&lt;Subst&gt;, Control&gt;
+pub fn check_generators(program: &amp;Program, rule: &amp;Rule)
+    -&gt; Result&lt;Vec&lt;bool&gt;, RuleError&gt;
+pub fn check_range_restriction(program: &amp;Program, rule: &amp;Rule, generators: &amp;[bool])
+    -&gt; Result&lt;(), RuleError&gt;
+pub fn check_pure(program: &amp;Program, rule: &amp;Rule, generators: &amp;[bool])
+    -&gt; Result&lt;(), RuleError&gt;</code></pre>
+<p>Each stub’s <code>let _ = (…);</code> line keeps the compiler quiet until the body reads its parameters. Two
+changes have no <code>todo_m6!</code> marker of their own:</p>
+<ol>
+<li>In the <code>Call</code> arm of both the evaluator and the checker, a call whose callee is a relation is a
+hole-free query.</li>
+<li>In the checker’s <code>Var</code> arm, a relation’s name used as a value is rejected with
+<code>RelationNotAValue</code>.</li>
+</ol>
+<p><code>check_guards</code>, in the same file as the rule checks, stays a hole until M7.</p>
+<h2 id="milestone-specification"><a class="header" href="#milestone-specification">Milestone specification</a></h2>
+<p>The query forms, the rules that give them meaning, and the cases in which evaluation is stuck or the
+checker rejects them:</p>
+<table>
+<thead>
+<tr><th>Form</th><th>Rules</th><th>Stuck when</th><th>Rejected when</th></tr>
+</thead>
 
-## What is provided
+<tbody>
+<tr>
+  <td><code>add R(e1, …, en)</code></td>
+  <td><code>E-AddFact</code>, <code>T-Add</code></td>
+  <td><code>R</code> is not a relation in scope; an argument is a hole; the count differs from
+  <code>R</code>'s columns; it runs inside a filter</td>
+  <td><code>R</code> is not a relation in scope; the count differs; an argument is a hole or is not
+  of its column's type</td>
+</tr>
 
-—
+<tr>
+  <td><code>clear R</code></td>
+  <td><code>E-Clear</code>, <code>T-Clear</code></td>
+  <td><code>R</code> is not a relation in scope; it runs inside a filter</td>
+  <td><code>R</code> is not a relation in scope</td>
+</tr>
 
-## The specification you must satisfy
+<tr>
+  <td><code>R(a1, …, an)</code>, and <code>R(e1, …, en)</code> in call syntax</td>
+  <td><code>E-Query-True</code>, <code>E-Query-False</code>, <code>T-Query</code></td>
+  <td><code>R</code> is not a relation in scope; the count differs; it runs inside a filter</td>
+  <td><code>R</code> is not a relation in scope; the count differs; a bound argument is not of its
+  column's type; a hole named twice stands over columns of different types</td>
+</tr>
 
-*To be written: the inference rules from this part, collected — the checklist your evaluator is
-measured against. Sources: spec §12.*
+<tr>
+  <td><code>solutions q</code></td>
+  <td><code>E-Solutions</code>, <code>T-Solutions</code></td>
+  <td>as for the query <code>q</code></td>
+  <td>as for the query <code>q</code></td>
+</tr>
 
-## How to know it works
+<tr>
+  <td><code>for q { e }</code></td>
+  <td><code>E-For-Query</code>, <code>T-For-Query</code></td>
+  <td>as for the query <code>q</code></td>
+  <td>as for the query <code>q</code>; the body is not <code>()</code></td>
+</tr>
 
-Transitive closure over a graph you build imperatively returns the right answer and terminates; an unsafe rule (an unbound head variable) is rejected.
+<tr>
+  <td><code>R</code> on its own</td>
+  <td>—</td>
+  <td>—</td>
+  <td>always: a relation is not a value</td>
+</tr>
 
-*To be written: worked examples with expected output, and a self-check test set you can run on your
-own machine.*
+</tbody>
 
-## Design problems
+</table>
 
-*To be written (plan §9.5, tier two): exercises that reason across this part's chapters, plus
-programming exercises written in Bridger, where the goal is to think in the paradigm as well as
-implement it. Answers in collapsible blocks.*
--->
+<p>The checks every rule must pass before the program runs, and the error each failure gives:</p>
+<table>
+<thead>
+<tr><th>Check</th><th>Rejected when</th><th>Error, at</th></tr>
+</thead>
+
+<tbody>
+<tr>
+  <td>generators</td>
+  <td>the head names no declared relation, or has the wrong number of terms; a generator has the
+  wrong number of arguments, or an argument that is neither a variable nor a literal; a conjunct
+  calls a name nothing declares</td>
+  <td><code>NotARelation</code> or <code>Arity</code> at the head; <code>Arity</code> at the
+  generator; <code>ArgumentNotATerm</code> at the argument; <code>NotARelation</code> at the
+  call</td>
+</tr>
+
+<tr>
+  <td>range restriction</td>
+  <td>a head variable that no generator binds; a name a filter reads that no generator binds and
+  that is not declared at the top level</td>
+  <td><code>Unbound</code> at the head, or at the filter</td>
+</tr>
+
+<tr>
+  <td>purity</td>
+  <td>a filter reaches a function with a function-typed parameter; a filter reaches an effect; a
+  filter reaches a recursive function</td>
+  <td><code>HigherOrder</code>, <code>Impure { witness }</code>, <code>Recursive</code>, at the
+  filter</td>
+</tr>
+
+<tr>
+  <td>typing</td>
+  <td>a variable stands over columns of different types; a literal is not of its column's type; a
+  head term is not of its column's type; a filter is not <code>Bool</code></td>
+  <td><code>Mismatch</code> at the argument, the head, or the filter</td>
+</tr>
+
+</tbody>
+
+</table>
+
+<p>The rules are in Appendix D: <a href="../appendix/language-reference.html#relations">evaluation</a>,
+<a href="../appendix/language-reference.html#relations-1">typing</a>, and <a href="../appendix/language-reference.html#purity-and-effects">purity and
+effects</a>. The <a href="../appendix/language-reference.html#runtime-errors-stuck-evaluation">runtime
+errors</a> and <a href="../appendix/language-reference.html#the-static-errors-by-name">static errors by
+name</a> give the variant a test expects
+for each case. The “Building it” sections of the Part VII chapters describe the algorithms; these
+tables are the checklist your code is measured against.</p>
+<p>The provided driver runs the rule checks on each rule in the order generators, range restriction,
+purity, and runs <code>check_rule</code> from the type checker’s driver. Across all the static checks, the
+error reported is the earliest in the file. The driver also rejects a relation whose column type
+admits no equality, with <code>RelationColumn</code>.</p>
+<p>These contracts hold across the files:</p>
+<ul>
+<li><strong>A query form evaluates its arguments once, left to right</strong>, after it has resolved the
+relation’s name and before it judges the argument count. An argument’s effect happens even when
+the form then turns out to have the wrong number of arguments. A <code>for</code> evaluates them a single
+time, before its first solution.</li>
+<li><strong>The solutions are distinct and in canonical order.</strong> Two matches that agree on every named hole
+are one solution, whatever stood at a bound argument or an anonymous hole. They are sorted with
+the provided <code>compare</code> on their hole values, first hole first.</li>
+<li><strong>The checks stop at the first failure, in source order.</strong> The head is checked before the body,
+and the conjuncts left to right. Within a generator, the argument count is checked before the
+arguments. Range restriction checks the head’s variables in the order written, then each
+filter’s free names in order of first appearance.</li>
+<li><strong>The database cannot change, and cannot be read, while a fixpoint is being computed.</strong> A query,
+<code>add</code>, or <code>clear</code> reached from a filter is stuck with <code>QueryInFilter</code>. The purity check rejects
+every such filter before the program runs, so only a program run without the checks reaches this
+state, and the tests run some programs that way.</li>
+</ul>
+<h2 id="implementing-milestone-m6"><a class="header" href="#implementing-milestone-m6">Implementing Milestone M6</a></h2>
+<p>The two new <code>Expr</code> variants and the types a rule is made of:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Fields</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Expr::Relation</code></td><td><code>(Rel, Span)</code></td></tr>
+<tr><td><code>Expr::ForQuery</code></td><td><code>(Query, Box&lt;Expr&gt;, Span)</code></td></tr>
+<tr><td><code>Rel</code></td><td><code>Add(Query)</code>, <code>Clear(Name)</code>, <code>Solutions(Query)</code>, <code>Query(Query)</code></td></tr>
+<tr><td><code>Query</code></td><td><code>{ name: Name, args: Vec&lt;QArg&gt; }</code></td></tr>
+<tr><td><code>QArg</code></td><td><code>Expr(Expr)</code>, <code>Hole(Option&lt;Name&gt;)</code></td></tr>
+<tr><td><code>Rule</code></td><td><code>{ head: Atom, body: Vec&lt;Expr&gt;, span: Span }</code></td></tr>
+<tr><td><code>Atom</code></td><td><code>{ name: Name, terms: Vec&lt;ast::Term&gt;, span: Span }</code></td></tr>
+<tr><td><code>ast::Term</code></td><td><code>Var(Name)</code>, <code>Lit(Lit)</code></td></tr>
+<tr><td><code>Decl::Relation</code></td><td><code>(Vec&lt;Ty&gt;)</code>, the column types</td></tr>
+</tbody>
+</table>
+</div>
+<p>Two types are called <code>Term</code>. The one in <code>ast.rs</code> is a term as written in a rule head. The one in
+<code>relations/term.rs</code> is what the engine matches with, a variable or a <code>Value</code>. A file that needs both
+can import one under another name, as in <code>use crate::ast::Term as AstTerm;</code>.</p>
+<h3 id="the-provided-runtime"><a class="header" href="#the-provided-runtime">The provided runtime</a></h3>
+<p><a href="../relations/unification.html#building-it">Unification</a> shows <code>Term</code> and <code>Subst</code>, <a href="../relations/datalog.html#building-it">Declarative
+programming</a> shows <code>RelationDb</code>’s <code>add</code> and <code>clear</code>, and
+<a href="../relations/fixpoint.html#building-it">Evaluating relations</a> shows how the engine reaches the rules
+and the stored closure. The rest of what the M6 files use:</p>
+<pre><code class="language-rust ignore">impl Subst {
+    fn iter(&amp;self) -&gt; impl Iterator&lt;Item = (&amp;Name, &amp;Value)&gt;; // every binding
+}
+
+impl RelationDb {
+    fn facts(&amp;self, relation: &amp;str) -&gt; &amp;[Tuple];      // Δ's facts for one relation
+    fn relations(&amp;self) -&gt; impl Iterator&lt;Item = &amp;str&gt;; // relations Δ has facts in
+}
+
+impl Interpreter {
+    pub(crate) db: RelationDb,       // Δ
+    pub(crate) materializing: bool,  // set while a fixpoint is computed
+    pub fn program(&amp;self) -&gt; &amp;Program;
+}
+
+impl Env {
+    pub fn root(&amp;self) -&gt; Env;       // the program's top-level environment
+}
+
+pub fn compare(a: &amp;Value, b: &amp;Value) -&gt; Ordering;   // crate::interp::value
+pub fn type_of(v: &amp;Value) -&gt; Ty;                    // crate::interp
+pub(crate) fn native_names() -&gt; impl Iterator&lt;Item = &amp;'static str&gt;;
+                                                    // crate::interp::prelude</code></pre>
+<p>The provided <code>eval_program</code> binds every declared relation in the root environment to a
+<code>Value::Relation(name)</code>, beside the functions, so a relation’s name is resolved like any other.</p>
+<h3 id="matching"><a class="header" href="#matching">Matching</a></h3>
+<p><code>Subst::unify</code> is <a href="../relations/unification.html#building-it">Unification</a>’s algorithm. A variable
+not yet bound, in <code>self</code> or at an earlier position of the same pattern, is bound to the fact’s value
+at its position. A variable already bound must equal that value, and so must a constant. Patterns
+and facts of different lengths do not match. On any mismatch the answer is <code>None</code>. On success it
+is a new, extended <code>Subst</code>. Since <code>unify</code> takes <code>&amp;self</code>, the substitution it was called on is left
+as it was, and the caller can try it against the next fact.</p>
+<h3 id="the-engine"><a class="header" href="#the-engine">The engine</a></h3>
+<p><code>solutions</code> does three things in order: it reads the query, computes the fixpoint, and matches the
+query against it.</p>
+<ul>
+<li><strong>The query.</strong> If <code>self.materializing</code> is set, the query is stuck with <code>QueryInFilter</code> at <code>span</code>.
+Otherwise the relation’s name is looked up in <code>env</code>. A <code>Value::Relation</code> gives the relation, any
+other value is <code>NotARelation { name, span }</code>, and no binding is <code>UnboundVariable { name, span }</code>.
+Each argument becomes a term, left to right: a bound argument is evaluated in <code>env</code> to a constant,
+a named hole <code>?x</code> is <code>Term::Var("x")</code>, and each anonymous hole is a variable with a fresh name
+no identifier can spell, such as <code>?0</code> and <code>?1</code>. Then an argument count other than the relation’s
+column count is <code>ArityMismatch { expected, found, span }</code>.</li>
+<li><strong>The fixpoint.</strong> The starting facts are those in <code>self.db</code> and the head of every rule with no
+body. The rules with bodies are then fired in rounds, as in <a href="../relations/fixpoint.html#building-it">Evaluating
+relations</a>, until a round adds nothing. Set
+<code>self.materializing</code> before the rounds and clear it after them, before any error from them is
+returned, so that one stuck filter does not leave every later query stuck. Clone the program’s
+rules before the rounds begin, since evaluating a filter borrows the interpreter mutably. Storing
+the closure with <code>set_derived</code> and reusing it is optional.</li>
+<li><strong>Firing one rule.</strong> A conjunct is a generator when it is a call whose callee is a variable naming
+a declared relation in <code>self.program().decls</code>. Its arguments become terms: a variable becomes
+<code>Term::Var</code> and a literal becomes the constant it denotes. The join starts from one empty
+substitution and extends it through each generator in turn with <code>unify</code>. Each filter is then
+evaluated, left to right, for each remaining substitution, in <code>env.root()</code> extended with that
+substitution’s bindings. <code>true</code> keeps the substitution, <code>false</code> drops it, and the filters after a
+<code>false</code> are not evaluated. A filter that yields a value other than a <code>Bool</code> is
+<code>TypeError { expected: Bool, found, span }</code> at the filter, with <code>found</code> from <code>type_of</code>. A
+<code>Control::Return</code> out of a filter is <code>ReturnOutsideFunction</code> at the filter. Each substitution that
+survives grounds the head, a variable to its binding and a literal to its value.</li>
+<li><strong>The answer.</strong> The query’s pattern is matched against every fact of its relation. Each match is
+cut down to the named holes, duplicates are removed, and the rest are sorted as the contracts say.
+A hole-free query has one empty substitution as its answer when its fact is derivable, and none
+when it is not.</li>
+</ul>
+<h3 id="the-evaluators-arms"><a class="header" href="#the-evaluators-arms">The evaluator’s arms</a></h3>
+<p><a href="../relations/datalog.html#building-it">Declarative programming</a> and <a href="../relations/integration.html#building-it">Querying relations from the
+host language</a> describe the arms. A test also holds them
+to the following:</p>
+<ul>
+<li><strong><code>add</code></strong> is stuck with <code>QueryInFilter</code> when <code>self.materializing</code> is set, before it does
+anything else. It then resolves the relation’s name as a query does, and evaluates its arguments
+left to right. A hole is <code>HoleInAdd</code> at the whole form, raised when the evaluation reaches it, so
+an earlier argument’s effects have happened. The argument count is checked after the arguments
+run, with <code>ArityMismatch</code> at the whole form. The fact goes to <code>self.db.add</code>, and the form’s value
+is <code>()</code>.</li>
+<li><strong><code>clear</code></strong> checks <code>materializing</code> and resolves its name the same way, then calls
+<code>self.db.clear</code>. Its value is <code>()</code>.</li>
+<li><strong>A query</strong> is <code>true</code> when <code>solutions</code> returns anything. <strong><code>solutions q</code></strong> builds one value per
+substitution from the query’s named holes, each distinct name once, in order of first appearance:
+<code>()</code> when there are none, the hole’s value when there is one, a tuple in hole order otherwise.</li>
+<li><strong><code>for q { e }</code></strong> calls <code>solutions</code> once and, for each substitution, runs the body in the
+environment at the <code>for</code> extended with that substitution’s bindings. A <code>return</code> in the body passes
+straight out, and the form’s value is <code>()</code>.</li>
+<li><strong>The <code>Call</code> arm</strong> evaluates its callee first, as before. A <code>Value::Relation</code> makes the call a
+hole-free query: the unevaluated arguments become <code>QArg::Expr</code>s, <code>solutions</code> evaluates them, and
+the call is <code>true</code> when there is a solution. A local that shadows a relation’s name has its own
+value, so a call through it is an ordinary call.</li>
+</ul>
+<h3 id="the-checkers-arms"><a class="header" href="#the-checkers-arms">The checker’s arms</a></h3>
+<p><a href="../relations/integration.html#building-it">Querying relations from the host
+language</a> describes the typing of the query forms, and
+<a href="../relations/rules.html#typing-a-rule">Typing a rule</a> the typing of a rule. In detail:</p>
+<ul>
+<li><strong>The relation a form names</strong> is resolved in this order, and each error is at the whole form:
+<ol>
+<li>A name the <code>Ctx</code> binds is <code>NotARelation</code>, since a local shadows the relation.</li>
+<li>Otherwise, a name <code>decl</code> finds as a relation gives the column types.</li>
+<li>A name <code>decl</code> finds as anything else, or a native function’s name, is <code>NotARelation</code>.</li>
+<li>A name found nowhere is <code>UndeclaredRelation</code>.</li>
+</ol>
+</li>
+<li><strong><code>add R(…)</code></strong> compares the argument count with the column count first, with
+<code>RelationArity { name, expected, found }</code> at the whole form. It then checks each argument against
+its column type, left to right. A hole is <code>HoleInAdd</code> at the whole form. The form has type <code>()</code>.
+<strong><code>clear R</code></strong> resolves its name and has type <code>()</code>.</li>
+<li><strong>A query</strong> checks its argument count as <code>add</code> does. Each bound argument is checked against its
+column type, in order. A named hole takes its column’s type where it first appears, and the same
+name at a later position unifies that type with its own column’s, at the whole form. A query has
+type <code>Bool</code>. <strong><code>solutions q</code></strong> has type <code>[()]</code> with no named holes, <code>[τ]</code> with one, and a list of
+tuples of the holes’ types, in order of first appearance, with more.</li>
+<li><strong><code>for q { e }</code></strong> checks the query, extends the <code>Ctx</code> with each named hole at its type, checks
+the body against <code>()</code>, and has type <code>()</code>.</li>
+<li><strong><code>Var</code>.</strong> After the <code>Ctx</code>, the functions, and the globals, a name <code>decl</code> finds as a relation is
+<code>RelationNotAValue { name }</code> at the name.</li>
+<li><strong><code>Call</code>.</strong> Before <code>check_callee</code>, a callee that is a variable the <code>Ctx</code> does not bind and that
+names a declared relation makes the call a query, typed as above with the arguments as bound
+arguments, of type <code>Bool</code>.</li>
+<li><strong><code>check_rule</code></strong> starts from an empty <code>Ctx</code> with no enclosing function, so a <code>return</code> in a filter
+is <code>ReturnOutsideFunction</code>. It walks the generators in body order. Each variable argument seen for
+the first time is bound in the <code>Ctx</code> at its column’s type. A variable seen again unifies the type
+it was bound at with this column’s, and a literal unifies its own type with its column’s, both at
+the argument. Then each head term is unified with the head relation’s column type at the head’s
+span, a variable at the type its generator gave it and a literal at its own type. Last, each
+filter is checked against <code>Bool</code>, in body order.</li>
+</ul>
+<p>Each arm ends as at M5: unify with the expected type, if there is one, then resolve the type and
+record it at the arm’s span.</p>
+<h3 id="the-rule-checks"><a class="header" href="#the-rule-checks">The rule checks</a></h3>
+<p><a href="../relations/rules.html#building-it">Rule bodies and safety</a> describes what each check does. A test
+holds them to the following:</p>
+<ul>
+<li><strong><code>check_generators</code></strong> checks the head first. A head that names no declared relation is
+<code>NotARelation</code>, and one with the wrong number of terms is <code>Arity</code>, both at the head’s span. Then
+each conjunct, in order. A call whose callee is a variable naming a declared relation is a
+generator. A generator with the wrong argument count is <code>Arity { name, expected, found }</code> at the
+call, and one with an argument that is neither a variable nor a literal is <code>ArgumentNotATerm</code> at
+that argument. A call whose callee names no relation, function, global, or native is
+<code>NotARelation</code> at the call: it could neither generate nor test. Every other conjunct is a filter.</li>
+<li><strong><code>check_range_restriction</code></strong> collects the variables the generators’ arguments name. A head
+variable outside that set is <code>Unbound { var }</code> at the head. A name a filter reads, from
+<code>free_vars</code>, that is outside the set and is not a global, a function, or a native is
+<code>Unbound { var }</code> at the filter. A generator’s variable shadows a top-level name of the same
+spelling.</li>
+<li><strong><code>check_pure</code></strong> first computes the impure set <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span> over every function in the program, as the
+least fixpoint in <a href="../relations/rules.html#which-functions-are-pure">Which functions are pure</a>. Then
+it judges each filter in body order, making three checks in this order, each at the filter’s span.
+If a function the filter reaches has a parameter whose type contains a function type, the error is
+<code>HigherOrder { name }</code>. If the filter reaches an effect, it is <code>Impure { witness }</code>. If a function
+it reaches can reach itself, the error is <code>Recursive { name }</code>.</li>
+</ul>
+<p>What counts as reaching an effect, for a function’s body and for a filter alike:</p>
+<ul>
+<li><strong>The forms with no purity rule:</strong> <code>ref</code>, <code>deref</code>, <code>:=</code>, <code>while</code>, <code>for</code>, <code>add</code>, <code>clear</code>,
+<code>solutions</code>, a query in either syntax, and a relational <code>for</code>.</li>
+<li><strong>Calls, by what the callee is.</strong> A callee that is a local is an effect, whatever function shares
+its name. In a function’s body the locals are its parameters and every name <code>bound_names</code> finds in
+the body. In a filter they are the generators’ variables and every name <code>bound_names</code> finds in any
+of the rule’s conjuncts. A call to a top-level function is an effect when the function is in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span>.
+A call to a native is an effect when the native is <code>print</code>, <code>println</code>, <code>to_string</code>, or one of the
+<code>read_*</code> family. A call to <code>map</code>, <code>filter</code>, or <code>fold</code> is also an effect when its callback (the
+second argument of <code>map</code> and <code>filter</code>, the third of <code>fold</code>) is anything but a lambda, a top-level
+function, or a native outside that list. The callback is still one of the call’s parts, so a
+lambda’s body is judged with the rest. A call through anything else, such as a relation, a
+global, or a computed closure, is an effect.</li>
+<li><strong>A top-level function named as a value</strong>, as in <code>fold(xs, 0, add_up)</code>, counts as called.</li>
+</ul>
+<p>A function is reached from a filter when the filter calls it or names it as a value, directly or
+through functions it reaches. The witness is the path to the first effect found, walking each
+expression’s parts in source order with <code>subexprs</code>, outermost name first:</p>
+<ul>
+<li><strong>Empty</strong> when the effect is a form of the filter’s own (a <code>deref</code>, an applied lambda).</li>
+<li><strong>One name</strong>, that of the impure native, the local, or the relation or global called through.</li>
+<li><strong>A function’s name, then its body’s witness</strong>, for a call to a function in <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">I</span></span></span></span> or a mention of
+one as a value.</li>
+</ul>
+<p>So the filter <code>far(a, b)</code>, with <code>far</code> calling <code>note</code> and <code>note</code> calling <code>println</code>, has the witness
+<code>["far", "note", "println"]</code>.</p>
+<h3 id="the-helper-module"><a class="header" href="#the-helper-module">The helper module</a></h3>
+<p>The starter leaves the module below out. Paste it at the end of <code>src/relations/check.rs</code> and import
+what you use, as in <code>use helpers::{free_vars, subexprs};</code>. It is public, so a helper you have not
+called yet raises no warning, and it brings its own <code>use</code> lines.</p>
+<ul>
+<li><strong><code>subexprs(e)</code></strong> is the parts of <code>e</code> one level down, in source order: an operator’s operands, a
+call’s callee and arguments, a block’s initializers and expressions and tail, a query’s bound
+arguments. A check that treats most forms alike, being pure when all their parts are, handles its
+own cases and recurses through <code>subexprs</code> for the rest. It covers the forms of later milestones
+too. Unlike <code>free_vars</code>, it includes a direct call’s callee, so a check that has already judged
+<code>f(x)</code> by <code>f</code> meets <code>f</code> again as a variable if it then recurses into the call’s parts.</li>
+<li><strong><code>query_exprs(q)</code></strong> is a query’s arguments other than its holes.</li>
+<li><strong><code>free_vars(e)</code></strong> is the names <code>e</code> reads and does not bind within itself, each once, in order
+of first appearance. A <code>let</code> binds over the rest of its block, and a lambda, a <code>for</code>, a relational
+<code>for</code>, and a <code>match</code> arm bind over their bodies. A direct call’s callee is left out, so <code>f</code> in
+<code>f(x)</code> is not counted, and <code>x</code> is.</li>
+<li><strong><code>bound_names(e)</code></strong> is every name bound anywhere within <code>e</code>, by the same forms.</li>
+</ul>
+<pre><code class="language-rust ignore">/// Provided helpers (Milestone M6): walks over expressions that no rule
+/// describes. Paste this module at the end of the file, unchanged.
+pub mod helpers {
+    use crate::ast::{Expr, Name, QArg, Query, Rel, Stmt};
+    use std::collections::HashSet;
+
+    /// The immediate subexpressions of `e`, in source order. A query
+    /// contributes its bound arguments, never its holes.
+    pub fn subexprs(e: &amp;Expr) -&gt; Vec&lt;&amp;Expr&gt; {
+        let mut cs: Vec&lt;&amp;Expr&gt; = Vec::new();
+        match e {
+            Expr::Lit(..) | Expr::Var(..) =&gt; {}
+            Expr::Unary(_, e1, _)
+            | Expr::Field(e1, _, _)
+            | Expr::Proj(e1, _, _)
+            | Expr::Return(e1, _)
+            | Expr::Try(e1, _)
+            | Expr::Lambda(_, e1, _) =&gt; cs.push(e1),
+            Expr::Binary(_, l, r, _) | Expr::Assign(l, r, _) =&gt; {
+                cs.push(l);
+                cs.push(r);
+            }
+            Expr::If(c, t, els, _) =&gt; {
+                cs.push(c);
+                cs.push(t);
+                if let Some(e1) = els {
+                    cs.push(e1);
+                }
+            }
+            Expr::While(c, b, _) | Expr::For(_, c, b, _) =&gt; {
+                cs.push(c);
+                cs.push(b);
+            }
+            Expr::Call(f, args, _) | Expr::Method(f, _, args, _) =&gt; {
+                cs.push(f);
+                cs.extend(args.iter());
+            }
+            Expr::Tuple(es, _) | Expr::List(es, _) | Expr::Ctor(_, es, _) =&gt; {
+                cs.extend(es.iter());
+            }
+            Expr::Struct(_, fields, _) =&gt; cs.extend(fields.iter().map(|(_, e)| e)),
+            Expr::Match(scrut, arms, _) =&gt; {
+                cs.push(scrut);
+                for a in arms {
+                    if let Some(g) = &amp;a.guard {
+                        cs.push(g);
+                    }
+                    cs.push(&amp;a.body);
+                }
+            }
+            Expr::Block(stmts, tail, _) =&gt; {
+                for s in stmts {
+                    match s {
+                        Stmt::Let(_, _, e1, _) | Stmt::Expr(e1) =&gt; cs.push(e1),
+                    }
+                }
+                if let Some(t) = tail {
+                    cs.push(t);
+                }
+            }
+            Expr::ForQuery(q, b, _) =&gt; {
+                cs.extend(query_exprs(q));
+                cs.push(b);
+            }
+            Expr::Relation(rel, _) =&gt; match rel {
+                Rel::Add(q) | Rel::Solutions(q) | Rel::Query(q) =&gt; {
+                    cs.extend(query_exprs(q));
+                }
+                Rel::Clear(_) =&gt; {}
+            },
+        }
+        cs
+    }
+
+    /// The bound arguments of a query: every argument that is not a hole.
+    pub fn query_exprs(q: &amp;Query) -&gt; impl Iterator&lt;Item = &amp;Expr&gt; {
+        q.args.iter().filter_map(|a| match a {
+            QArg::Expr(e) =&gt; Some(e),
+            QArg::Hole(_) =&gt; None,
+        })
+    }
+
+    /// The names `e` reads and does not bind itself, each once, in order of
+    /// first appearance: every variable in value position, minus those bound
+    /// within `e` (a `let` over the rest of its block, a lambda's parameters,
+    /// a `for` variable, a relational `for`'s named holes, a pattern's
+    /// names). A direct call's callee, `f` in `f(x)`, is not counted; its
+    /// arguments are.
+    pub fn free_vars(e: &amp;Expr) -&gt; Vec&lt;Name&gt; {
+        let mut out = Vec::new();
+        free_vars_into(e, &amp;HashSet::new(), &amp;mut out);
+        out
+    }
+
+    fn free_vars_into(e: &amp;Expr, bound: &amp;HashSet&lt;Name&gt;, out: &amp;mut Vec&lt;Name&gt;) {
+        match e {
+            Expr::Var(x, _) =&gt; {
+                if !bound.contains(x) &amp;&amp; !out.contains(x) {
+                    out.push(x.clone());
+                }
+            }
+            Expr::Call(callee, args, _) =&gt; {
+                if !matches!(&amp;**callee, Expr::Var(..)) {
+                    free_vars_into(callee, bound, out);
+                }
+                for a in args {
+                    free_vars_into(a, bound, out);
+                }
+            }
+            Expr::Lambda(params, body, _) =&gt; {
+                let mut inner = bound.clone();
+                inner.extend(params.iter().map(|p| p.name.clone()));
+                free_vars_into(body, &amp;inner, out);
+            }
+            Expr::Block(stmts, tail, _) =&gt; {
+                let mut inner = bound.clone();
+                for s in stmts {
+                    match s {
+                        Stmt::Let(x, _, rhs, _) =&gt; {
+                            free_vars_into(rhs, &amp;inner, out);
+                            inner.insert(x.clone());
+                        }
+                        Stmt::Expr(e1) =&gt; free_vars_into(e1, &amp;inner, out),
+                    }
+                }
+                if let Some(t) = tail {
+                    free_vars_into(t, &amp;inner, out);
+                }
+            }
+            Expr::For(x, iter, body, _) =&gt; {
+                free_vars_into(iter, bound, out);
+                let mut inner = bound.clone();
+                inner.insert(x.clone());
+                free_vars_into(body, &amp;inner, out);
+            }
+            Expr::Match(scrut, arms, _) =&gt; {
+                free_vars_into(scrut, bound, out);
+                for arm in arms {
+                    let mut inner = bound.clone();
+                    inner.extend(arm.pat.binders());
+                    if let Some(g) = &amp;arm.guard {
+                        free_vars_into(g, &amp;inner, out);
+                    }
+                    free_vars_into(&amp;arm.body, &amp;inner, out);
+                }
+            }
+            Expr::ForQuery(q, body, _) =&gt; {
+                let mut inner = bound.clone();
+                for a in &amp;q.args {
+                    match a {
+                        QArg::Expr(e1) =&gt; free_vars_into(e1, bound, out),
+                        QArg::Hole(Some(x)) =&gt; {
+                            inner.insert(x.clone());
+                        }
+                        QArg::Hole(None) =&gt; {}
+                    }
+                }
+                free_vars_into(body, &amp;inner, out);
+            }
+            _ =&gt; {
+                for c in subexprs(e) {
+                    free_vars_into(c, bound, out);
+                }
+            }
+        }
+    }
+
+    /// Every name bound anywhere within `e`: `let` names, lambda
+    /// parameters, `for` variables, a relational `for`'s named holes, and
+    /// the names a `match` arm's pattern binds.
+    pub fn bound_names(e: &amp;Expr) -&gt; HashSet&lt;Name&gt; {
+        let mut out = HashSet::new();
+        bound_names_into(e, &amp;mut out);
+        out
+    }
+
+    fn bound_names_into(e: &amp;Expr, out: &amp;mut HashSet&lt;Name&gt;) {
+        match e {
+            Expr::Block(stmts, _, _) =&gt; {
+                for s in stmts {
+                    if let Stmt::Let(x, ..) = s {
+                        out.insert(x.clone());
+                    }
+                }
+            }
+            Expr::Lambda(params, _, _) =&gt; {
+                out.extend(params.iter().map(|p| p.name.clone()));
+            }
+            Expr::Match(_, arms, _) =&gt; {
+                for arm in arms {
+                    out.extend(arm.pat.binders());
+                }
+            }
+            Expr::For(x, ..) =&gt; {
+                out.insert(x.clone());
+            }
+            Expr::ForQuery(q, ..) =&gt; {
+                for a in &amp;q.args {
+                    if let QArg::Hole(Some(x)) = a {
+                        out.insert(x.clone());
+                    }
+                }
+            }
+            _ =&gt; {}
+        }
+        for c in subexprs(e) {
+            bound_names_into(c, out);
+        }
+    }
+}</code></pre>
+<h2 id="running-a-program"><a class="header" href="#running-a-program">Running a program</a></h2>
+<p><code>cargo run --features m6</code> runs the rule checks and the type checker before <code>main</code>. <code>deps.brg</code>
+builds a dependency graph from a list with an ordinary loop and asks the relation what it implies:</p>
+<pre><code class="language-text">$ cat deps.brg
+relation needs : (String, String);
+relation uses : (String, String);
+
+rule uses(a, b) :- needs(a, b);
+rule uses(a, c) :- needs(a, b) and uses(b, c);
+
+fn main() {
+    let edges = [("app", "ui"), ("ui", "gfx"), ("app", "net"), ("net", "io")];
+    for e in edges { add needs(e.0, e.1); }
+    println(solutions uses("app", ?m));
+    println(uses("io", "app"));
+    for uses(?m, "io") { println(m); }
+}
+
+$ cargo run -q --features m6 -- deps.brg
+["gfx", "io", "net", "ui"]
+false
+app
+net
+</code></pre>
+<p>In <code>hops.brg</code> the filter calls a function that recurses. The function always returns, but the
+check reads the call graph and never the arguments, so the program never starts:</p>
+<pre><code class="language-text">$ cat hops.brg
+relation link : (String, String);
+relation near : (String, String);
+
+fn hops(n: Int) -&gt; Bool = if n &lt;= 0 { true } else { hops(n - 1) };
+
+rule near(a, b) :- link(a, b) and hops(2);
+
+fn main() {
+    println("start");
+    add link("a", "b");
+    println(solutions near(?a, ?b));
+}
+
+$ cargo run -q --features m6 -- hops.brg
+  × `hops` is recursive, so a filter calling it might not terminate
+   ╭─[hops.brg:6:35]
+ 5 │ 
+ 6 │ rule near(a, b) :- link(a, b) and hops(2);
+   ·                                   ───┬───
+   ·                                      ╰── here
+ 7 │ 
+   ╰────
+</code></pre>
+<p>The exit status is <code>1</code>. A filter rejected as impure has its witness printed in a help line under
+the diagnostic. For the filter <code>far(a, b)</code> of <a href="#the-rule-checks">the rule checks</a>, the help line
+names the path <code>far</code> → <code>note</code> → <code>println</code> and then says what a filter may use.</p>
+<p>The checker runs first, so no program that uses a relation runs under <code>--features m6</code> until the
+checker’s relation arms are written: the first <code>todo_m6!</code> it meets stops the run.</p>
+<h2 id="worked-examples"><a class="header" href="#worked-examples">Worked examples</a></h2>
+<p>After <code>deps.brg</code>’s four <code>add</code>s, the queries below have these values:</p>
+<pre><code class="language-text">solutions uses("app", ?m)                    ["gfx", "io", "net", "ui"]
+solutions uses(?a, "gfx")                    ["app", "ui"]
+solutions needs(?a, ?)                       ["app", "net", "ui"]
+solutions uses("app", "io")                  [()]
+uses(?m, "app")                              false
+solutions uses(?m, ?m)                       []
+{ clear needs; solutions uses(?a, ?b) }      []
+{ add uses("io", "disk");                    ["disk", "gfx", "io", "net", "ui"]
+  solutions uses("app", ?m) }
+</code></pre>
+<p>The last example adds a fact directly to <code>uses</code>. From it, the second rule derives
+<code>uses("net", "disk")</code> and then <code>uses("app", "disk")</code>.</p>
+<p>Forms the checker rejects, in a <code>main</code> after the declarations of <code>deps.brg</code>:</p>
+<pre><code class="language-text">add uses("app", ?m)                       HoleInAdd, at the whole form
+add uses("app")                           RelationArity (uses takes 2, given 1)
+solutions uses(1, ?m)                     Mismatch (expected String, found Int), at 1
+clear depends                             UndeclaredRelation (depends)
+{ let f = uses; f("a", "b") }             RelationNotAValue (uses), at uses
+{ let needs = 1; solutions needs(?a, ?b) }
+                                          NotARelation (needs), at the whole form
+for uses(?a, ?b) { 1 }                    Mismatch (expected (), found Int), at 1
+</code></pre>
+<p><code>{ let uses = |a, b| true; uses("a", 2) }</code> is accepted: the local shadows the relation, so the call
+is an ordinary call to a lambda.</p>
+<p>Rules the checks reject, given <code>relation size : (String, Int);</code>, <code>relation leaf : (String);</code>, a
+global <code>let cap = 3;</code>, a global <code>ref budget = 3;</code>, and <code>fn note(s: String) -&gt; Bool { println(s); true }</code>:</p>
+<pre><code class="language-text">rule uses(a, c) :- needs(a, b);                 Unbound (c), at the head
+rule tall(a) :- size(a, n);                     NotARelation (tall), at the head
+rule leaf(a) :- needs(a, b) and uses(b);        Arity (uses: 2, given 1)
+rule leaf(a) :- size(a, n + 1);                 ArgumentNotATerm, at n + 1
+rule leaf(a) :- size(a, n) and m &gt; cap;         Unbound (m), at the filter
+rule leaf(a) :- size(a, n) and n &gt; deref budget;
+                                                Impure, witness []
+rule leaf(a) :- size(a, n) and note(a);         Impure, witness [note, println]
+rule leaf(a) :- size(a, n) and not uses(a, a);  Impure, witness [uses]
+rule leaf(a) :- size(a, n) and n;               Mismatch (expected Bool, found Int)
+rule leaf(a) :- size(a, "big");                 Mismatch (expected Int,
+                                                found String), at "big"
+</code></pre>
+<p>These are accepted: <code>n &gt; cap</code> reads a global constant, and in
+<code>{ let m = n * 2; m &gt; cap }</code> the block binds <code>m</code> itself.</p>
+<h2 id="how-to-know-it-works"><a class="header" href="#how-to-know-it-works">How to know it works</a></h2>
+<p><code>cargo m6</code> runs the provided milestone M6 tests and, with them, every earlier milestone’s. The M6
+tests come in four kinds. Some call <code>Subst::unify</code> directly on terms and values. Some run a whole
+program with <code>run_program</code>, which skips the static checks, so the engine meets filters the checks
+would have refused. Some run <code>check_rules</code> alone on a loaded program, and some run the type checker
+on one:</p>
+<pre><code class="language-rust ignore">// path(?x, ?y) against (0, 1) binds x and y
+let got = Subst::new()
+    .unify(&amp;[Term::Var("x".into()), Term::Var("y".into())], &amp;[v(0), v(1)])
+    .unwrap();
+assert_eq!(got.get("x"), Some(&amp;v(0)));
+
+// a whole program, run without the static checks
+let src = format!("{GRAPH} fn main() -&gt; Bool {{ setup(); path(0, 3) }}");
+assert_eq!(run_program(&amp;src).0, Value::Bool(true));</code></pre>
+<p>A rejection is tested by its <code>RuleError</code> or <code>TyError</code> variant and, where it matters, by its payload:
+the name in <code>Unbound</code>, the path in <code>Impure</code>. The text of the message is never tested. Write <code>unify</code>
+first, since the engine calls it for every pairing of an atom and a fact. Then write the engine and
+the evaluator’s arms, which the whole-program tests reach without the checker. The checker’s arms
+and the rule checks can follow in either order.</p>
+<h2 id="design-problems"><a class="header" href="#design-problems">Design problems</a></h2>
+<details>
+<summary>A rule's terms are variables and literals, so <code>rule within(a, c, n) :- within(a, b, m) and link(b, c) and n == m + 1;</code> is rejected with <code>n</code> unbound. Without changing the language, compute for every node the number of links on the shortest path from <code>"a"</code> to it. Why does your version terminate on a graph with a cycle?</summary>
+<p>The rule cannot compute <code>m + 1</code>, so the host computes it ahead of time. A relation <code>step</code> holds
+pairs of consecutive integers, added by an ordinary loop, and the rule looks the successor up
+through a generator:</p>
+<pre><code class="language-text">relation link : (String, String);
+relation step : (Int, Int);
+relation within : (String, String, Int);
+
+rule within(a, b, 1) :- link(a, b);
+rule within(a, c, n) :- within(a, b, m) and link(b, c) and step(m, n);
+
+fn main() {
+    let edges = [("a", "b"), ("b", "c"), ("c", "a"), ("a", "c")];
+    for e in edges { add link(e.0, e.1); }
+    for i in range(1, 4) { add step(i, i + 1); }
+    for link(?x, ?) {
+        println((x, minimum(solutions within("a", x, ?n))));
+    }
+}
+</code></pre>
+<p>It prints <code>("a", Some(2))</code>, <code>("b", Some(1))</code>, and <code>("c", Some(1))</code>. <code>within</code> holds every walk
+length up to the bound, and the host takes the least, since a rule cannot aggregate. Every value in
+a derived fact comes from a fact already present: node names from <code>link</code>, lengths from <code>step</code>. Those
+are finite, so <code>within</code> is too, whatever cycles the graph has, and the rounds stop. The cycle
+<code>a → b → c → a</code> gives <code>a</code> walks of every length, and the largest step in <code>step</code> is where they stop.
+The bound is the host’s choice. Too small a bound gives a wrong answer silently, and the number of
+nodes is always enough.</p>
+</details>
+<details>
+<summary>Canonical order says the solutions depend on M(P, Δ) alone. Design a test that checks this for your engine without a list of expected answers, and say which engine bugs it cannot find.</summary>
+<p>Run one program several times, adding the same facts in a different order each time, and require
+every <code>solutions</code> list to be identical across the runs, element for element. The order of <code>add</code>s
+changes which facts each round finds first, and so the order in which a naive or semi-naive engine
+derives the closure. An engine that returns solutions in derivation order gives different lists,
+and the test reports it. It needs no
+answer key, so the programs can come from a generator. It finds nothing that every order gets wrong
+in the same way. An engine that fires each rule once and stops before the fixpoint, or that drops a
+filter, gives the same wrong list every time. So does a <code>unify</code> that ignores a repeated variable.
+Comparing against an answer key, or against a second engine written as directly as possible, finds
+those.</p>
+</details>
+<details>
+<summary>The purity check rejects <code>rule three(a) :- size(a, n) and to_string(n) == "3";</code>, although <code>n</code> is an <code>Int</code> and converting an integer reads nothing. What does the check not know that would let it accept this filter, and what would accepting it cost?</summary>
+<p><code>to_string</code> is impure because it can read the store: <code>to_string(r)</code> on a reference prints what the
+reference holds now. Whether a call reads the store depends on its argument’s type, and the purity
+check judges a call by its callee alone. To accept this filter it would need the type of every
+argument of every call the filter reaches, and only the type checker computes those. Either the
+purity check would read the types the checker records, or purity would be judged inside the type
+checker, with an effect recorded beside each type, the design that <a href="../relations/rules.html#tracking-effects">Tracking
+effects</a> describes. The judgment would be more precise, and
+it would apply to every helper the filter calls, at the types each call uses. A generic helper
+<code>fn show&lt;T&gt;(x: T) -&gt; String = to_string(x);</code> would be pure at <code>Int</code> and impure at <code>ref&lt;Int&gt;</code>, so
+purity, which the check now decides once for each function, would have to be decided again at
+each call.</p>
+</details>
+<details>
+<summary>The purity check rejects every filter that queries, before the program runs. Why does the engine also refuse a query while it computes a fixpoint, and what would happen to this program, run without the checks, if it did not?</summary>
+<pre><code class="language-text">relation q : (Int);
+relation r : (Int);
+relation p : (Int);
+
+rule r(x) :- q(x) and x &gt; 1;
+rule p(x) :- q(x) and not r(x);
+
+fn main() {
+    add q(1); add q(2);
+    println(solutions p(?x));
+}
+</code></pre>
+<p>The checks are a pass that a program can skip: the tests run programs without them, and the
+evaluator must give every program a meaning, checked or not. To answer <code>solutions p(?x)</code>, the
+engine fires the rule for <code>p</code>, and its filter asks <code>r(x)</code>. Answered as a query, <code>r(x)</code> would need
+the fixpoint of every rule over the same facts, so the engine would start computing it again. That
+fixpoint fires the rule for <code>p</code> too, whose filter asks <code>r(x)</code> again, and so on without end. The
+reference interpreter with the guard removed overflows its stack on this program. With the guard
+it stops at <code>r(x)</code> with <code>QueryInFilter</code>. Making the query work would take more than avoiding the
+loop. <code>not r(x)</code> asks for <code>r</code> to be complete before <code>p</code>’s rule reads it, which is the layering of
+relations that <a href="../relations/rules.html#absence-in-a-body">Absence in a body</a> describes. An engine
+that ran the inner query against the facts derived so far would get an answer that depends on the
+order of the rounds.</p>
+</details>
 
                     </main>
 
