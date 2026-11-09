@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b73242dc.js";
+            window.path_to_searchindex_js = "../searchindex-d0177e83.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -182,66 +182,438 @@
 <h1 id="milestone-m7"><a class="header" href="#milestone-m7">Milestone M7</a></h1>
 <p class="chapter-subtitle">Algebraic Data Types and Pattern Matching</p>
 
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Closes Part VIII. Course offering: due Fri Nov 20.
-     Sources: spec §9, §10
-     Status: placeholder — spine authored just-in-time.
-     Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
-     satisfy, worked examples, self-check tests). Grading, deadlines, submission
-     and autograder mechanics stay in the syllabus and never appear here.
+     Closes Part VIII. SPEC ONLY (plan §9.5): what to build, the checklist, worked examples,
+     self-check; NO grading, deadlines, submission, or autograder text, and no course/institution
+     names in rendered prose.
+     TEMPLATE: M5/M6's shape. The checklist DEFERS the rules to Appendix D ("Constructors and
+     pattern matching", "Control flow", "Purity and effects") and the algorithms to Part VIII. NO
+     arm or function bodies printed; the guidance is prose, at the level of the contracts a test
+     holds. No helper module: everything M7 needs is provided or was written at M5/M6.
+     REPO FACTS: holes are todo_m7! for Ctor, Match, Try in eval.rs and types/check.rs, plus
+       check_guards in relations/check.rs. Two changes have no marker: the Lambda arm's TryInLambda
+       relabelling, and check_pure's forms deferred from M6 (Ctor, Match, Try).
+     CONTRACTS read off the reference: eval.rs (Ctor lookup before the arguments, arity after;
+       match_pattern; a non-carrier `?` operand is NonExhaustiveMatch at the `?`); types/check.rs
+       (check_ctor, check_pattern_in, check_exhaustive, check_try, the Lambda arm);
+       relations/check.rs (check_guards: source order; HigherOrder, then ImpureGuard; no totality).
+     EXAMPLES run 2026-11-08, reference release --features m7, stdin </dev/null: calc.brg, gap.brg,
+       every line of the two worked-example tables; design problems: the stack machine with and
+       without its last arm, `rule p(Succ(x))` failing to parse. The unreachable-arm trace and
+       the witness of the stack machine are worked by hand.
+     HIDDEN TESTS: never use or name a case from milestones/m7/tests/graded.rs: mdBook passes HTML
+       comments through to the page source.
+     Course offering (instructor note, not rendered): due Fri Nov 20.
+     Status: draft authored 2026-11-08, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-Everything in Part VIII has been building toward one thing: an interpreter that actually runs these
-programs. This chapter says what yours should do now, and how to know it works.
+<p>Part VIII gave Bridger a way to declare data and a way to take it apart. <a href="../adt/adts.html">Sum and product
+types</a> added <code>type</code> declarations and constructors. <a href="../adt/pattern-matching.html">Pattern
+matching</a> added <code>match</code>, guards, and <code>?</code>, and <a href="../adt/exhaustiveness.html">Exhaustiveness
+checking</a> added the premise of T-Match that requires the arms to cover
+their scrutinee’s type. This milestone builds all of it, and the prelude’s <code>Option</code>, <code>Result</code>, and
+<code>Ordering</code> constructors come to life with it. Every M1–M6 test must still pass.</p>
+<p>The work is in three files you have already edited: the evaluator in <code>src/interp/eval.rs</code>, the
+checker in <code>src/types/check.rs</code>, and the rule checks in <code>src/relations/check.rs</code>.</p>
+<h2 id="to-dos"><a class="header" href="#to-dos">To-dos</a></h2>
+<p><code>grep -rn 'todo_m7!' src</code> lists the holes:</p>
+<pre><code class="language-rust ignore">// src/interp/eval.rs
+Expr::Ctor(..) =&gt; todo_m7!("E-Ctor"),
+Expr::Match(..) =&gt; todo_m7!("E-Match"),
+Expr::Try(..) =&gt; todo_m7!("E-Try (`?`: match + return)"),
 
-## What you build
+// src/types/check.rs
+Expr::Ctor(..) =&gt; todo_m7!("T-Con"),
+Expr::Match(..) =&gt; todo_m7!("T-Match (patterns, then exhaustiveness)"),
+Expr::Try(..) =&gt; todo_m7!("T-Try"),
 
-Sum and product types, constructors, `match` with pattern matching, and exhaustiveness checking in the type checker.
+// src/relations/check.rs
+pub fn check_guards(program: &amp;Program) -&gt; Result&lt;(), RuleError&gt;</code></pre>
+<p>Two changes have no <code>todo_m7!</code> marker of their own:</p>
+<ol>
+<li>The checker’s <code>Lambda</code> arm reports a <code>?</code> that a lambda’s body cannot carry, as
+<a href="#try">described below</a>.</li>
+<li>Your purity judgment from M6 needs to handle constructor applications, <code>match</code>, and <code>?</code>, which no
+M6 program could reach. <a href="../appendix/language-reference.html#purity-and-effects">Appendix D</a> gives
+the rules: a constructor application is pure when its arguments are, and a <code>match</code> when its
+scrutinee, guards, and bodies are. <code>?</code> is pure at this milestone, because it is a <code>match</code> and a
+<code>return</code>, and no <code>impl From</code> exists yet.</li>
+</ol>
+<p><a href="#how-to-know-it-works">How to know it works</a> suggests an order for the work.</p>
+<h2 id="milestone-specification"><a class="header" href="#milestone-specification">Milestone specification</a></h2>
+<p>The forms, the rules that give them meaning, and the cases in which evaluation is stuck or the
+checker rejects them:</p>
+<table>
+<thead>
+<tr><th>Form</th><th>Rules</th><th>Stuck when</th><th>Rejected when</th></tr>
+</thead>
 
-## What is provided
+<tbody>
+<tr>
+  <td><code>C(e1, …, en)</code></td>
+  <td><code>E-Con</code>, <code>T-Con</code></td>
+  <td><code>C</code> is not a declared name (<code>UnboundVariable</code>); <code>C</code> names a
+  type or struct and has arguments (<code>NotAFunction</code>); the count differs from the
+  declaration (<code>ArityMismatch</code>)</td>
+  <td><code>C</code> is unknown (<code>UnknownConstructor</code>) or names a type, struct, or trait
+  (<code>NotAConstructor</code>); the count differs (<code>ArityMismatch</code>); an argument has
+  the wrong type</td>
+</tr>
 
-—
+<tr>
+  <td><code>match e { p [if g] =&gt; b, … }</code></td>
+  <td><code>E-Match</code>, <code>T-Match</code></td>
+  <td>a guard is not a <code>Bool</code> (<code>TypeError</code>, at the guard); no arm applies
+  (<code>NonExhaustiveMatch</code>, at the <code>match</code>)</td>
+  <td>a pattern does not fit the scrutinee's type; a guard is not a <code>Bool</code>; bodies
+  disagree (<code>Mismatch</code>); the unguarded arms do not cover the type
+  (<code>NonExhaustiveMatch</code>, at the <code>match</code>); a guard is not pure
+  (<code>ImpureGuard</code>, <code>HigherOrder</code>)</td>
+</tr>
 
-## The specification you must satisfy
+<tr>
+  <td><code>e?</code></td>
+  <td>desugars to <code>match</code> and <code>return</code></td>
+  <td><code>e</code> is not an <code>Ok</code>, <code>Err</code>, <code>Some</code>, or
+  <code>None</code> (<code>NonExhaustiveMatch</code>, at the <code>?</code>)</td>
+  <td><code>e</code> is not an <code>Option</code> or <code>Result</code>
+  (<code>TryOnNonCarrier</code>); the enclosing function cannot carry the failure
+  (<code>TryInNonCarrierFunction</code>, <code>TryInLambda</code>); the two error types differ
+  (<code>Mismatch</code>)</td>
+</tr>
 
-*To be written: the inference rules from this part, collected — the checklist your evaluator is
-measured against. Sources: spec §9, §10.*
+</tbody>
 
-## How to know it works
+</table>
 
-A non-exhaustive `match` is a compile-time error, and `Option`/`Result` from the prelude work as ordinary user-definable types.
+<p>The patterns, each of which is an arm of your matcher and of <code>check_pattern</code>:</p>
+<table>
+<thead>
+<tr><th>Pattern</th><th>Matches</th><th>Rejected when</th></tr>
+</thead>
 
-*To be written: worked examples with expected output, and a self-check test set you can run on your
-own machine.*
+<tbody>
+<tr><td><code>_</code></td><td>anything</td><td>never</td></tr>
 
-## Design problems
+<tr><td><code>x</code></td><td>anything, binding <code>x</code></td>
+  <td><code>x</code> is already bound in this pattern (<code>NonLinearPattern</code>)</td></tr>
 
-*To be written (plan §9.5, tier two): exercises that reason across this part's chapters, plus
-programming exercises written in Bridger, where the goal is to think in the paradigm as well as
-implement it. Answers in collapsible blocks.*
--->
+<tr><td>a literal</td><td>an equal value</td>
+  <td>its type is not the scrutinee's</td></tr>
+
+<tr><td><code>C(p, …)</code></td><td>that constructor, with matching arguments</td>
+  <td>as for a <code>C(e, …)</code> expression; its type is not the scrutinee's</td></tr>
+
+<tr><td><code>(p, q, …)</code></td><td>a tuple of that width, with matching components</td>
+  <td>the scrutinee is not such a tuple</td></tr>
+
+<tr><td><code>[p, …]</code>, <code>[p, …, ...t]</code></td>
+  <td>exactly that many elements, or at least that many with <code>t</code> as the rest</td>
+  <td>the scrutinee is not a list; <code>t</code> is already bound</td></tr>
+
+<tr><td><code>h :: t</code></td><td>a non-empty list</td>
+  <td>the scrutinee is not a list</td></tr>
+
+<tr><td><code>S { f: p, … }</code></td>
+  <td>that struct, with the named fields matching</td>
+  <td><code>S</code> is unknown (<code>UnknownType</code>) or names something other than a struct
+  (<code>NotAStruct</code>); a field is repeated (<code>DuplicateField</code>) or undeclared
+  (<code>NoSuchField</code>); its type is not the scrutinee's</td></tr>
+
+<tr><td><code>p | q</code></td><td>either side, trying <code>p</code> first</td>
+  <td>the sides differ in their variables or their types (<code>OrPatternBindings</code>)</td></tr>
+
+</tbody>
+
+</table>
+
+<p><code>match(p, v)</code> and E-Match are in
+<a href="../appendix/language-reference.html#constructors-and-pattern-matching">Appendix D</a>, T-Con and T-Match
+under <a href="../appendix/language-reference.html#typing-rules">its typing rules</a>, and the static errors are
+catalogued <a href="../appendix/language-reference.html#the-static-errors-by-name">by name</a>. Struct values do
+not exist until M8, but struct patterns are part of the matcher, the checker, and exhaustiveness
+now.</p>
+<h2 id="implementing-milestone-m7"><a class="header" href="#implementing-milestone-m7">Implementing Milestone M7</a></h2>
+<h3 id="the-provided-runtime"><a class="header" href="#the-provided-runtime">The provided runtime</a></h3>
+<p>A constructor value is <code>Value::Ctor(name, args)</code>, with its arguments in an <code>Rc&lt;[Value]&gt;</code>. A list is
+<code>Value::List(List)</code>, whose <code>uncons</code> returns the head and a reference to the tail. Keep the sharing:
+a <code>::</code> or <code>...rest</code> pattern binds the tail it was given, and cloning a <code>List</code> is cheap, whereas
+rebuilding one would make a recursion over a list quadratic. <code>Pattern::binders</code> in <code>ast.rs</code> lists
+the names a pattern binds. Finding a constructor’s declaration is a walk over <code>Decl::Type</code> entries
+in the program’s <code>decls</code>, whose variants carry their names and field types.</p>
+<p>A struct declaration is <code>Decl::Struct(generics, fields)</code>, and a struct value is
+<code>Value::Struct(name, fields)</code>, with its fields as name and value pairs in an <code>Rc&lt;[(Name, Value)]&gt;</code>.
+No program can build one yet, since <code>Expr::Struct</code> is a <code>todo_m8!</code>, so at this milestone only the
+checker and exhaustiveness halves of a struct pattern can run against a real struct. Against any
+other value, the matcher’s struct arm reports that the value does not fit.</p>
+<h3 id="the-evaluators-arms"><a class="header" href="#the-evaluators-arms">The evaluator’s arms</a></h3>
+<ul>
+<li><strong><code>Ctor</code></strong> decides what its name means before it runs the arguments. With no arguments, a name
+that is <code>Int</code>, <code>Bool</code>, <code>String</code>, or a declared type or struct is the type itself, a <code>Value::Type</code>,
+which M8’s associated calls use as a receiver. Any other declared name that is not a constructor
+is <code>NotAFunction</code>, with <code>found</code> the named type <code>type N</code>. A name that is not declared is
+<code>UnboundVariable</code>. It then evaluates the arguments left to right and checks the argument count
+afterward, reporting <code>ArityMismatch</code> at the whole expression if the count differs from the
+declaration.</li>
+<li><strong>The matcher</strong> is one recursive function following <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">match</span></span><span class="mopen">(</span><span class="mord mathnormal">p</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mclose">)</span></span></span></span>. A value that does not
+fit is an ordinary result that sends the evaluator to the next arm, and it never becomes a
+<code>RuntimeError</code>. Its literal arm compares the value it is given with the value the literal denotes.</li>
+<li><strong><code>Match</code></strong> evaluates the scrutinee once, then tries the arms in order. Each arm’s bindings extend
+the environment at the <code>match</code>, for that arm’s guard and body. A guard that is not a <code>Bool</code> is
+<code>TypeError { expected: Bool, found, span }</code> at the guard, with <code>found</code> from <code>type_of</code>. After the
+last arm, the result is <code>NonExhaustiveMatch</code> at the <code>match</code>.</li>
+<li><strong><code>Try</code></strong> returns the argument of an <code>Ok</code> or <code>Some</code>. On a <code>None</code> or an <code>Err</code>, it raises
+<code>Control::Return</code> holding that same value, the signal your <code>return</code> arm uses, so the enclosing
+function’s call handles it. Any other value is <code>NonExhaustiveMatch</code> at the <code>?</code>.</li>
+</ul>
+<h3 id="the-checkers-arms"><a class="header" href="#the-checkers-arms">The checker’s arms</a></h3>
+<p>Each arm ends as M5’s did, with the final unification against the expected type and the <code>record</code>.</p>
+<ul>
+<li><strong><code>Ctor</code></strong> looks the name up as the table says, with the wrong-arity report made before any
+argument is checked. It maps the declaration’s type parameters to fresh inference variables,
+records any declared bound with <code>require_trait</code> as your <code>Var</code> arm does, and builds the constructed
+type. If the expected type has the same head, unify with it now, so that an argument such as an
+unannotated lambda is checked against a known type. Each argument is then checked against its
+field’s type with the map applied.</li>
+<li><strong><code>check_pattern</code></strong> takes a pattern, the scrutinee’s type, and a context to extend. It also needs
+to know which variables this pattern has bound so far, to raise <code>NonLinearPattern</code> at the second
+occurrence and to compare the sides of an <code>|</code>. A <code>...rest</code> binder goes through the same path as a
+variable, at the type of the list. An <code>|</code> checks each side on its own context. Both must bind the
+same names, and their types must unify, or the result is <code>OrPatternBindings</code> at the whole pattern.
+A struct pattern looks its name up first. It then rejects a repeated field, and instantiates the
+declaration’s type parameters as a constructor pattern does before unifying with the scrutinee’s
+type. Each named field’s pattern is checked against that field’s type with the map applied, and an
+undeclared field is <code>NoSuchField</code> at the field’s pattern. Every mismatch is reported at the
+pattern’s own span. In a <code>Mismatch</code>, the scrutinee’s type is <code>expected</code> and the pattern’s is
+<code>found</code>.</li>
+<li><strong><code>Match</code></strong> checks the scrutinee with no expected type. If the scrutinee diverges, call
+<code>dead_after</code> with the scrutinee’s span and the span of the <code>match</code>. The result type is the
+expected type if there is one, or a fresh variable. Each arm checks, on its own copy of the
+context, its pattern, its guard against <code>Bool</code>, and its body against the result type.
+Exhaustiveness comes after every arm, so a disagreeing arm is reported ahead of a gap. If there is
+at least one arm and every body diverges, call <code>record_diverging</code> on the <code>match</code>.</li>
+</ul>
+<h4 id="try"><a class="header" href="#try">Try</a></h4>
+<p><code>?</code> checks its operand with no expected type. An operand that diverges calls <code>dead_after</code> and the
+form takes a fresh variable. After resolving the operand’s type:</p>
+<ul>
+<li>A <code>Result&lt;T, E&gt;</code> requires the context’s return type, <code>ctx.ret()</code>, to unify with a <code>Result</code> of some
+fresh <code>T'</code> and <code>E'</code>. No return type at all is <code>ReturnOutsideFunction</code>, and a return type that will
+not unify is <code>TryInNonCarrierFunction { ret, span }</code>, or <code>TryInLambda { found: ret, span }</code> when
+<code>ctx.in_lambda()</code> holds. Then <code>E</code> must unify with <code>E'</code>, and if it does not, the result is
+<code>Mismatch { expected: E', found: E, span }</code>. The form’s type is <code>T</code>.</li>
+<li>An <code>Option&lt;T&gt;</code> is the same with <code>Option</code> in place of <code>Result</code>, and has no error type to compare.</li>
+<li>An unsolved inference variable is <code>Ambiguous</code>, unless <code>in_dead_code</code> holds for the form, where it
+takes a fresh variable. Any other type is <code>TryOnNonCarrier { found, span }</code>.</li>
+</ul>
+<p>If the return type is an inference variable when <code>?</code> constrains it, call <code>note_try_pinned</code>
+with its id. The <code>Lambda</code> arm reads that back through <code>try_pinned</code>. When a lambda has no written
+result type, a <code>?</code> inside it pinned the inference variable for that result type, and checking the
+lambda’s body fails with a <code>Mismatch</code> whose <code>expected</code> type is that pinned result type, replace the
+error with <code>TryInLambda</code> using the same <code>found</code> type and <code>span</code>. Any other error from the body stays
+as it is.</p>
+<h3 id="exhaustiveness"><a class="header" href="#exhaustiveness">Exhaustiveness</a></h3>
+<p><a href="../adt/exhaustiveness.html">Exhaustiveness checking</a> defines the check in full, and
+<a href="../adt/exhaustiveness.html#building-it">its summary of the parts</a> is the plan to follow. A test will
+hold you to these points:</p>
+<ul>
+<li>Resolve the scrutinee’s type first, since its signature depends on what inference has solved.</li>
+<li>A guarded arm contributes no row.</li>
+<li>The column types travel with the columns, because a wildcard’s signature comes from its column’s
+type. Applying a generic type’s arguments to its constructors’ field types is what lets
+<code>Option&lt;Bool&gt;</code> be completed by <code>Some(true)</code>, <code>Some(false)</code>, and <code>None</code>.</li>
+<li><code>Int</code> and <code>String</code> have literals but no signature, so their heads are never complete. A type
+parameter, function, or reference has no signature either.</li>
+</ul>
+<h3 id="guards"><a class="header" href="#guards">Guards</a></h3>
+<p><code>check_guards</code> visits every <code>fn</code> body, global initializer, <code>impl</code> method, and rule conjunct. It
+reports the first offender in source order, sorted by source and position, since the order of
+<code>decls</code> is not the order of the file. Within a body, a <code>match</code>’s own guards come before those nested
+further in. The walker from <a href="m6.html#the-helper-module">M6’s helper module</a> already yields guards.</p>
+<p>Each guard is judged by your M6 purity judgment, with its pattern variables as locals, and with one
+difference from a rule filter: recursion is allowed, because a guard runs once per arm and need not
+contribute to a fixpoint. A guard that reaches a function with a function-typed parameter is
+<code>HigherOrder</code>, as a filter is. An impure guard is <code>ImpureGuard { span, witness }</code>, at the guard,
+with the chain of calls to the effect. A call through a local closure <code>g</code> has the witness <code>["g"]</code>.</p>
+<h2 id="running-a-program"><a class="header" href="#running-a-program">Running a program</a></h2>
+<p><code>cargo run --features m7</code> runs the static checks and then <code>main</code>. <code>calc.brg</code> uses constructors,
+<code>match</code>, and <code>?</code> together:</p>
+<pre><code class="language-text">$ cat calc.brg
+type Calc = Num(Int) | Add(Calc, Calc) | Div(Calc, Calc);
+
+fn result(e: Calc) -&gt; Result&lt;Int, String&gt; = match e {
+    Num(n) =&gt; Ok(n),
+    Add(l, r) =&gt; Ok(result(l)? + result(r)?),
+    Div(l, r) =&gt; {
+        let d = result(r)?;
+        if d == 0 { Err("divide by zero") } else { Ok(result(l)? / d) }
+    },
+};
+
+fn main() {
+    println(result(Add(Num(1), Div(Num(8), Num(2)))));
+    println(result(Div(Num(1), Add(Num(0), Num(0)))));
+}
+
+$ cargo run -q --features m7 -- calc.brg
+Ok(5)
+Err("divide by zero")
+</code></pre>
+<p><code>gap.brg</code> has a function over <code>Calc</code> that forgets <code>Div</code>. <code>main</code> never builds one, but the program
+never starts, and its <code>println("start")</code> prints nothing:</p>
+<pre><code class="language-text">$ cat gap.brg
+type Calc = Num(Int) | Add(Calc, Calc) | Div(Calc, Calc);
+
+fn size(e: Calc) -&gt; Int = match e {
+    Num(_) =&gt; 1,
+    Add(l, r) =&gt; 1 + size(l) + size(r),
+};
+
+fn main() {
+    println("start");
+    println(size(Num(1)));
+}
+
+$ cargo run -q --features m7 -- gap.brg
+  × match is not exhaustive
+   ╭─[gap.brg:3:27]
+ 2 │ 
+ 3 │ fn size(e: Calc) -&gt; Int = match e {
+   ·                           ────┬────
+   ·                               ╰── here
+ 4 │     Num(_) =&gt; 1,
+   ╰────
+</code></pre>
+<p>The exit status is <code>1</code>. The checker runs first, so no program containing a <code>match</code> runs under
+<code>--features m7</code> until the checker’s arms are written: the first <code>todo_m7!</code> it meets stops the run.</p>
+<h2 id="worked-examples"><a class="header" href="#worked-examples">Worked examples</a></h2>
+<p>Each expression below has the value at its right:</p>
+<pre><code class="language-text">match [4, 5, 6] { [a, b, ...t] =&gt; (b, t), _ =&gt; (0, []) }     (5, [6])
+match [1, 2] { x :: y :: [] =&gt; x + y, _ =&gt; 0 }               3
+match () { () =&gt; "unit" }                                    "unit"
+match false { true =&gt; 1, false =&gt; 2 }                        2
+match (1, Some("x")) {                                       "x"
+    (_, None) =&gt; "a",
+    (n, Some(s)) if n &gt; 1 =&gt; "b",
+    (_, Some(s)) =&gt; s,
+}
+match Err("no") { Ok(n) if n &gt; 0 =&gt; n, Ok(_) | Err(_) =&gt; 0 } 0
+</code></pre>
+<p>The checker rejects each of these:</p>
+<pre><code class="language-text">match (Some(1), true) { (None, _) =&gt; 0, (_, false) =&gt; 1 }
+                                   NonExhaustiveMatch, at the match
+match 1 { 0 =&gt; "z", n =&gt; n }       Mismatch (expected String, found Int), at n
+match (1, 2) { (a, a) =&gt; a, _ =&gt; 0 }
+                                   NonLinearPattern (a), at the second a
+match Some(1) { Some(a) | None =&gt; 0 }
+                                   OrPatternBindings (a), at the whole pattern
+match Some(1) { Ok(a) =&gt; a, _ =&gt; 0 }
+                                   Mismatch (expected Option&lt;Int&gt;,
+                                   found Result&lt;_, _&gt;), at Ok(a)
+match Some(1) { Some(a, b) =&gt; 0, _ =&gt; 1 }
+                                   ArityMismatch (Some: 1, given 2)
+match 1 { Foo(y) =&gt; 0, _ =&gt; 1 }    UnknownConstructor (Foo)
+match 1 { Option(y) =&gt; 0, _ =&gt; 1 } NotAConstructor (Option)
+match 1 { k if k =&gt; 0, _ =&gt; 1 }    Mismatch (expected Bool, found Int), at k
+1?                                 TryOnNonCarrier (Int)
+</code></pre>
+<p>The guard checks reject the first two of these. The third is accepted, because a guard may reach a
+recursive function:</p>
+<pre><code class="language-text">fn ping(k: Int) -&gt; Bool { println(k); true }
+match 1 { k if ping(k) =&gt; 0, _ =&gt; 1 }           ImpureGuard, witness [ping, println]
+match 1 { k if { println(k); true } =&gt; 0, _ =&gt; 1 }
+                                                ImpureGuard, witness [println]
+
+fn up(k: Int) -&gt; Bool = up(k + 1);
+match 1 { k if false and up(k) =&gt; 0, _ =&gt; 1 }   accepted; the value is 1
+</code></pre>
+<h2 id="how-to-know-it-works"><a class="header" href="#how-to-know-it-works">How to know it works</a></h2>
+<p><code>cargo m7</code> runs the provided milestone M7 tests and, with them, every earlier milestone’s. Some run
+a whole program with <code>run_program</code>, which skips the static checks, so the evaluator meets programs
+the checker would have refused. Some call <code>Checker::check_program</code> on a loaded program, and some
+call <code>check_guards</code> alone. A rejection is tested by its error variant and, where it matters, by its
+payload, and the text of a message is never tested.</p>
+<p>Write the matcher and the evaluator’s arms first, since the whole-program tests reach them without
+the checker. Then write <code>check_pattern</code> and the checker’s arms with a stub exhaustiveness check that
+accepts everything, and fill in the check once the rest passes. <code>check_guards</code> can come at any point
+after that.</p>
+<h2 id="design-problems"><a class="header" href="#design-problems">Design problems</a></h2>
+<details>
+<summary>Write a compiler from <code>Arith</code> to a stack machine, with instructions <code>Push(Int)</code>, <code>AddTop</code>, and <code>MulTop</code>, and a function <code>run</code> that executes a list of instructions on a stack and returns <code>Option&lt;Int&gt;</code>. Argue that it agrees with <code>value</code>.</summary>
+<pre><code class="language-text">type Arith = Num(Int) | Add(Arith, Arith) | Mul(Arith, Arith);
+type Instr = Push(Int) | AddTop | MulTop;
+
+fn compile(e: Arith) -&gt; [Instr] = match e {
+    Num(n) =&gt; [Push(n)],
+    Add(l, r) =&gt; compile(l) ++ compile(r) ++ [AddTop],
+    Mul(l, r) =&gt; compile(l) ++ compile(r) ++ [MulTop],
+};
+
+fn run(code: [Instr], stack: [Int]) -&gt; Option&lt;Int&gt; = match (code, stack) {
+    ([], [top]) =&gt; Some(top),
+    ([], _) =&gt; None,
+    (Push(n) :: rest, s) =&gt; run(rest, n :: s),
+    (AddTop :: rest, b :: a :: s) =&gt; run(rest, (a + b) :: s),
+    (MulTop :: rest, b :: a :: s) =&gt; run(rest, (a * b) :: s),
+    (_ :: _, _) =&gt; None,
+};
+</code></pre>
+<p><code>run(compile(Add(Num(3), Mul(Num(4), Num(2)))), [])</code> is <code>Some(11)</code>. Without the last arm the checker
+rejects <code>run</code>, because the value <code>(AddTop :: [], [])</code> fits no arm: an instruction that needs two
+operands on a stack that has too few.</p>
+<p>The claim to prove is stronger than the one asked for, since <code>compile(l)</code> runs with instructions
+after it and values under it. For every <code>e</code>, <code>k</code>, and <code>s</code>, <code>run(compile(e) ++ k, s)</code> equals
+<code>run(k, value(e) :: s)</code>. The proof is by induction on <code>e</code>, with one case per constructor. <code>Num(n)</code>
+is one <code>Push</code> step. For <code>Add(l, r)</code>, the induction hypothesis applied to <code>l</code> and then <code>r</code> leaves
+<code>value(r) :: value(l) :: s</code>, and <code>AddTop</code> replaces those with their sum. Taking <code>k</code> as <code>[]</code> and <code>s</code>
+as <code>[]</code> gives the result. The recursion in <code>compile</code>, the cases of the proof, and the arms of the
+<code>match</code> all follow the alternatives of the declaration.</p>
+</details>
+<details>
+<summary>Given <code>type Nat = Zero | Succ(Nat);</code> and <code>relation p : (Nat);</code>, the rule <code>rule p(Succ(x)) :- p(x);</code> does not parse, because a rule's arguments are variables and literals. Suppose it did. What would happen to the fixpoint, and is a constructor in a rule body any safer?</summary>
+<p>With <code>add p(Zero)</code>, the rule derives <code>Succ(Zero)</code>, then <code>Succ(Succ(Zero))</code>, and so on with no end.
+<a href="../relations/fixpoint.html">Evaluating relations</a> guaranteed termination because every value in a
+derived fact already occurs in some fact, which leaves a finite set of possible facts. A constructor
+in a head builds values that occur nowhere, so that set is infinite and the rounds never finish.
+This is the difference between Datalog and Prolog, whose terms may be compound and whose programs
+need not terminate.</p>
+<p>A constructor pattern in a <em>body</em> position, as in <code>rule q(x) :- p(Succ(x));</code>, only takes existing
+values apart. Every <code>x</code> it binds is a part of a value already present, and the parts of a finite set
+of finite values are finite, so termination would survive. Matching would have to look inside
+values, which makes <code>unify</code> a little more than the comparison of variables and constants that it is
+now. Facts can already hold constructor values today, and a rule filter can open them with a
+<code>match</code>.</p>
+</details>
+<details>
+<summary>Bridger accepts a <code>match</code> with an arm that can never run. Using usefulness, say how to detect such an arm, trace it on arms <code>Some(x)</code>, <code>None</code>, <code>Some(1)</code>, <code>_</code>, and say how guards change the answer.</summary>
+<p>Arm <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.854em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05724em;">j</span></span></span></span> can run exactly when <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0361em;vertical-align:-0.2861em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1..</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span> holds, where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9694em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1..</span><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span> has a row for each
+earlier arm. For <code>Some(1)</code>, the earlier rows are <code>Some(x)</code> and <code>None</code>. The head of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span> is the
+constructor <code>Some</code>, so <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span></span></span></span> specializes: the row <code>None</code> drops, the row <code>Some(x)</code> becomes a wildcard,
+and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span> becomes <code>1</code>. Specializing again by the literal <code>1</code>, the wildcard row leaves a row with no
+columns and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span> has none either. A row remains, so <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span></span></span></span> is false and the arm can never run. For <code>_</code>,
+the rows <code>Some(x)</code>, <code>None</code>, and <code>Some(1)</code> make the heads complete. Specializing by <code>Some</code> leaves
+the rows <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.12em;vertical-align:-0.12em;"></span><span class="mord rule" style="border-right-width:0.55em;border-top-width:0.05em;bottom:-0.12em;"></span></span></span></span> and <code>1</code>, whose heads are incomplete, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span></span></span></span> keeps the wildcard row, so <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span></span></span></span> is
+false. Specializing by <code>None</code> leaves a row with no columns, also false. <code>_</code> can never run
+either.</p>
+<p>A guarded earlier arm contributes no row, since its guard may fail. A guarded arm is still tested
+by its own pattern: if the pattern is useless, the guard cannot help it. An unreachable arm is
+usually a mistake, such as a general arm written above a specific one, and many compilers warn about
+it. Bridger could add such a warning and still accept the same programs.</p>
+</details>
+<details>
+<summary>The checker reports only that a <code>match</code> is not exhaustive. Change <code>U</code> so it returns an example of a missing value, and give the example it produces for <code>zip_with</code> from the chapter.</summary>
+<p>Have <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span></span></span></span> return an optional vector of patterns, one per column, where it now returns true or false.
+With no columns, a useful vector is the empty vector. A constructor head of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span> or a complete
+signature recurses: if the recursion on <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span><span class="mopen">(</span><span class="mord mathnormal">c</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mclose">)</span></span></span></span> returns <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.864em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">⋯</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">a</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.1522em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span></span></span></span>, the result is
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">c</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">a</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace"> </span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.1522em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span></span></span></span>. In the default case, if the recursion on <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mclose">)</span></span></span></span> returns <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.714em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.1522em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span></span></span></span>,
+the first column needs a value no row’s head covers. If no row has a head at all, it is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.12em;vertical-align:-0.12em;"></span><span class="mord rule" style="border-right-width:0.55em;border-top-width:0.05em;bottom:-0.12em;"></span></span></span></span>. If
+some do and the type has a signature, it is any constructor missing from the heads, with wildcards
+for its arguments. For an <code>Int</code>, it is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.12em;vertical-align:-0.12em;"></span><span class="mord rule" style="border-right-width:0.55em;border-top-width:0.05em;bottom:-0.12em;"></span></span></span></span> again, or any literal the rows do not mention.</p>
+<p>For <code>zip_with</code>, the tuple step wraps the result. In the <code>::</code> branch, the first column gives
+<code>_ :: _</code>, the wildcards give <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.12em;vertical-align:-0.12em;"></span><span class="mord rule" style="border-right-width:0.55em;border-top-width:0.05em;bottom:-0.12em;"></span></span></span></span>, and the last column is the default case with <code>::</code> present and
+<code>[]</code> missing, so the witness is <code>(_ :: _, [])</code>: a non-empty first list and an empty second one. A
+message built from this tells the programmer which case to add, with the wildcards standing for
+parts that do not matter.</p>
+</details>
 
                     </main>
 
@@ -278,22 +650,6 @@ implement it. Answers in collapsible blocks.*
         <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
         <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
 
-        <!-- Livereload script (if served using the cli tool) -->
-        <script>
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
-            const socket = new WebSocket(wsAddress);
-            socket.onmessage = function (event) {
-                if (event.data === "reload") {
-                    socket.close();
-                    location.reload();
-                }
-            };
-
-            window.onbeforeunload = function() {
-                socket.close();
-            }
-        </script>
 
 
         <script>

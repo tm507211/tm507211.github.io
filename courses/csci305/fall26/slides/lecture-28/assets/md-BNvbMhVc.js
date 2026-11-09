@@ -1,0 +1,8 @@
+import{H as e,L as t,T as n,X as r,Z as i,_ as a,_t as o,b as s,g as c,ht as l,x as u,y as d}from"./modules/shiki-B6CMAte1.js";import{nt as f,tt as p}from"./index-DiT2iguK.js";import{t as m}from"./ExprTree-CJ01icjf.js";import{t as h}from"./slidev/default-CIcQ1HjV.js";var g={class:`cols2`},_={class:`col`},v={class:`read`},y={class:`col`},b={class:`code`},x={class:`term`},S={class:`read`},C={__name:`slides.md__slidev_2`,setup(C){let{$slidev:w,$nav:T,$clicksContext:E,$clicks:D,$page:O,$renderContext:k,$frontmatter:A}=f();return E.setup(),(f,C)=>{let w=m,T=e(`click`);return t(),a(h,o(n(l(p)(l(A),1))),{default:r(()=>[C[6]||=c(`h2`,null,`An arithmetic tree`,-1),c(`div`,g,[c(`div`,_,[C[1]||=c(`div`,{class:`mono amb`,style:{"font-size":`1.25em`}},`3 + 4 * 2`,-1),u(w,{tree:`Add(Num(3), Mul(Num(4), Num(2)))`,tuples:!0,scale:.88}),i((t(),d(`div`,v,[...C[0]||=[s(`Every node is a 3-tuple: a `,-1),c(`code`,null,`tag`,-1),s(`, then its pieces. A number's last slot is a filler `,-1),c(`code`,null,`0`,-1)]])),[[T,1]])]),c(`div`,y,[C[5]||=c(`pre`,{class:`code`},`let e = ("add", ("num", 3, 0),
+          ("mul", ("num", 4, 0),
+                  ("num", 2, 0)));`,-1),i((t(),d(`pre`,b,[...C[2]||=[s(`fn value(e: Node) -> Int =
+    if e.0 == "num" { e.1 }
+    else if e.0 == "add" {
+        value(e.1) + value(e.2) }
+    else {
+        value(e.1) * value(e.2) };`,-1)]])),[[T,2]]),i((t(),d(`div`,x,[...C[3]||=[c(`div`,{class:`ok`},`value(e) ⇒ 11`,-1)]])),[[T,2]]),i((t(),d(`div`,S,[...C[4]||=[c(`code`,null,`Node`,-1),s(` is the type we would like `,-1),c(`code`,null,`e`,-1),s(` to have. It does not exist.`,-1)]])),[[T,3]])])])]),_:1},16)}}};export{C as default};

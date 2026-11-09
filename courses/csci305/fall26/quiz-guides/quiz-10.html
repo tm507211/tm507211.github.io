@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 10 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 10 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lecture 28 and its two textbook
+      chapters: sum and product types, and pattern matching. Exhaustiveness checking is not on this
+      quiz. Answers are short: a sentence or two, in your own words, earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 15 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions, each asking one thing. Most
+            give you a small Bridger program &mdash; say what it prints or why it is rejected, and
+            why. Others ask you to count a type's values or to work out what a pattern binds.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.
+            You may name a rule (<code>E-Match</code>, <code>T-Con</code>) if it helps, but you are
+            never required to.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Sum and product types
+      <small class="text-muted">Lecture 28</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/adt/adts.html">Sum and Product Types</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-28/index.html">Lecture 28</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Say what goes wrong with data encoded as tagged tuples: why a misspelled tag still runs,
+        and why no single tuple type describes a tree of every depth.</li>
+      <li>Count a type's values: a product multiplies its components' counts, a sum adds its
+        alternatives' counts, and a constructor's arguments form a product.</li>
+      <li>Explain why a sum is a <em>disjoint</em> union: the tag keeps the alternatives apart even
+        when they hold the same type. Compare <code>Result&lt;Bool, Bool&gt;</code> with the set
+        union of <code>Bool</code> and <code>Bool</code>, and <code>Option&lt;Option&lt;T&gt;&gt;</code>
+        with TypeScript's <code>T | null | null</code>.</li>
+      <li>Read a <code>type</code> declaration as a sum of products. Write one for a small set of
+        shapes, including a recursive or generic one.</li>
+      <li>Build a recursive type level by level, say at what level a given value first appears, and
+        say why a type such as <code>type Loop = Again(Loop);</code> is accepted yet has no
+        values.</li>
+      <li>Apply <code>E-Con</code>: a constructor evaluates its arguments left to right and builds a
+        value tagged with its name, running no other code. Say when two constructor values are equal
+        under <code>==</code>.</li>
+      <li>Apply <code>T-Con</code>: say why a constructor use is rejected (unknown name, wrong number
+        of arguments, wrong argument type) and why one name cannot belong to two types.</li>
+      <li>Say what determines a generic constructor's type arguments, why <code>let n = None;</code>
+        is rejected, and why <code>map([1, 2], Some)</code> needs a lambda in Bridger.</li>
+      <li>Recognize the design space: untagged unions in C and TypeScript; null references compared
+        with <code>Option</code>; nominal sums compared with OCaml's polymorphic variants;
+        constructors as functions in ML and Haskell; Pascal's optional tag; sums written as class
+        hierarchies.</li>
+    </ul>
+
+    <h2>Pattern matching
+      <small class="text-muted">Lecture 28</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/adt/pattern-matching.html">Pattern Matching</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-28/index.html">Lecture 28</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Compute <em>match(p, v)</em> by hand for each form of pattern: wildcard, variable, literal,
+        constructor, tuple, list, cons, and or-pattern. Tell the empty binding &empty; apart from the
+        failure &perp;, and say why one failing subpattern fails the whole pattern.</li>
+      <li>Trace <code>E-Match</code>: the scrutinee is evaluated once, arms are tried from top to
+        bottom, and the first arm whose pattern fits and whose guard holds runs. Say why a general arm
+        can sit behind special ones, and what happens to a special arm placed behind a general
+        one.</li>
+      <li>Say where a pattern's bindings are in scope, the guard and body of that arm, and how they
+        shadow outer names.</li>
+      <li>Explain why an identifier in a pattern always binds, what that does to an arm named after
+        an existing variable, and how to write the comparison with a guard.</li>
+      <li>Say why a pattern may bind each name only once (linearity), what that gives the matching
+        relation and the typing rule, and how to test two components for equality instead.</li>
+      <li>Say what an or-pattern requires of its two sides, and why.</li>
+      <li>Give the types a pattern binds using <em>p : &tau; &#8867; &Gamma;<sub>p</sub></em>, and say
+        why <code>T-Match</code> requires every arm's body to have one type.</li>
+      <li>Use guards: when a guard runs, what a <code>false</code> guard does, and why a guard must be
+        pure, including why it cannot call a function parameter.</li>
+      <li>Read the list patterns: <code>[]</code>, <code>[x]</code>, <code>[x, ...t]</code>, and
+        <code>h :: t</code>. Expand the bracket forms into conses, and write a recursive list function
+        with one arm per way of building a list.</li>
+      <li>Expand <code>e?</code> on an <code>Option</code> and on a <code>Result</code> as a
+        <code>match</code> with a <code>return</code>, trace where a failure leaves the function, and
+        say what the enclosing function's result type must be.</li>
+      <li>Say why a top-down <code>simplify</code> can leave an addition of zero behind, and how
+        simplifying the operands first changes that.</li>
+      <li>Recognize the design space: matching compared with unification; repeated variables in
+        Prolog and Erlang; Python's capturing <code>case limit:</code>; compiling arms into a tree of
+        tag tests; views and active patterns; <code>match</code> as an expression compared with a
+        statement.</li>
+    </ul>
+
+    <h2>Sample questions
+      <small class="text-muted">Practice</small></h2>
+    <p>
+      These are the same kind and size of question as the quiz, on different programs. No answers
+      are given: work each one by hand first. Once your interpreter handles <code>match</code>, run
+      the programs to check yourself. The counting and level questions you check by reasoning.
+    </p>
+
+    <ol class="objectives">
+      <li>
+        <p><strong>Counting values.</strong> How many values does each type have:
+          <code>Flip</code>, <code>(Coin, Option&lt;Coin&gt;)</code>,
+          <code>Result&lt;(), Coin&gt;</code>, and <code>Option&lt;Option&lt;Coin&gt;&gt;</code>?</p>
+<pre>type Coin = Heads | Tails;
+type Flip = Done | Again(Coin, Bool);</pre>
+      </li>
+      <li>
+        <p><strong>Levels.</strong> At what level does <code>Succ(Succ(Zero))</code> first appear?
+          Bridger accepts <code>Fork</code>. How many values does it have, and why?</p>
+<pre>type Nat = Zero | Succ(Nat);
+type Fork = Both(Fork, Fork);</pre>
+      </li>
+      <li>
+        <p><strong>Rejected constructors.</strong> Each line, on its own, keeps a program from
+          starting. Why?</p>
+<pre>type Slot = Empty | Pos(Int, Int);
+
+Pos(1)
+Place(1, 2)
+Pos(1, "2")
+map([1, 2], Ok)
+let n = None;</pre>
+      </li>
+      <li>
+        <p><strong>The matching relation.</strong> Give each result: a binding, &empty;, or &perp;.</p>
+<pre>match(Mul(x, Num(1)), Mul(Num(1), Num(1)))
+match(Mul(x, Num(1)), Add(Num(2), Num(1)))
+match(None, None)
+match(h :: t, [7])
+match([a, ...t], [])
+match([_], [1])</pre>
+      </li>
+      <li>
+        <p><strong>Arm order and guards.</strong> What does <code>main</code> print, and which arm runs
+          each time? What changes if the arm <code>(_, 0)</code> moves to the top?</p>
+<pre>fn label(p: (Int, Int)) -> String = match p {
+    (0, _) => "left zero",
+    (x, y) if x == y => "equal",
+    (_, 0) => "right zero",
+    _ => "other",
+};
+
+fn main() {
+    println(label((0, 0)));
+    println(label((5, 5)));
+    println(label((5, 0)));
+    println(label((5, 6)));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Scope.</strong> What does <code>main</code> print, and why?</p>
+<pre>fn main() {
+    let y = 1;
+    let v = match (y + 1, y) {
+        (y, 1) if y > 5 => y * 10,
+        (y, _) => y + 100,
+    };
+    println(v);
+    println(y);
+}</pre>
+      </li>
+      <li>
+        <p><strong>Typing patterns.</strong> What type does each of <code>a</code>, <code>b</code>, and
+          <code>c</code> have, and where does the checker get it?</p>
+<pre>fn f(p: (Option&lt;Int&gt;, [String])) -> String = match p {
+    (Some(a), b :: c) => b ++ to_string(a + len(c)),
+    _ => "none",
+};</pre>
+      </li>
+      <li>
+        <p><strong>Or-patterns.</strong> Why does Bridger accept the first function and reject the
+          second?</p>
+<pre>type Tok = Plus(Int) | Minus(Int) | End;
+
+fn f(t: Tok) -> Int = match t {
+    Plus(n) | Minus(n) => n,
+    End => 0,
+};
+
+fn g(t: Tok) -> Int = match t {
+    Plus(n) | End => 1,
+    Minus(n) => n,
+};</pre>
+      </li>
+      <li>
+        <p><strong>Guards.</strong> Why does Bridger reject this guard? What would the program's
+          behaviour depend on if it were allowed?</p>
+<pre>ref seen = 0;
+fn bump(x: Int) -> Bool { seen := deref seen + 1; x > 0 }
+
+fn f(o: Option&lt;Int&gt;) -> Int = match o {
+    Some(x) if bump(x) => x,
+    _ => 0,
+};</pre>
+      </li>
+      <li>
+        <p><strong>List patterns.</strong> What does <code>main</code> print? Which arm handles a list
+          of exactly one element, and why does the first arm not fit it?</p>
+<pre>fn pairs(xs: [Int]) -> [Int] = match xs {
+    [a, b, ...t] => (a + b) :: pairs(t),
+    [x] => [x * 100],
+    [] => [],
+};
+
+fn main() {
+    println(pairs([1, 2, 3, 4]));
+    println(pairs([1, 2, 3, 4, 5]));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Propagating failure.</strong> What does <code>main</code> print, and why? Write the
+          first line of the body as a <code>match</code>. Why would changing the result type to
+          <code>Result&lt;Int, String&gt;</code> make this <code>?</code> a type error?</p>
+<pre>fn second(xs: [Int]) -> Option&lt;Int&gt; {
+    let t = tail(xs)?;
+    println(len(t));
+    head(t)
+}
+
+fn main() {
+    println(second([1, 2]));
+    println(second([1]));
+    println(second([]));
+}</pre>
+      </li>
+      <li>
+        <p><strong>Top-down simplification.</strong> Using the lecture's <code>simplify</code>, what
+          is the result, and which identity did it miss?</p>
+<pre>simplify(Mul(Add(Num(0), Num(1)), Num(9)))</pre>
+      </li>
+    </ol>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Beyond that: declare a
+        small type and list its values; draw a tree and walk a pattern over it, writing down the
+        binding; reorder the arms of a <code>match</code> and predict what changes; and expand each
+        <code>?</code> in a short function by hand. If your interpreter handles <code>match</code>,
+        run your programs and check yourself.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>product type</li>
+        <li>sum type</li>
+        <li>algebraic data type</li>
+        <li>disjoint union</li>
+        <li>tag</li>
+        <li>constructor</li>
+        <li>recursive type</li>
+        <li>nominal type</li>
+        <li>untagged union</li>
+        <li>pattern</li>
+        <li>scrutinee</li>
+        <li>arm</li>
+        <li>binding (&theta;)</li>
+        <li>wildcard</li>
+        <li>guard</li>
+        <li>or-pattern</li>
+        <li>linear pattern</li>
+        <li>cons</li>
+        <li>matching vs. unification</li>
+        <li><code>?</code> (propagating failure)</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>
