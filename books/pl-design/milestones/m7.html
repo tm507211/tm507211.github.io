@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d0177e83.js";
+            window.path_to_searchindex_js = "../searchindex-e4ccdfa0.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -189,13 +189,20 @@
      TEMPLATE: M5/M6's shape. The checklist DEFERS the rules to Appendix D ("Constructors and
      pattern matching", "Control flow", "Purity and effects") and the algorithms to Part VIII. NO
      arm or function bodies printed; the guidance is prose, at the level of the contracts a test
-     holds. No helper module: everything M7 needs is provided or was written at M5/M6.
+     holds. One helper module, for exhaustiveness: it provides U, S, and D (`useful`,
+     `specialize`, `default_rows`) behind `exhaustive::covers`, plus stubs for `is_exhaustive`,
+     `normalize`, and `signature`, which the student writes. Stubs sit in `impl Checker`, outside
+     the module, so the module stays paste-unchanged and re-pasteable. Verified 2026-11-15: the
+     reference with its own U/S/D replaced by this module and these signatures passes every
+     public suite and graded_m7/graded_m8, clippy -D warnings clean at m7 and m8, rustfmt-stable.
+     `#[allow(dead_code)]` is needed because `types::check` is a private module (`pub` does not
+     silence dead code there, unlike M6's `relations::check`).
      REPO FACTS: holes are todo_m7! for Ctor, Match, Try in eval.rs and types/check.rs, plus
        check_guards in relations/check.rs. Two changes have no marker: the Lambda arm's TryInLambda
        relabelling, and check_pure's forms deferred from M6 (Ctor, Match, Try).
      CONTRACTS read off the reference: eval.rs (Ctor lookup before the arguments, arity after;
        match_pattern; a non-carrier `?` operand is NonExhaustiveMatch at the `?`); types/check.rs
-       (check_ctor, check_pattern_in, check_exhaustive, check_try, the Lambda arm);
+       (check_ctor, check_pattern_in, is_exhaustive, check_try, the Lambda arm);
        relations/check.rs (check_guards: source order; HigherOrder, then ImpureGuard; no totality).
      EXAMPLES run 2026-11-08, reference release --features m7, stdin </dev/null: calc.brg, gap.brg,
        every line of the two worked-example tables; design problems: the stack machine with and
@@ -228,6 +235,8 @@ Expr::Try(..) =&gt; todo_m7!("T-Try"),
 
 // src/relations/check.rs
 pub fn check_guards(program: &amp;Program) -&gt; Result&lt;(), RuleError&gt;</code></pre>
+<p>Pasting the declarations from <a href="#exhaustiveness">Exhaustiveness</a> below adds their <code>todo_m7!</code> holes
+to <code>src/types/check.rs</code>.</p>
 <p>Two changes have no <code>todo_m7!</code> marker of their own:</p>
 <ol>
 <li>The checker’s <code>Lambda</code> arm reports a <code>?</code> that a lambda’s body cannot carry, as
@@ -389,8 +398,9 @@ pattern’s own span. In a <code>Mismatch</code>, the scrutinee’s type is <cod
 <code>dead_after</code> with the scrutinee’s span and the span of the <code>match</code>. The result type is the
 expected type if there is one, or a fresh variable. Each arm checks, on its own copy of the
 context, its pattern, its guard against <code>Bool</code>, and its body against the result type.
-Exhaustiveness comes after every arm, so a disagreeing arm is reported ahead of a gap. If there is
-at least one arm and every body diverges, call <code>record_diverging</code> on the <code>match</code>.</li>
+Exhaustiveness comes after every arm, so a disagreeing arm is reported ahead of a gap: when
+<code>is_exhaustive</code> is false, the result is <code>NonExhaustiveMatch</code> at the <code>match</code>. If there is at least
+one arm and every body diverges, call <code>record_diverging</code> on the <code>match</code>.</li>
 </ul>
 <h4 id="try"><a class="header" href="#try">Try</a></h4>
 <p><code>?</code> checks its operand with no expected type. An operand that diverges calls <code>dead_after</code> and the
@@ -412,18 +422,238 @@ lambda’s body fails with a <code>Mismatch</code> whose <code>expected</code> t
 error with <code>TryInLambda</code> using the same <code>found</code> type and <code>span</code>. Any other error from the body stays
 as it is.</p>
 <h3 id="exhaustiveness"><a class="header" href="#exhaustiveness">Exhaustiveness</a></h3>
-<p><a href="../adt/exhaustiveness.html">Exhaustiveness checking</a> defines the check in full, and
-<a href="../adt/exhaustiveness.html#building-it">its summary of the parts</a> is the plan to follow. A test will
-hold you to these points:</p>
+<p><a href="../adt/exhaustiveness.html">Exhaustiveness checking</a> defines the check, and
+<a href="../adt/exhaustiveness.html#building-it">its summary of the parts</a> divides it into a reduction of
+patterns to wildcards, constructors, and alternatives; a function from a type to its signature; and
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span></span></span></span> with its helpers <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span></span></span></span>. The module below provides <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span></span></span></span>, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span>, and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span></span></span></span>. You write the
+reduction and the signature, and the method that joins them.</p>
+<p>Paste the module at the end of <code>src/types/check.rs</code>, unchanged, and add
+<code>use exhaustive::{Con, Pat, Signature};</code> to the file’s imports. Its public function is
+<code>covers(rows, ty, signature)</code>, which holds when no value of <code>ty</code> escapes every row, with one <code>Pat</code>
+per row. It asks <code>signature</code> for the constructors of each column’s type as <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> replaces a column by
+a constructor’s arguments, so the column types and the splitting of <code>|</code> alternatives happen inside
+it. Within the module, <code>useful</code> is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span></span></span></span>, <code>specialize</code> is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span>, and <code>default_rows</code> is <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span></span></span></span>. Nothing
+reaches the module until your code calls <code>covers</code>, which is why it allows <code>dead_code</code>.</p>
+<pre><code class="language-rust ignore">/// Provided helpers (Milestone M7): the usefulness test behind
+/// exhaustiveness checking. Paste this module at the end of the file,
+/// unchanged. Until `is_exhaustive` calls `covers`, nothing reaches this
+/// module, so `dead_code` is allowed here.
+#[allow(dead_code)]
+pub mod exhaustive {
+    use crate::ast::{Name, Ty};
+    use std::collections::HashSet;
+
+    /// A pattern as the usefulness test sees it: a wildcard, a constructor
+    /// applied to sub-patterns, or two alternatives. A variable is a
+    /// wildcard here, since it matches anything.
+    #[derive(Clone, Debug)]
+    pub enum Pat {
+        Wild,
+        Con(Con, Vec&lt;Pat&gt;),
+        Or(Box&lt;Pat&gt;, Box&lt;Pat&gt;),
+    }
+
+    /// The constructor at the head of a pattern. Literals are constructors
+    /// with no arguments; a tuple of width n is one constructor of arity n;
+    /// a list is `Nil` or `Cons(head, tail)`; a struct is one constructor
+    /// whose arguments are its fields in declaration order.
+    #[derive(Clone, Debug, PartialEq, Eq, Hash)]
+    pub enum Con {
+        Int(i64),
+        Bool(bool),
+        Str(String),
+        Unit,
+        Tuple(usize),
+        Nil,
+        Cons,
+        Ctor(Name),
+        Struct(Name),
+    }
+
+    /// A type's constructors, each with its argument types.
+    pub type Signature = Vec&lt;(Con, Vec&lt;Ty&gt;)&gt;;
+
+    /// The function `covers` asks for a type's signature: `None` for a type
+    /// that only a wildcard covers (`Int`, `String`, a function, ...).
+    pub type SignatureOf&lt;'a&gt; = dyn Fn(&amp;Ty) -&gt; Option&lt;Signature&gt; + 'a;
+
+    /// One row of the pattern matrix: a pattern per column.
+    type Row = Vec&lt;Pat&gt;;
+
+    /// Whether the rows cover every value of `ty`: no value of that type
+    /// escapes all of them.
+    pub fn covers(rows: &amp;[Pat], ty: &amp;Ty, signature: &amp;SignatureOf&lt;'_&gt;) -&gt; bool {
+        let matrix: Vec&lt;Row&gt; = rows.iter().map(|p| vec![p.clone()]).collect();
+        !useful(&amp;matrix, &amp;[Pat::Wild], std::slice::from_ref(ty), signature)
+    }
+
+    /// Whether some value (of `tys`, one type per column) matches `q` and
+    /// no row of `rows`.
+    fn useful(rows: &amp;[Row], q: &amp;[Pat], tys: &amp;[Ty], sig: &amp;SignatureOf&lt;'_&gt;) -&gt; bool {
+        let Some((head, q_rest)) = q.split_first() else {
+            return rows.is_empty();
+        };
+        let (ty, tys_rest) = (&amp;tys[0], &amp;tys[1..]);
+        // Continue with `pats` in place of the first column.
+        let go = |rows2: &amp;[Row], pats: Vec&lt;Pat&gt;, arg_tys: Vec&lt;Ty&gt;| {
+            let mut q2 = pats;
+            q2.extend_from_slice(q_rest);
+            let mut tys2 = arg_tys;
+            tys2.extend_from_slice(tys_rest);
+            useful(rows2, &amp;q2, &amp;tys2, sig)
+        };
+        match head {
+            Pat::Or(a, b) =&gt; {
+                go(rows, vec![(**a).clone()], vec![ty.clone()])
+                    || go(rows, vec![(**b).clone()], vec![ty.clone()])
+            }
+            Pat::Con(c, args) =&gt; {
+                let arg_tys = arg_types(sig(ty), c, args.len());
+                go(&amp;specialize(rows, c, args.len()), args.clone(), arg_tys)
+            }
+            Pat::Wild =&gt; {
+                let heads = head_constructors(rows);
+                let complete = sig(ty).filter(|cons| is_complete(cons, &amp;heads));
+                match complete {
+                    Some(cons) =&gt; cons.into_iter().any(|(c, arg_tys)| {
+                        let rows2 = specialize(rows, &amp;c, arg_tys.len());
+                        go(&amp;rows2, vec![Pat::Wild; arg_tys.len()], arg_tys)
+                    }),
+                    None =&gt; useful(&amp;default_rows(rows), q_rest, tys_rest, sig),
+                }
+            }
+        }
+    }
+
+    /// Constructor `c`'s argument types, or `n` placeholders when the type
+    /// has no signature (a literal of `Int` or `String`).
+    fn arg_types(sig: Option&lt;Signature&gt;, c: &amp;Con, n: usize) -&gt; Vec&lt;Ty&gt; {
+        let found = sig.and_then(|s| s.into_iter().find(|(k, _)| k == c));
+        match found {
+            Some((_, tys)) =&gt; tys,
+            None =&gt; vec![Ty::meta(u32::MAX); n],
+        }
+    }
+
+    /// Whether every constructor of a (non-empty) signature heads some row.
+    fn is_complete(sig: &amp;Signature, heads: &amp;HashSet&lt;Con&gt;) -&gt; bool {
+        !sig.is_empty() &amp;&amp; sig.iter().all(|(c, _)| heads.contains(c))
+    }
+
+    /// Every constructor at the head of some row, alternatives flattened.
+    fn head_constructors(rows: &amp;[Row]) -&gt; HashSet&lt;Con&gt; {
+        fn heads(p: &amp;Pat, out: &amp;mut HashSet&lt;Con&gt;) {
+            match p {
+                Pat::Wild =&gt; {}
+                Pat::Con(c, _) =&gt; {
+                    out.insert(c.clone());
+                }
+                Pat::Or(a, b) =&gt; {
+                    heads(a, out);
+                    heads(b, out);
+                }
+            }
+        }
+        let mut out = HashSet::new();
+        for p in rows.iter().filter_map(|row| row.first()) {
+            heads(p, &amp;mut out);
+        }
+        out
+    }
+
+    /// The rows specialized to constructor `c` of arity `n`: a row headed
+    /// by `c` gives its arguments then its other columns, a row headed by a
+    /// wildcard gives `n` wildcards then its other columns, and a row headed
+    /// by another constructor is dropped.
+    fn specialize(rows: &amp;[Row], c: &amp;Con, n: usize) -&gt; Vec&lt;Row&gt; {
+        let mut out = Vec::new();
+        for row in rows {
+            let Some((head, rest)) = row.split_first() else {
+                continue;
+            };
+            match head {
+                Pat::Con(k, args) if k == c =&gt; {
+                    out.push([args.as_slice(), rest].concat());
+                }
+                Pat::Con(..) =&gt; {}
+                Pat::Wild =&gt; {
+                    let wilds = vec![Pat::Wild; n];
+                    out.push([wilds.as_slice(), rest].concat());
+                }
+                Pat::Or(a, b) =&gt; {
+                    for alt in [a, b] {
+                        let r = [std::slice::from_ref(&amp;**alt), rest].concat();
+                        out.extend(specialize(&amp;[r], c, n));
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// The rows headed by a wildcard, without that column.
+    fn default_rows(rows: &amp;[Row]) -&gt; Vec&lt;Row&gt; {
+        let mut out = Vec::new();
+        for row in rows {
+            let Some((head, rest)) = row.split_first() else {
+                continue;
+            };
+            match head {
+                Pat::Wild =&gt; out.push(rest.to_vec()),
+                Pat::Con(..) =&gt; {}
+                Pat::Or(a, b) =&gt; {
+                    for alt in [a, b] {
+                        let r = [std::slice::from_ref(&amp;**alt), rest].concat();
+                        out.extend(default_rows(&amp;[r]));
+                    }
+                }
+            }
+        }
+        out
+    }
+}</code></pre>
+<p>Then paste these declarations into the <code>impl Checker</code> block, beside your other methods. Their
+comments state what a test will hold each one to:</p>
+<pre><code class="language-rust ignore">    /// Exhaustiveness (T-Match's last premise): whether the unguarded arms
+    /// cover every value of `scrut_ty`. A guarded arm contributes no row,
+    /// since its guard may fail. Builds one `Pat` per unguarded arm with
+    /// `normalize` and asks `exhaustive::covers`, passing `signature`.
+    fn is_exhaustive(&amp;self, arms: &amp;[Arm], scrut_ty: &amp;Ty) -&gt; bool {
+        let _ = (arms, scrut_ty);
+        todo_m7!("is_exhaustive: unguarded arms -&gt; rows -&gt; exhaustive::covers")
+    }
+
+    /// A pattern as the usefulness test sees it. A variable is `Pat::Wild`.
+    /// A literal is a constructor with no arguments. A tuple pattern is
+    /// `Con::Tuple(width)` over its parts. A list is built from `Con::Nil`
+    /// and `Con::Cons(head, tail)`: `[p, q]` is `Cons(p, Cons(q, Nil))`, and
+    /// `[p, ...rest]` is `Cons(p, Wild)`. A struct pattern is
+    /// `Con::Struct(name)` over every declared field in declaration order,
+    /// an unmentioned field as `Pat::Wild`.
+    fn normalize(&amp;self, p: &amp;Pattern) -&gt; Pat {
+        let _ = p;
+        todo_m7!("normalize: Pattern -&gt; exhaustive::Pat")
+    }
+
+    /// The constructors of `ty`, each with its argument types, or `None`
+    /// for a type only a wildcard covers: `Int`, `String`, a function, a
+    /// reference, a type parameter, an unsolved variable. Resolve `ty`
+    /// first. A generic type's constructors take its type arguments: the
+    /// signature of `Option&lt;Bool&gt;` is `Some` with `[Bool]`, then `None`.
+    fn signature(&amp;self, ty: &amp;Ty) -&gt; Option&lt;Signature&gt; {
+        let _ = ty;
+        todo_m7!("signature: a type's constructors and their argument types")
+    }</code></pre>
+<p><code>covers</code> takes the signature function as a closure over the checker, written
+<code>&amp;|t| self.signature(t)</code>. A test will also hold you to these points:</p>
 <ul>
-<li>Resolve the scrutinee’s type first, since its signature depends on what inference has solved.</li>
-<li>A guarded arm contributes no row.</li>
-<li>The column types travel with the columns, because a wildcard’s signature comes from its column’s
-type. Applying a generic type’s arguments to its constructors’ field types is what lets
-<code>Option&lt;Bool&gt;</code> be completed by <code>Some(true)</code>, <code>Some(false)</code>, and <code>None</code>.</li>
-<li><code>Int</code> and <code>String</code> have literals but no signature, so their heads are never complete. A type
-parameter, function, or reference has no signature either.</li>
+<li><code>Option&lt;Bool&gt;</code> is completed by <code>Some(true)</code>, <code>Some(false)</code>, and <code>None</code> only if <code>signature</code>
+applies the type’s arguments to its constructors’ field types.</li>
+<li><code>Int</code> and <code>String</code> have literals but no signature, so a <code>match</code> over either needs an arm that
+matches anything.</li>
 </ul>
+<p>A struct has a single constructor, so one struct pattern covers its type when the patterns for its
+fields cover theirs. The M8 tests hold you to this, once struct values exist.</p>
 <h3 id="guards"><a class="header" href="#guards">Guards</a></h3>
 <p><code>check_guards</code> visits every <code>fn</code> body, global initializer, <code>impl</code> method, and rule conjunct. It
 reports the first offender in source order, sorted by source and position, since the order of
@@ -533,8 +763,8 @@ the checker would have refused. Some call <code>Checker::check_program</code> on
 call <code>check_guards</code> alone. A rejection is tested by its error variant and, where it matters, by its
 payload, and the text of a message is never tested.</p>
 <p>Write the matcher and the evaluator’s arms first, since the whole-program tests reach them without
-the checker. Then write <code>check_pattern</code> and the checker’s arms with a stub exhaustiveness check that
-accepts everything, and fill in the check once the rest passes. <code>check_guards</code> can come at any point
+the checker. Then write <code>check_pattern</code> and the checker’s arms with an <code>is_exhaustive</code> that returns
+<code>true</code>, and fill in the check once the rest passes. <code>check_guards</code> can come at any point
 after that.</p>
 <h2 id="design-problems"><a class="header" href="#design-problems">Design problems</a></h2>
 <details>
