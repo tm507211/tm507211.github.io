@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Milestone M7 — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 100rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    h3 { margin-top: 1.4rem; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    pre { font-size: .9em; }
+    table code { white-space: nowrap; }
+    .grade-table td:first-child { white-space: nowrap; }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Milestone M7 <small>Algebraic Data Types</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      In this milestone Bridger gets its own data. You build constructor applications, <code>match</code>
+      with its patterns and guards, and the <code>?</code> operator, in both the evaluator and the type
+      checker. The checker also proves that every <code>match</code> covers its scrutinee's type, and the
+      rule checks extend to guards, which must be pure. With this milestone the prelude's
+      <code>Option</code>, <code>Result</code>, and <code>Ordering</code> constructors come to life.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>At a glance</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>Due</dt><dd>Monday, November 30, at 11:59&nbsp;PM.</dd>
+          <dt>Submit</dt><dd>Through Gradescope, linked from the course Canvas page.</dd>
+          <dt>Attempts</dt><dd><strong>Unlimited.</strong> Resubmit as many times as you like before
+            the deadline. Only your last submission is graded.</dd>
+          <dt>Deliverables</dt><dd>A single <code>.zip</code> containing your <code>src/</code>
+            folder and the <code>.md</code> files from the project root, including your
+            <code>Description.md</code>.</dd>
+          <dt>Reading</dt><dd>The textbook's
+            <a href="../../../../books/pl-design/milestones/m7.html">Milestone M7</a> chapter is the
+            full specification. This page adds the course-specific rules: how to submit and how it is
+            graded.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>What to build <small class="text-muted">the specification</small></h2>
+    <p class="refs text-muted">
+      Full specification:
+      <a href="../../../../books/pl-design/milestones/m7.html">Textbook &mdash; Milestone M7: algebraic data types and pattern matching</a>
+      &nbsp;|&nbsp; Previous milestone:
+      <a href="m6.html">Milestone M6: relations</a>
+    </p>
+    <p>
+      Read the <a href="../../../../books/pl-design/milestones/m7.html">Milestone M7 chapter</a> before
+      you start. It is the authoritative specification. Its two tables, one for the forms and one for
+      the patterns, are the checklist your code is measured against. The rules themselves are in the
+      <a href="../../../../books/pl-design/appendix/language-reference.html">language reference</a>
+      appendix (under constructors and pattern matching, control flow, and purity and effects). The
+      algorithms are in the Part VIII chapters:
+      <a href="../../../../books/pl-design/adt/adts.html">Sum and product types</a>,
+      <a href="../../../../books/pl-design/adt/pattern-matching.html">Pattern matching</a>, and
+      <a href="../../../../books/pl-design/adt/exhaustiveness.html">Exhaustiveness checking</a>.
+      The work is in three files you have already edited:
+    </p>
+    <pre><code>// src/interp/eval.rs
+Expr::Ctor(..) =&gt; todo_m7!("E-Ctor"),
+Expr::Match(..) =&gt; todo_m7!("E-Match"),
+Expr::Try(..) =&gt; todo_m7!("E-Try (`?`: match + return)"),
+
+// src/types/check.rs
+Expr::Ctor(..) =&gt; todo_m7!("T-Con"),
+Expr::Match(..) =&gt; todo_m7!("T-Match (patterns, then exhaustiveness)"),
+Expr::Try(..) =&gt; todo_m7!("T-Try"),
+fn is_exhaustive(&amp;self, arms: &amp;[Arm], scrut_ty: &amp;Ty) -&gt; bool   // pasted in, see below
+fn normalize(&amp;self, p: &amp;Pattern) -&gt; Pat
+fn signature(&amp;self, ty: &amp;Ty) -&gt; Option&lt;Signature&gt;
+
+// src/relations/check.rs
+pub fn check_guards(program: &amp;Program) -&gt; Result&lt;(), RuleError&gt;</code></pre>
+    <p>
+      Two changes have no <code>todo_m7!</code> marker. The checker's <code>Lambda</code> arm reports a
+      <code>?</code> that a lambda's body cannot carry as <code>TryInLambda</code>. And your M6 purity
+      judgment must now handle constructor applications, <code>match</code>, and <code>?</code>, which no
+      M6 program could reach. The chapter spells out the contracts the tests hold each file to. These are
+      the ones that most often cause trouble:
+    </p>
+    <ul>
+      <li><strong>A pattern that does not fit is not an error.</strong> The matcher's failure sends the
+        evaluator to the next arm. Only after the last arm fails is the result
+        <code>NonExhaustiveMatch</code>, at the <code>match</code>. A guard that is not a
+        <code>Bool</code> is a <code>TypeError</code> at the guard.</li>
+      <li><strong>Keep list tails shared.</strong> A <code>::</code> or <code>...rest</code> pattern binds
+        the tail it was given. Rebuilding the tail makes every recursion over a list quadratic.</li>
+      <li><strong><code>Ctor</code> resolves its name first, and counts its arguments last.</strong> The
+        evaluator decides what the name means before it runs the arguments, and reports
+        <code>ArityMismatch</code> only after running them. The checker makes its arity report before it
+        checks any argument.</li>
+      <li><strong>Disagreement before gaps.</strong> The checker types every arm before it asks whether
+        the arms are exhaustive, so a body of the wrong type is a <code>Mismatch</code> even when the
+        <code>match</code> also has a gap. A guarded arm contributes nothing to coverage, since its guard
+        may fail.</li>
+      <li><strong><code>?</code> is a <code>match</code> and a <code>return</code>.</strong> On a
+        <code>None</code> or an <code>Err</code>, raise the same <code>Control::Return</code> your
+        <code>return</code> arm uses. In the checker, the operand's carrier must match the enclosing
+        function's return type, and a <code>Result</code>'s two error types must agree.</li>
+      <li><strong>Guards allow recursion.</strong> <code>check_guards</code> reuses your M6 purity
+        judgment, except that a guard may reach a recursive function. It reports the first offender in
+        source order, and the order of <code>decls</code> is not the order of the file.</li>
+    </ul>
+    <p>
+      Everything outside the holes is provided, including <code>Value::Ctor</code>,
+      <code>Value::List</code> and its <code>uncons</code>, <code>Pattern::binders</code>, and the
+      driver that runs the guard checks, the rule checks, and the type checker before <code>main</code>.
+      Struct <em>values</em> do not exist until M8, but struct <em>patterns</em> are part of the matcher,
+      the checker, and exhaustiveness now. The chapter lists the provided runtime the M7 arms use.
+    </p>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>First: paste in the exhaustiveness module</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The starter leaves out the usefulness test behind exhaustiveness checking. The chapter's
+          <a href="../../../../books/pl-design/milestones/m7.html#exhaustiveness">exhaustiveness</a>
+          section prints it in two parts. Copy both, unchanged:
+        </p>
+        <ul style="margin-bottom:.6em">
+          <li>The <code>pub mod exhaustive</code> module goes at the <strong>end of
+            <code>src/types/check.rs</code></strong>. Add
+            <code>use exhaustive::{Con, Pat, Signature};</code> to the file's imports.</li>
+          <li>The three declarations, <code>is_exhaustive</code>, <code>normalize</code>, and
+            <code>signature</code>, go <strong>inside the <code>impl Checker</code> block</strong>, beside
+            your other methods. Pasting them adds their <code>todo_m7!</code> holes, which are yours to
+            fill.</li>
+        </ul>
+        <ul style="margin-bottom:0">
+          <li><strong>Both must live in <code>src/types/check.rs</code>.</strong> Only the submitted
+            files are collected, so code you put in a new file of your own is not part of what is graded,
+            and your submission will not compile on Gradescope.</li>
+          <li>The module provides <code>covers</code>, and inside it <code>useful</code>
+            (<em>U</em>), <code>specialize</code> (<em>S</em>), and <code>default_rows</code>
+            (<em>D</em>). It allows <code>dead_code</code>, so it raises no clippy warning before your
+            code calls it. You may read it freely, but you do not need to change it.</li>
+          <li>You write the reduction of a pattern to a <code>Pat</code> (<code>normalize</code>), a
+            type's constructors (<code>signature</code>), and the method that joins them
+            (<code>is_exhaustive</code>).</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Getting the code and running the tests</h2>
+    <p>
+      M7 builds directly on your M1&ndash;M6 code. Because the milestones are
+      <strong>cumulative</strong>, <code>cargo m7</code> runs every M6, M5, M4, M3, M2, and M1 test too,
+      and the provided-test gate (below) will fail the whole milestone if any of them fail.
+      <strong>Finish <a href="m6.html">Milestone M6</a> first</strong>, and keep working in the same
+      clone with your completed evaluator, checker, and rule checks in place. <code>check_guards</code>
+      is built on your M6 purity judgment, and every program goes through your M5 checker before it
+      runs.
+    </p>
+    <p>
+      The toolchain, the clone, and the layout of the codebase are the ones from
+      <a href="m1.html#getting-the-code-and-running-the-tests">Milestone M1</a>. That setup is done once,
+      and this milestone does not change it. If you are starting fresh, follow the M1 page to install
+      <a href="https://rustup.rs"><code>rustup</code></a>, clone
+      <a href="https://github.com/chaluli/bridger-interpreter"><code>bridger-interpreter</code></a>, and
+      complete M1 through M6. Then pick up the same loop, with the milestone number advanced:
+    </p>
+    <pre><code>cargo m7                                    # run the Milestone-7 tests
+cargo fmt                                   # format your code
+cargo clippy --all-targets -- -D warnings   # lint</code></pre>
+    <p>
+      <code>cargo m7</code> is short for <code>cargo test --features m7</code>, and runs the M7 tests
+      <em>and</em> every earlier milestone's. To list the milestone-tagged holes at any time:
+    </p>
+    <pre><code>grep -rn 'todo_m7!' src</code></pre>
+    <p>
+      The holes for struct literals, field access, and method calls stay <code>todo_m8!</code>s until
+      the next milestone.
+    </p>
+    <p>
+      A suggested order: write the matcher and the evaluator's arms first, since many provided tests run
+      whole programs <em>without</em> the checker. Then write <code>check_pattern</code> and the checker's
+      arms with an <code>is_exhaustive</code> that just returns <code>true</code>, and fill in the real
+      check once the rest passes. <code>check_guards</code> can come at any point after that.
+    </p>
+
+    <h3>Running a program</h3>
+    <p>
+      With <code>--features m7</code>, <code>cargo run</code> runs the static checks and then
+      <code>main</code>. <code>calc.brg</code> uses constructors, <code>match</code>, and <code>?</code>
+      together:
+    </p>
+    <pre><code>$ cat calc.brg
+type Calc = Num(Int) | Add(Calc, Calc) | Div(Calc, Calc);
+
+fn result(e: Calc) -&gt; Result&lt;Int, String&gt; = match e {
+    Num(n) =&gt; Ok(n),
+    Add(l, r) =&gt; Ok(result(l)? + result(r)?),
+    Div(l, r) =&gt; {
+        let d = result(r)?;
+        if d == 0 { Err("divide by zero") } else { Ok(result(l)? / d) }
+    },
+};
+
+fn main() {
+    println(result(Add(Num(1), Div(Num(8), Num(2)))));
+    println(result(Div(Num(1), Add(Num(0), Num(0)))));
+}
+
+$ cargo run -q --features m7 -- calc.brg
+Ok(5)
+Err("divide by zero")</code></pre>
+    <p>
+      In <code>gap.brg</code> a function over <code>Calc</code> forgets <code>Div</code>. <code>main</code>
+      never builds a <code>Div</code>, but the checker rejects the program before it starts. Not even
+      <code>start</code> is printed, and the exit status is <code>1</code>:
+    </p>
+    <pre><code>$ cat gap.brg
+type Calc = Num(Int) | Add(Calc, Calc) | Div(Calc, Calc);
+
+fn size(e: Calc) -&gt; Int = match e {
+    Num(_) =&gt; 1,
+    Add(l, r) =&gt; 1 + size(l) + size(r),
+};
+
+fn main() {
+    println("start");
+    println(size(Num(1)));
+}
+
+$ cargo run -q --features m7 -- gap.brg
+  × match is not exhaustive
+   ╭─[gap.brg:3:27]
+ 2 │
+ 3 │ fn size(e: Calc) -&gt; Int = match e {
+   ·                           ────┬────
+   ·                               ╰── here
+ 4 │     Num(_) =&gt; 1,
+   ╰────</code></pre>
+    <p>
+      Because the checker runs first, no program containing a <code>match</code> runs under
+      <code>--features m7</code> until the checker's arms are written. The first <code>todo_m7!</code> it
+      meets stops the run.
+    </p>
+
+    <h3>A few examples</h3>
+    <p>Each expression has the value at its right:</p>
+    <pre><code>match [4, 5, 6] { [a, b, ...t] =&gt; (b, t), _ =&gt; (0, []) }     (5, [6])
+match [1, 2] { x :: y :: [] =&gt; x + y, _ =&gt; 0 }               3
+match false { true =&gt; 1, false =&gt; 2 }                        2
+match Err("no") { Ok(n) if n &gt; 0 =&gt; n, Ok(_) | Err(_) =&gt; 0 } 0</code></pre>
+    <p>Matches that are <em>rejected</em> before the program runs, with the error and where it is
+      reported (the chapter has more):</p>
+    <pre><code>match (Some(1), true) { (None, _) =&gt; 0, (_, false) =&gt; 1 }
+                                   NonExhaustiveMatch, at the match
+match 1 { 0 =&gt; "z", n =&gt; n }       Mismatch (expected String, found Int), at n
+match (1, 2) { (a, a) =&gt; a, _ =&gt; 0 }
+                                   NonLinearPattern (a), at the second a
+match Some(1) { Some(a) | None =&gt; 0 }
+                                   OrPatternBindings (a), at the whole pattern
+1?                                 TryOnNonCarrier (Int)
+match 1 { k if { println(k); true } =&gt; 0, _ =&gt; 1 }
+                                   ImpureGuard, witness [println]</code></pre>
+    <p>
+      The provided tests come in three kinds. Some run a whole program with <code>run_program</code>,
+      which skips the static checks, so the evaluator meets programs the checker would have refused.
+      Some call <code>Checker::check_program</code> on a loaded program, and some call
+      <code>check_guards</code> alone. A rejection is tested by its error variant and, where it matters,
+      by its payload (the name in <code>NonLinearPattern</code>, the path in <code>ImpureGuard</code>),
+      never by the text of its message. When <code>cargo m7</code> is all green, your implementation is
+      very likely correct.
+    </p>
+
+    <h2>How M7 is graded</h2>
+    <p>M7 is worth <strong>100 points</strong>:</p>
+    <div class="table-responsive">
+      <table class="table table-bordered grade-table">
+        <thead>
+          <tr><th>Item</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Auto-graded tests</td>
+            <td><strong>80</strong>, split <strong>40 / 40</strong>: <strong>40</strong> on the new M7
+              behavior (five properties, <strong>8 points each</strong>) and <strong>40</strong> on
+              carried-over regression tests for the past milestones (M1 through M6), since M7 is
+              cumulative. The carried-over 40 is divided <strong>evenly among M1 through M6</strong>
+              (about 6.7 points each), then across each milestone's properties, so a regression in any
+              one of them is weighted against that milestone's own share. These are held-back tests, run
+              on Gradescope against the public interface, separate from the provided tests you run
+              locally with <code>cargo m7</code>.</td>
+          </tr>
+          <tr>
+            <td>Formatting &amp; linting</td>
+            <td><strong>10</strong>: <strong>5</strong> for <code>cargo fmt</code> (checked on your
+              submitted files) and <strong>5</strong> for <code>cargo clippy</code> (checked with
+              <code>-D warnings</code>). Run both before submitting. The starter is clean on a fresh
+              clone, so a warning means something you introduced.</td>
+          </tr>
+          <tr>
+            <td><code>Description.md</code></td>
+            <td><strong>10</strong>, human-graded (see below).</td>
+          </tr>
+          <tr class="danger">
+            <td>Does not compile</td>
+            <td><strong>0</strong> for the entire milestone. The autograder builds your files against its
+              own copies of the frozen files, so make sure your code builds with those files
+              unmodified.</td>
+          </tr>
+          <tr class="danger">
+            <td>Fails any provided test</td>
+            <td><strong>0</strong> for the entire milestone. The provided (visible) tests are a hard
+              gate: you must pass all of them, the M7 tests <em>and</em> the carried-over M6&ndash;M1
+              tests, before any of the 80 auto-graded points are counted.</td>
+          </tr>
+          <tr class="danger">
+            <td>Description does not match your code</td>
+            <td>The <code>Description.md</code> can be scored <strong>negative</strong>, roughly
+              <strong>&minus;20</strong> and up to <strong>&minus;40</strong>, at the discretion of the TA
+              or instructor (see below). Passing every test does not by itself secure full credit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The two <strong>0 gates</strong> come first. Code that does not compile, or that fails any of the
+      tests shipped with the repository, earns no credit for the milestone regardless of anything else.
+      Because M7 is cumulative, a change that breaks an earlier milestone's test trips this gate too.
+      Only after both gates pass are the 80 auto-graded points, the 10 style points, and the 10
+      description points assessed.
+    </p>
+    <p>
+      Each of the 80 points is tied to one <strong>property</strong>, a single rule your implementation
+      must obey. Five properties cover the new M7 behavior:
+    </p>
+    <ul>
+      <li><strong>Constructors</strong>: a constructor application builds a tagged value, a generic
+        constructor is typed at its use, and the wrong number of arguments is an
+        <code>ArityMismatch</code>.</li>
+      <li><strong>Match basics</strong>: <code>match</code> takes the first arm whose pattern matches,
+        binding its variables. It handles constructor, cons-list, literal, guard, wildcard, or-, and
+        list-rest patterns, and an arm's variables are in scope for that arm only.</li>
+      <li><strong>Exhaustiveness</strong>: a <code>match</code>'s arms must all produce one type, and its
+        patterns must cover the scrutinee's type, looking inside constructors, tuples, and lists, and
+        requiring a catch-all for <code>Int</code> and <code>String</code>. Otherwise the checker reports
+        <code>NonExhaustiveMatch</code>.</li>
+      <li><strong>Match at run time</strong>: in a program run without the checks, a <code>match</code>
+        that no arm covers is a clean <code>NonExhaustiveMatch</code> stuck state, not a crash.</li>
+      <li><strong>Try</strong>: <code>e?</code> unwraps an <code>Ok</code> or <code>Some</code> and
+        returns an <code>Err</code> or <code>None</code> from the enclosing function, and it is checked
+        against that function's return type.</li>
+    </ul>
+    <p>
+      The guard checks are not a separate property. The provided tests cover them, so they count
+      through the provided-test gate.
+    </p>
+    <p>
+      A property is <strong>all-or-nothing</strong>. It is checked by several cases, some
+      <strong>visible</strong> and some <strong>hidden</strong>, and you earn its points only when all
+      of them pass. When a property fails, Gradescope reports <strong>which property</strong> it was and
+      states the rule it checks, so you know what behavior to fix. If the failing case is a visible one,
+      you also see a short description of it. If it is a hidden one, you see a hint about what kind of
+      case it is, but not the specific input. Because attempts are unlimited, the workflow is: submit, read
+      which properties failed, fix them, and resubmit.
+    </p>
+
+    <h2>The write-up: <code>Description.md</code></h2>
+    <p>
+      You may use generative AI on this project, and a coding assistant can likely solve M7 on its
+      own. That is fine. What I grade is not <em>only</em> that the code works, but that
+      <strong>you understand the code you submitted</strong>. The <code>Description.md</code> is how I
+      judge that. Write it yourself, in your own words, about the code you are actually turning in.
+    </p>
+    <p>Put a <code>Description.md</code> at the root of the repository that answers all of the following.</p>
+
+    <h3>Concept questions</h3>
+    <p>
+      A few sentences each, in your own words. These are about the code <em>you</em> wrote. Point at
+      your own implementation where a question asks you to, rather than repeating the textbook's answers.
+    </p>
+    <ol>
+      <li>
+        <code>calc.brg</code> (above) prints <code>Err("divide by zero")</code> for
+        <code>Div(Num(1), Add(Num(0), Num(0)))</code>. Trace that call through your code: which arm of the
+        <code>match</code> runs at each level, what your matcher binds, and what your <code>Try</code> arm
+        does when <code>result(r)?</code> sees an <code>Ok</code>. Then explain how a failing
+        <code>?</code> leaves the enclosing function: what your evaluator raises, and which part of your
+        earlier code turns it into the function's result.
+      </li>
+      <li>
+        <code>gap.brg</code> (above) is rejected before it runs, although <code>main</code> never builds a
+        <code>Div</code>. Show what your <code>normalize</code> produces for each arm of
+        <code>size</code>, what your <code>signature</code> returns for <code>Calc</code>, and how
+        <code>covers</code> concludes that a value escapes every row. Why must <code>signature</code>
+        return <code>None</code> for <code>Int</code>, and what would go wrong if it returned the literals
+        that appear in the arms?
+      </li>
+      <li>
+        <code>match (Some(1), true) { (None, _) =&gt; 0, (_, false) =&gt; 1 }</code> is not exhaustive,
+        but neither column alone has a missing constructor. Name a value that escapes both arms, and
+        explain how the usefulness test finds the gap by looking at the two columns together. Then
+        explain why your <code>is_exhaustive</code> leaves out a guarded arm, using
+        <code>match Err("no") { Ok(n) if n &gt; 0 =&gt; n, Ok(_) | Err(_) =&gt; 0 }</code>.
+      </li>
+      <li>
+        <code>match (1, 2) { (a, a) =&gt; a, _ =&gt; 0 }</code> is <code>NonLinearPattern</code> and
+        <code>match Some(1) { Some(a) | None =&gt; 0 }</code> is <code>OrPatternBindings</code>. Point at
+        where your <code>check_pattern</code> catches each one. Why does Bridger reject a repeated variable
+        instead of reading it as an equality test, and why must both sides of an <code>|</code> bind the
+        same names at the same types?
+      </li>
+      <li>
+        A rule filter that reaches a recursive function is <code>Recursive</code>, yet a guard may reach
+        one: <code>match 1 { k if false and up(k) =&gt; 0, _ =&gt; 1 }</code> is accepted, where
+        <code>up</code> calls itself. Explain why the two places are treated differently, and how your
+        <code>check_guards</code> reuses your M6 purity judgment while allowing recursion. How does your
+        code build the witness <code>[ping, println]</code> for a guard that calls
+        <code>ping</code>, which prints?
+      </li>
+    </ol>
+
+    <h3>How you implemented it</h3>
+    <ul>
+      <li>
+        Walk through your matcher from start to finish: one sentence per kind of pattern, saying how it
+        decides whether the value fits and what it binds. Say how your <code>::</code> and
+        <code>...rest</code> arms keep the tail shared, and how your <code>|</code> arm tries its sides.
+        Naming the provided tools you used (<code>Value::Ctor</code>, <code>List::uncons</code>,
+        <code>Pattern::binders</code>, <code>type_of</code>, <code>Control</code>) is encouraged.
+      </li>
+      <li>
+        Describe your checker's <code>Match</code> and <code>Try</code> arms: how you check each arm on
+        its own copy of the context, when you call <code>is_exhaustive</code>, and how <code>?</code>
+        decides between <code>TryInNonCarrierFunction</code>, <code>TryInLambda</code>, and a
+        <code>Mismatch</code> of error types.
+      </li>
+      <li>
+        Point out anything that was tricky, a bug you fixed, or a design choice you made. If you used an
+        assistant, say what you had it do and how you checked its work.
+      </li>
+    </ul>
+
+    <div class="panel panel-warning">
+      <div class="panel-heading"><strong>Understanding what you submit</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The <code>Description.md</code> is worth up to <strong>10 points</strong>, graded by hand.
+          But it can also be scored <strong>negative</strong>. If your description does not match the code
+          you submitted (it describes an approach your code does not take, gets the behavior wrong, or
+          reads as though you cannot explain your own submission), you can lose roughly <strong>20
+          points, and up to 40</strong>, as judged by the TA or instructor, who may also ask you to explain
+          your submission in person. Passing every test does not by itself secure full credit.
+        </p>
+        <p style="margin-bottom:0">
+          You are welcome to use a coding assistant to <em>write</em> the code. You are responsible for
+          <em>understanding</em> it. Code you cannot explain will not earn full credit. This expectation
+          grows across the semester. M7 touches the evaluator, the checker, and the rule checks, so make
+          sure you can explain your changes to each of them.
+        </p>
+      </div>
+    </div>
+
+    <h2>Submitting</h2>
+    <p>
+      First write your <code>Description.md</code> at the root of the repository. Then, from inside the
+      project folder, check the code:
+    </p>
+    <pre><code>cd bridger-interpreter                       # the project root
+
+cargo m7                                     # all Milestone-7 tests pass (M6–M1 too)?
+cargo fmt                                    # format your code
+cargo clippy --all-targets -- -D warnings    # lint — fix any warnings</code></pre>
+    <p>
+      Then package <code>src/</code> and the root <code>.md</code> files into a <code>.zip</code>.
+      Run the command for your system from the project root.
+    </p>
+    <p><strong>macOS / Linux</strong> (Terminal):</p>
+    <pre><code>zip -r ../m7-submission.zip src *.md</code></pre>
+    <p><strong>Windows</strong> (PowerShell):</p>
+    <pre><code>Compress-Archive -Path src, *.md -DestinationPath ..\m7-submission.zip -Force</code></pre>
+    <p>
+      Either one writes <code>m7-submission.zip</code> in the folder just above the project, with
+      <code>src/</code> and <code>Description.md</code> at the top of the archive. The autograder
+      replaces <code>Cargo.toml</code>, <code>tests/</code>, and the frozen <code>src/</code> files with its
+      own copies, so any changes you make to them are discarded. The same five files as at M6 are graded
+      as your code:
+    </p>
+    <ul>
+      <li><code>src/interp/eval.rs</code></li>
+      <li><code>src/types/check.rs</code></li>
+      <li><code>src/relations/unify.rs</code></li>
+      <li><code>src/relations/engine.rs</code></li>
+      <li><code>src/relations/check.rs</code></li>
+    </ul>
+    <p>
+      Any helper functions you write, and both pasted-in helper modules, must live in one of those five
+      files.
+    </p>
+    <p>
+      Upload <code>m7-submission.zip</code> to the <strong>Milestone M7</strong> assignment on
+      Gradescope (linked from Canvas). Some tests are visible, so you will get results back shortly and
+      can resubmit before the deadline. Other tests are hidden, so passing every visible test does not
+      guarantee full credit.
+    </p>
+    <p class="text-muted" style="font-size:.92em">
+      No <code>zip</code> command on Linux? Install it (on Debian/Ubuntu,
+      <code>sudo apt install zip</code>). Alternatively, in Finder (macOS) or File Explorer (Windows),
+      select the <code>src</code> folder and the <code>.md</code> files inside the project folder (not
+      the project folder itself) and choose <strong>Compress</strong> /
+      <strong>Send to &rarr; Compressed (zipped) folder</strong>.
+    </p>
+    <p>
+      See the <strong>Course Project Policies</strong> on the
+      <a href="../../fall26.html">main course page</a> for the collaboration, generative-AI, and
+      late-work rules that apply to every milestone.
+    </p>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages &middot;
+      <a href="../../fall26.html">Course home</a>
+    </footer>
+
+  </div>
+</body>
+</html>
