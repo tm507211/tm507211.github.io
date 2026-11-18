@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e4ccdfa0.js";
+            window.path_to_searchindex_js = "../searchindex-df70b0b3.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -182,66 +182,1275 @@
 <h1 id="milestone-m8"><a class="header" href="#milestone-m8">Milestone M8</a></h1>
 <p class="chapter-subtitle">Structs, Methods, and Traits</p>
 
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Closes Part IX. Course offering: due Mon Nov 30.
-     Sources: spec §11
-     Status: placeholder — spine authored just-in-time.
-     Per plan 9.5: this chapter is SPECIFICATION ONLY (what to build, rules to
-     satisfy, worked examples, self-check tests). Grading, deadlines, submission
-     and autograder mechanics stay in the syllabus and never appear here.
+     Closes Part IX. SPEC ONLY (plan §9.5): what to build, the checklist, worked examples,
+     self-check; NO grading, deadlines, submission, or autograder text, and no course/institution
+     names in rendered prose.
+     TEMPLATE: M7's shape. The checklist DEFERS the rules to Appendix D ("Structs, fields, and
+     methods", "Functions, methods, and generics", "The static errors by name") and the algorithms
+     to structs.md, dispatch.md, traits-inheritance.md. NO arm or function bodies printed.
+     REPO FACTS: holes are todo_m8! for Struct, Field, Method in interp/eval.rs and types/check.rs.
+       Three changes have no marker: the Try arms of both (the From conversion, which the
+       reference gates on cfg(feature = "m8") in check_try and convert_error), and check_pure /
+       check_guards over method calls, struct literals, field access, and a converting `?`
+       (the stub's check_pure doc comment already states the rules).
+     PROVIDED: Interpreter.methods ((head key, name) -> first impl's Rc<Method>, built at load),
+       Interpreter.conversions (span -> Rc<Method>, filled by record_conversion), env.root(),
+       enter_call/leave_call, prelude::builtin_method + eval_prelude (built-in conformances),
+       Checker: require_trait, bound_of, record_conversion, is_type_param, type_params,
+       types::head_key (a type's head key), builtin_conforms; the declaration checks in
+       types/mod.rs (conformance, coherence, ImplTarget, AmbiguousInstance, BuiltinImpl, bound
+       discharge with UnsatisfiedBound).
+     HELPERS (user decision 2026-11-17: students write the Part IX core; plumbing that only
+       connects objects to other parts ships as paste-in code, per memory starter-fixes-via-
+       chapter). Three modules, one per submitted file, own `use` lines, lines <= 85 and
+       rustfmt-stable at width 100:
+       - `mod head` (eval.rs): Interpreter::head_key. The reference keeps value_head_key and
+         type_of_ctor in eval.rs, the student file, so the stub has neither; interp/mod.rs's
+         comment on impl_head_key ("needs no head key itself") is wrong for the student and stays,
+         frozen.
+       - `mod objects` (types/check.rs): struct_decl, type_receiver, instantiate_struct,
+         find_method -> Found {has_self, ty, is_param}, method_sig, find_from. find_from returns
+         None unless cfg!(feature = "m8"), so one Try arm serves m7 and m8. How::Impl is boxed
+         (clippy large_enum_variant).
+       - `pub mod calls` (relations/check.rs): method_callee, method_bodies, method_params,
+         method_keys, is_prelude_fn. `pub` because a pub fn in a private module still trips
+         dead_code. method_callee finds the enclosing fn / method / rule by span containment and
+         rebuilds that body's declared-type scope, so the student threads no scope; O(program)
+         per call.
+       Student keeps: E-Struct/E-Field/E-Method (all of dispatch) and the eval `?` conversion;
+       T-Struct, T-Field, T-Method's core (receiver kind, TypeParamCall, pairings, arity, args,
+       FieldNotMethod), the Try arm's find_from + record_conversion; the purity walk's descent and
+       key handling.
+     VERIFIED 2026-11-17: (1) assembled starter + M5 helpers + the three modules: clippy --tests
+       -D warnings and fmt --check clean at m7 and m8. (2) The reference with its own copies
+       deleted (check_struct, check_method, check_sig_call, find_from_impl, find_methods,
+       find_trait_method, builtin_head, subst_full; value_head_key, type_of_ctor; method_key,
+       method_scope, receiver_head, head_of_ty, is_head, impl_has, has_impl_method) and its arms
+       rewired onto the modules: cargo test passes 693 at m8 and 582 at m7, provided plus every
+       held-back suite. Rewired student-side code, rustfmt'd: about 305 lines in the six arms and
+       the eval conversion, plus about 20 in the Try arm and the purity wiring.
+     CONTRACTS read off the reference: eval.rs (Struct: fields first, then DuplicateField,
+       NotAStruct, MissingField in declaration order, NoSuchField, all at the literal; Field:
+       NoSuchField at the access; Method: receiver, args, conversions-then-methods, built-in
+       fallback, ArityMismatch / NoReceiver / NotAMethod / NoSuchMethod at the call);
+       types/check.rs (check_struct, the Field arm, check_method, check_sig_call,
+       find_from_impl, check_try). Static spans from the probe: DuplicateField and NoSuchField
+       at the field's value, MissingField at the literal, a field-access error at the access.
+     PROVIDED TESTS: tests/m8.rs, 80 tests, run by cargo m8 with every earlier milestone's.
+     EXAMPLES run 2026-11-17, reference release --features m8, stdin </dev/null: media.brg (and
+       with the Song impl made inherent), log.brg, err.brg (and without its impl), every line of
+       the worked-example tables, dp1-dp5 of the design problems. Unchecked lines (the two
+       run_program behaviours) from a probe over the library's eval_program.
+     HIDDEN TESTS: never use or name a case from milestones/m8/tests/graded.rs: mdBook passes HTML
+       comments through to the page source. Type names here avoid the held-back suite's.
+     Course offering (instructor note, not rendered): due date per fall26.html.
+     Status: draft authored 2026-11-17, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-Everything in Part IX has been building toward one thing: an interpreter that actually runs these
-programs. This chapter says what yours should do now, and how to know it works.
+<p>Part IX gave Bridger named products and the operations attached to them. <a href="../objects/structs.html">Structs with
+methods</a> added <code>struct</code> declarations, literals, field access, inherent
+<code>impl</code> blocks, and associated functions. <a href="../objects/dispatch.html">Dispatch and encapsulation</a>
+added traits, bounds, and the rule that picks a method by the receiver’s head, and <a href="../objects/traits-inheritance.html">Traits vs.
+inheritance</a> restated the prelude over <code>Ord</code> and <code>Len</code> and gave
+<code>?</code> its conversion through <code>From</code>. This milestone builds all of it. Every M1–M7 test must still
+pass.</p>
+<p>The work is in the files you have already edited: the evaluator in <code>src/interp/eval.rs</code>, the
+checker in <code>src/types/check.rs</code>, and the purity judgment in <code>src/relations/check.rs</code>.</p>
+<h2 id="to-dos"><a class="header" href="#to-dos">To-dos</a></h2>
+<p><code>grep -rn 'todo_m8!' src</code> lists the holes:</p>
+<pre><code class="language-rust ignore">// src/interp/eval.rs
+Expr::Struct(..) =&gt; todo_m8!("E-Struct"),
+Expr::Field(..) =&gt; todo_m8!("E-Field (struct field access)"),
+Expr::Method(..) =&gt; todo_m8!("E-Method (head-type dispatch)"),
 
-## What you build
+// src/types/check.rs
+Expr::Struct(..) =&gt; todo_m8!("T-Struct"),
+Expr::Field(..) =&gt; todo_m8!("T-Field"),
+Expr::Method(..) =&gt; todo_m8!("T-Method (dispatch on the receiver's type; bounds)"),</code></pre>
+<p>Before you start, paste the three modules in <a href="#the-helper-modules">The helper modules</a> below,
+one at the end of each file you edit. They do the bookkeeping that connects objects to the rest of
+the interpreter: the key a value’s head has in the method table, the search for the method a call
+names, and the method nodes of the purity judgment’s call graph. What remains is the part of
+Part IX that the rules describe.</p>
+<p>Three changes have no <code>todo_m8!</code> marker of their own:</p>
+<ol>
+<li>The checker’s <code>Try</code> arm accepts a <code>?</code> whose error type differs from the function’s, when an
+<code>impl From</code> converts it, as <a href="#the-conversion-in-">described below</a>.</li>
+<li>The evaluator’s <code>Try</code> arm runs that conversion.</li>
+<li>Your purity judgment from M6 and M7 meets struct literals, field access, method calls, and a
+<code>?</code> that converts, which no earlier program could reach. <a href="#purity">Purity</a> below says how the
+provided <code>calls</code> module fits into the walk you already have.</li>
+</ol>
+<p><a href="#how-to-know-it-works">How to know it works</a> suggests an order for the work.</p>
+<h2 id="milestone-specification"><a class="header" href="#milestone-specification">Milestone specification</a></h2>
+<p>The forms, the rules that give them meaning, and the cases in which evaluation is stuck or the
+checker rejects them:</p>
+<table>
+<thead>
+<tr><th>Form</th><th>Rules</th><th>Stuck when</th><th>Rejected when</th></tr>
+</thead>
 
-Structs as named product types with associated methods, encapsulation, and traits: a function takes a trait-typed parameter, and structs implement it.
+<tbody>
+<tr>
+  <td><code>S { f1: e1, …, fn: en }</code></td>
+  <td><code>E-Struct</code>, <code>T-Struct</code></td>
+  <td>a field is named twice (<code>DuplicateField</code>); <code>S</code> is not a struct
+  (<code>NotAStruct</code>); a declared field is missing (<code>MissingField</code>); a field is
+  not declared (<code>NoSuchField</code>); each at the literal</td>
+  <td><code>S</code> is unknown (<code>UnknownType</code>) or not a struct
+  (<code>NotAStruct</code>); a field is named twice (<code>DuplicateField</code>) or not declared
+  (<code>NoSuchField</code>), at that field's value; a declared field is missing
+  (<code>MissingField</code>), at the literal; a field's value has the wrong type</td>
+</tr>
 
-## What is provided
+<tr>
+  <td><code>e.f</code></td>
+  <td><code>E-Field</code>, <code>T-Field</code></td>
+  <td><code>e</code>'s value is not a struct with a field <code>f</code>
+  (<code>NoSuchField</code>, at the access)</td>
+  <td><code>e</code>'s type is not a struct (<code>FieldOfNonStruct</code>); the struct has no
+  field <code>f</code> (<code>NoSuchField</code>); <code>e</code>'s type is undetermined
+  (<code>Ambiguous</code>)</td>
+</tr>
 
-—
+<tr>
+  <td><code>e.m(e1, …, en)</code>, <code>T.m(e1, …, en)</code></td>
+  <td><code>E-Method</code>, <code>T-Method</code></td>
+  <td>neither an <code>impl</code> nor a built-in conformance gives the head a method
+  <code>m</code> (<code>NoSuchMethod</code>); a method with <code>self</code> is called on a type
+  name (<code>NoReceiver</code>) or one without on a value (<code>NotAMethod</code>); the count
+  differs (<code>ArityMismatch</code>); each at the call</td>
+  <td>the type has no method <code>m</code> (<code>NoSuchMethod</code>), or a field
+  <code>m</code> (<code>FieldNotMethod</code>); the <code>self</code> pairings
+  (<code>NoReceiver</code>, <code>NotAMethod</code>); <code>T</code> is a type parameter
+  (<code>TypeParamCall</code>); several instances fit the arguments
+  (<code>AmbiguousMethod</code>); the count differs (<code>ArityMismatch</code>); an argument has
+  the wrong type; an <code>impl</code>'s own bound is not met (<code>UnsatisfiedBound</code>)</td>
+</tr>
 
-## The specification you must satisfy
+<tr>
+  <td><code>e?</code></td>
+  <td>desugars to <code>match</code>, <code>return</code>, and <code>E.from</code></td>
+  <td>as at M7</td>
+  <td>as at M7, except that two different error types are accepted when an
+  <code>impl From</code> converts one into the other</td>
+</tr>
 
-*To be written: the inference rules from this part, collected — the checklist your evaluator is
-measured against. Sources: spec §11.*
+</tbody>
 
-## How to know it works
+</table>
 
-A function written against a trait works unchanged for two different implementing structs — dispatch selects the right method at run time.
+<p>E-Struct, E-Field, and E-Method are in <a href="../appendix/language-reference.html#structs-fields-and-methods">Appendix
+D</a>, T-Struct, T-Field, and T-Method
+under <a href="../appendix/language-reference.html#functions-methods-and-generics">its typing rules</a>, and the
+static errors are catalogued <a href="../appendix/language-reference.html#the-static-errors-by-name">by
+name</a>.
+A struct value holds its fields in declaration order, whatever order its literal wrote them in, as
+E-Struct’s permutation premise says.</p>
+<p>The declarations themselves are checked by provided code before any expression is: every trait
+<code>impl</code> conforms to its trait (<code>MissingMethod</code>, <code>NotInTrait</code>, <code>SignatureMismatch</code>), coherence holds
+(<code>DuplicateImpl</code>, <code>DuplicateMethod</code>, <code>OverlappingImpls</code>, <code>BuiltinImpl</code>), an <code>impl</code>’s target has a
+head (<code>ImplTarget</code>), and a bound is not met at several instances (<code>AmbiguousInstance</code>). The
+obligations your arms register with <code>require_trait</code> are discharged by provided code too, which
+reports <code>UnsatisfiedBound</code>.</p>
+<h2 id="implementing-milestone-m8"><a class="header" href="#implementing-milestone-m8">Implementing Milestone M8</a></h2>
+<h3 id="the-provided-runtime"><a class="header" href="#the-provided-runtime">The provided runtime</a></h3>
+<p>A struct value is <code>Value::Struct(name, fields)</code>, with its fields as name and value pairs in an
+<code>Rc&lt;[(Name, Value)]&gt;</code>, and a bare type name is <code>Value::Type(name)</code>, which your M7 <code>Ctor</code> arm
+already builds. Printing, <code>==</code>, and your matcher’s struct arm already handle struct values.</p>
+<p>When a program loads, the provided code builds two tables on the <code>Interpreter</code>:</p>
+<pre><code class="language-rust ignore">methods: HashMap&lt;(String, Name), Rc&lt;Method&gt;&gt;,  // (head key, name) -&gt; first body
+conversions: Conversions,                      // HashMap&lt;Span, Rc&lt;Method&gt;&gt;</code></pre>
+<p><code>methods</code> holds every <code>impl</code>’s methods under the key of the type the <code>impl</code> extends. Where a head
+implements a trait at several instances, it holds the first impl’s body. <code>conversions</code> holds the
+checker’s choices by span: the method a call runs where its head did not determine it, and the
+<code>from</code> a <code>?</code> converts through. It is empty when a program runs unchecked, as <code>run_program</code> runs
+one. A <code>Method</code> carries <code>has_self</code>, <code>params</code>, and <code>body</code>.</p>
+<p>The built-in conformances have no <code>impl</code>. <code>prelude::builtin_method(&amp;receiver, m)</code> returns the
+native for <code>cmp</code> on an <code>Int</code>, <code>String</code>, or <code>Bool</code>, or for <code>length</code> on a <code>String</code> or a list, and
+<code>self.eval_prelude(id, args, span)</code> runs it with the receiver as the first argument.</p>
+<h3 id="the-evaluators-arms"><a class="header" href="#the-evaluators-arms">The evaluator’s arms</a></h3>
+<ul>
+<li>
+<p><strong><code>Struct</code></strong> evaluates the field expressions in the order the literal writes them, before any
+check. It then reports, at the literal, a field named twice (<code>DuplicateField</code>), a name whose
+declaration is not a struct (<code>NotAStruct</code>), the first declared field the literal omits
+(<code>MissingField</code>), and a field the declaration lacks (<code>NoSuchField</code>). The value holds the fields
+in the declaration’s order, so <code>Pos { y: 2, x: 1 }</code> and <code>Pos { x: 1, y: 2 }</code> are one value.</p>
+</li>
+<li>
+<p><strong><code>Field</code></strong> evaluates its receiver and returns the named field. A value with no such field,
+including any value that is not a struct, is <code>NoSuchField</code> at the access.</p>
+</li>
+<li>
+<p><strong><code>Method</code></strong> evaluates the receiver, then the arguments left to right. The method to run is the
+one <code>conversions</code> holds at the call’s span, if there is one, and otherwise the one <code>methods</code>
+holds under the receiver’s head key, which <code>head_key</code> from <a href="#the-head-module">the head module</a>
+gives, and the method’s name. With a method in hand:</p>
+<ul>
+<li>A receiver that is a <code>Value::Type</code> makes the call an associated call. A method with <code>self</code>
+called that way is <code>NoReceiver</code>, and one without <code>self</code> called on a value is <code>NotAMethod</code>,
+with <code>ty</code> the receiver’s head key.</li>
+<li>A count that differs from the method’s parameters is <code>ArityMismatch</code>.</li>
+<li>The body runs in a scope built from <code>env.root()</code>, extended with <code>self</code> bound to the receiver
+when the method takes one, then with each parameter. It runs between <code>enter_call</code> and
+<code>leave_call</code>, and a <code>Return</code> from it is the call’s value, as your <code>Call</code> arm does.</li>
+</ul>
+<p>With no method from either table, a built-in conformance answers through <code>builtin_method</code>, and
+anything else is <code>NoSuchMethod</code>. The errors are all at the call.</p>
+</li>
+</ul>
+<h3 id="the-checkers-arms"><a class="header" href="#the-checkers-arms">The checker’s arms</a></h3>
+<p>Each arm ends as M5’s did, with the final unification against the expected type and the <code>record</code>.
+The helpers named here are in <a href="#the-objects-module">the <code>objects</code> module</a>.</p>
+<ul>
+<li><strong><code>Struct</code></strong> looks the name up with <code>struct_decl</code>, which gives the declaration’s generics and
+fields. A name it does not find is <code>NotAStruct</code> when some other declaration has it and
+<code>UnknownType</code> when none does. The arm then rejects a repeated field with <code>DuplicateField</code>, at
+that field’s value, and a missing one with <code>MissingField</code>, at the literal. <code>instantiate_struct</code>
+gives the literal’s type, with fresh inference variables for the struct’s parameters, together
+with the instantiation that maps each parameter to its variable. Check each field’s value against
+its declared type with that instantiation applied by <code>Ty::substitute</code>. A field the declaration
+lacks is <code>NoSuchField</code>, at its value.</li>
+<li><strong><code>Field</code></strong> infers the receiver’s type and resolves it. For a struct type, the field’s type is
+its declared type with the struct’s parameters replaced by the type’s arguments, and a missing
+field is <code>NoSuchField</code>. An unsolved inference variable goes to M5’s <code>undetermined</code>, and any other
+type is <code>FieldOfNonStruct { field, found, span }</code>.</li>
+<li><strong><code>Method</code></strong> first decides what the receiver is.
+<ul>
+<li>A receiver that is a bare name with no arguments and is in <code>type_params</code> is <code>TypeParamCall</code>,
+since a type parameter has no head at run time. For any other bare name, <code>type_receiver</code> gives
+the type an associated call is made on, with fresh variables for its parameters, or <code>None</code>
+when the name is not a struct, a <code>type</code>, <code>Int</code>, <code>Bool</code>, or <code>String</code>. A type from
+<code>type_receiver</code> makes the call an associated call. Any other receiver is inferred and resolved,
+and an unsolved variable makes the call’s type <code>undetermined</code>.</li>
+<li><code>find_method(&amp;recv_ty, m, args, ctx, span)</code> finds what the call can run: an <code>impl</code>’s method
+for the receiver’s head, a built-in conformance’s, or the method a bounded type parameter’s
+trait declares. Where several instances of a generic trait provide <code>m</code>, it chooses by the
+arguments and records the choice for the evaluator. With nothing found, a receiver that is not
+a type name and is a struct with a field <code>m</code> is <code>FieldNotMethod</code>, and anything else is
+<code>NoSuchMethod</code>.</li>
+<li>A found method’s <code>has_self</code> gives the pairings: a method with <code>self</code> on a type name is
+<code>NoReceiver</code>, and one without <code>self</code> on a value is <code>NotAMethod</code>, whose <code>ty</code> and <code>is_param</code> are
+the found method’s fields of those names.</li>
+<li><code>method_sig(&amp;found, &amp;recv_ty, m, span)</code> gives the method’s parameter types and result type with
+<code>Self</code> read as the receiver’s type and an <code>impl</code>’s parameters solved from it. It reports
+<code>NoSuchMethod</code> for an <code>impl</code> at another instance than the receiver’s and registers the <code>impl</code>’s
+own bounds. Then check the count (<code>ArityMismatch</code>) and each argument against its parameter
+type. The call’s type is the result type.</li>
+</ul>
+</li>
+</ul>
+<h4 id="the-conversion-in-"><a class="header" href="#the-conversion-in-">The conversion in ?</a></h4>
+<p>M7’s <code>Try</code> arm compared the operand’s error type with the function’s and reported <code>Mismatch</code> when
+they differed. From M8, before it reports that, it calls <code>find_from(&amp;have, &amp;want, span)</code> with the
+operand’s error type and the function’s. When that gives a <code>from</code>, pass it to <code>record_conversion</code>
+at the <code>?</code>’s span and give the form the operand’s <code>Ok</code> type. Before M8, <code>find_from</code> always gives
+<code>None</code>, so one arm is right at both milestones, and when the error types already agree nothing is
+recorded, so a program from M7 checks and runs as it did.</p>
+<p>The evaluator’s <code>Try</code> arm changes only for an <code>Err</code>. If <code>conversions</code> holds a method at the <code>?</code>’s
+span, run its body with its parameter bound to the <code>Err</code>’s payload, in a scope built from
+<code>env.root()</code> and between <code>enter_call</code> and <code>leave_call</code>, and return the result inside a new <code>Err</code>.
+With no entry, the payload passes through unchanged, which is what a program run unchecked does.</p>
+<h3 id="purity"><a class="header" href="#purity">Purity</a></h3>
+<p>A rule filter and a match guard may now contain struct literals, field accesses, method calls, and
+<code>?</code>. A struct literal and a field access are pure when their parts are, so your walks need only
+descend into their subexpressions: a literal’s field values, an access’s receiver, and a call’s
+receiver and arguments.</p>
+<p>A method call or a <code>?</code> is a call to a <strong>callee key</strong>, which plays the part a function’s name plays
+in your M6 judgment. <a href="#the-calls-module">The <code>calls</code> module</a> computes it:</p>
+<ul>
+<li><code>calls::method_callee(program, e)</code> is the key of a method call or a <code>?</code> anywhere in the program.
+It is <code>Head.m</code> when the declarations settle the receiver’s head, as in <code>Pos.sum</code>, and <code>.m</code>, every
+<code>impl</code>’s method of that name, when they do not. A <code>?</code> is <code>.from</code>. <code>None</code> means a built-in
+conformance or a <code>?</code> with no <code>impl From</code>, and either is pure apart from its parts.</li>
+<li><code>calls::method_bodies(program, key)</code> gives the bodies behind a key, each with the names its
+declaration binds, <code>self</code> and then the parameters, which are locals in that body.</li>
+<li><code>calls::method_params(program, key)</code> gives their parameter types, for the higher-order check.</li>
+<li><code>calls::method_keys(program)</code> lists every key, so your impurity fixpoint can range over methods
+along with functions.</li>
+<li><code>calls::is_prelude_fn(program, name)</code> holds for the prelude’s Bridger-written <code>min</code>, <code>max</code>,
+<code>minimum</code>, <code>maximum</code>, and <code>len</code>. They are trusted to be total, so they are exempt from the
+recursion and higher-order checks, and the methods they reach are judged like any other.</li>
+</ul>
+<p>With these, a key is a callee like a function: impure when one of its bodies reaches an effect, in
+a recursive cycle when its bodies reach it again, and named by its key in a witness. Your
+<code>check_guards</code> also walks every method body in <code>program.impls</code>, since a guard can sit in a method.</p>
+<h3 id="the-helper-modules"><a class="header" href="#the-helper-modules">The helper modules</a></h3>
+<p>The starter leaves out the three modules below. Paste each at the end of the file it serves, after
+everything else in the file. Each brings its own <code>use</code> lines, so it cannot clash with the imports
+your arms add, and an item you have not called yet raises no warning. None of them contains a
+typing or evaluation rule. The checker’s module can read the <code>Checker</code>’s private fields because
+<code>check.rs</code> is part of the <code>types</code> module.</p>
+<h4 id="the-head-module"><a class="header" href="#the-head-module">The head module</a></h4>
+<p>The evaluator looks a method up under its receiver’s head, and the key the table uses for a head
+is a string. Paste this module at the end of <code>src/interp/eval.rs</code>:</p>
+<pre><code class="language-rust ignore">mod head {
+    use crate::ast::Decl;
+    use crate::interp::value::Value;
+    use crate::interp::Interpreter;
 
-*To be written: worked examples with expected output, and a self-check test set you can run on your
-own machine.*
+    impl Interpreter {
+        /// The key of `v`'s head in `self.methods`: a struct's name, the
+        /// name a `Value::Type` carries, the type that declares a
+        /// constructor, or a built-in head ("Int", "Bool", "String", "()",
+        /// "[]"). A tuple, reference, closure, or relation has no head.
+        pub fn head_key(&amp;self, v: &amp;Value) -&gt; Option&lt;String&gt; {
+            let key = match v {
+                Value::Struct(n, _) | Value::Type(n) =&gt; n.clone(),
+                Value::Ctor(c, _) =&gt; self.declaring_type(c)?,
+                Value::Int(_) =&gt; "Int".to_string(),
+                Value::Bool(_) =&gt; "Bool".to_string(),
+                Value::Str(_) =&gt; "String".to_string(),
+                Value::Unit =&gt; "()".to_string(),
+                Value::List(_) =&gt; "[]".to_string(),
+                _ =&gt; return None,
+            };
+            Some(key)
+        }
 
-## Design problems
+        /// The name of the `type` declaration with a constructor `c`.
+        fn declaring_type(&amp;self, c: &amp;str) -&gt; Option&lt;String&gt; {
+            let declares = |d: &amp;Decl| match d {
+                Decl::Type(_, vs) =&gt; vs.iter().any(|x| x.name == c),
+                _ =&gt; false,
+            };
+            let (name, _) = self.program.decls.iter().find(|(_, d)| declares(d))?;
+            Some(name.clone())
+        }
+    }
+}</code></pre>
+<p>A <code>Value::Type</code> and a struct value of the same name have the same key, so an associated call
+<code>Pos.zero()</code> and a method call on a <code>Pos</code> look in the same place. Which of the two kinds of method
+a call may run is the <code>Method</code> arm’s decision.</p>
+<h4 id="the-objects-module"><a class="header" href="#the-objects-module">The objects module</a></h4>
+<p>Paste this module at the end of <code>src/types/check.rs</code>, after M5’s <code>helpers</code>:</p>
+<ul>
+<li><strong><code>struct_decl(name)</code></strong> is the generics and fields of the struct <code>name</code>, or <code>None</code>.</li>
+<li><strong><code>type_receiver(name)</code></strong> is the type a bare name stands for as the receiver of an associated
+call, or <code>None</code>.</li>
+<li><strong><code>instantiate_struct(name, generics, expected, span)</code></strong> is a struct literal’s type and
+instantiation, with the struct’s declared bounds registered and an expected type of the same
+head unified in, so the field checks see what the context already knows.</li>
+<li><strong><code>find_method(recv, m, args, ctx, span)</code></strong> is the method a call can run, as a <code>Found</code> with
+<code>has_self</code>, <code>ty</code>, and <code>is_param</code>, or <code>None</code>.</li>
+<li><strong><code>method_sig(found, recv, m, span)</code></strong> is a found method’s parameter types and result type at
+this receiver.</li>
+<li><strong><code>find_from(src, tgt, span)</code></strong> is the <code>from</code> that converts the error type <code>src</code> into <code>tgt</code>, or
+<code>None</code>, and always <code>None</code> before M8.</li>
+</ul>
+<pre><code class="language-rust ignore">/// Provided helpers (Milestone M8): finding the method a call names, and
+/// the instantiation a struct literal needs. Paste this module at the end
+/// of the file, unchanged.
+mod objects {
+    use crate::ast::{Decl, Expr, Field, Generics, Method, Name, Sig, Span};
+    use crate::ast::{TraitRef, Ty, TyKind};
+    use crate::types::{builtin_conforms, head_key, Checker, Ctx, TyError};
+    use std::collections::HashMap;
 
-*To be written (plan §9.5, tier two): exercises that reason across this part's chapters, plus
-programming exercises written in Bridger, where the goal is to think in the paradigm as well as
-implement it. Answers in collapsible blocks.*
--->
+    type Res&lt;T&gt; = Result&lt;T, TyError&gt;;
+    type Subst = HashMap&lt;Name, Ty&gt;;
+    /// The `from` a `?` converts through, if one applies.
+    type Conversion = Option&lt;Method&gt;;
+
+    /// A method a call can run, as [`Checker::find_method`] found it.
+    pub struct Found {
+        /// whether the method takes `self`
+        pub has_self: bool,
+        /// the receiver as a `NotAMethod` error names it
+        pub ty: String,
+        /// whether it was found through a type parameter's bound
+        pub is_param: bool,
+        how: How,
+    }
+
+    enum How {
+        /// a method of an `impl`: its generics, the type it extends, and it
+        Impl(Box&lt;(Generics, Ty, Method)&gt;),
+        /// a trait's signature: a built-in conformance, or a bound
+        Sig(Sig),
+    }
+
+    impl Checker {
+        /// The generics and fields of the struct `name`, if it is one.
+        pub fn struct_decl(&amp;self, name: &amp;str) -&gt; Option&lt;(Generics, Vec&lt;Field&gt;)&gt; {
+            match self.decl(name) {
+                Some(Decl::Struct(g, fields)) =&gt; Some((g.clone(), fields.clone())),
+                _ =&gt; None,
+            }
+        }
+
+        /// The type a bare name stands for as the receiver of an associated
+        /// call: a struct or `type` with fresh variables for its parameters,
+        /// or `Int`, `Bool`, `String`. `None` for any other name.
+        pub fn type_receiver(&amp;mut self, name: &amp;str) -&gt; Option&lt;Ty&gt; {
+            match name {
+                "Int" =&gt; return Some(Ty::int()),
+                "Bool" =&gt; return Some(Ty::bool()),
+                "String" =&gt; return Some(Ty::str()),
+                _ =&gt; {}
+            }
+            let generics = match self.decl(name) {
+                Some(Decl::Struct(g, _)) | Some(Decl::Type(g, _)) =&gt; g.clone(),
+                _ =&gt; return None,
+            };
+            let map = self.fresh_for(&amp;generics);
+            Some(Ty::named(name.to_string(), args_of(&amp;generics, &amp;map)))
+        }
+
+        /// A struct literal's type, with fresh variables for the struct's
+        /// parameters, its declared bounds required, and an expected type of
+        /// the same head unified in. Also returns the instantiation, to apply
+        /// to each field's declared type with `Ty::substitute`.
+        pub fn instantiate_struct(
+            &amp;mut self,
+            name: &amp;str,
+            generics: &amp;Generics,
+            expected: Option&lt;&amp;Ty&gt;,
+            span: Span,
+        ) -&gt; Res&lt;(Ty, Subst)&gt; {
+            let map = self.fresh_for(generics);
+            self.require_bounds(generics, &amp;map, span);
+            let ty = Ty::named(name.to_string(), args_of(generics, &amp;map));
+            if let Some(want) = expected.map(|t| self.resolve(t)) {
+                if same_head(&amp;ty, &amp;want) {
+                    self.unify(&amp;ty, &amp;want, span)?;
+                }
+            }
+            Ok((ty, map))
+        }
+
+        /// The method `m` that a call on a receiver of type `recv` can run:
+        /// an `impl`'s method for the receiver's head, a built-in
+        /// conformance's, or the trait method a bounded type parameter
+        /// promises. Where several instances of a generic trait provide `m`,
+        /// the arguments choose, and the choice is recorded for the
+        /// evaluator. `None` when nothing provides `m`.
+        pub fn find_method(
+            &amp;mut self,
+            recv: &amp;Ty,
+            m: &amp;str,
+            args: &amp;[Expr],
+            ctx: &amp;Ctx,
+            span: Span,
+        ) -&gt; Res&lt;Option&lt;Found&gt;&gt; {
+            let mut cands = self.impl_methods(recv, m);
+            if cands.len() &gt; 1 {
+                cands = self.choose_instance(cands, recv, m, args, ctx, span)?;
+            }
+            if let Some((generics, impl_ty, method)) = cands.into_iter().next() {
+                let ty = head_key(recv).unwrap_or_else(|| "T".to_string());
+                return Ok(Some(Found {
+                    has_self: method.has_self,
+                    ty,
+                    is_param: false,
+                    how: How::Impl(Box::new((generics, impl_ty, method))),
+                }));
+            }
+            if let Some(sig) = self.builtin_sig(recv, m) {
+                return Ok(Some(self.found_sig(sig, recv)));
+            }
+            if let Some(sig) = self.bound_sig(recv, m) {
+                return Ok(Some(self.found_sig(sig, recv)));
+            }
+            Ok(None)
+        }
+
+        /// The parameter types and the result type of a found method, with
+        /// `Self` read as `recv` and an `impl`'s parameters solved from
+        /// `recv`. An `impl` at another instance than `recv`'s is
+        /// `NoSuchMethod`; an `impl`'s own bounds are required at the call.
+        pub fn method_sig(
+            &amp;mut self,
+            found: &amp;Found,
+            recv: &amp;Ty,
+            m: &amp;str,
+            span: Span,
+        ) -&gt; Res&lt;(Vec&lt;Ty&gt;, Ty)&gt; {
+            let (map, params, ret): (Subst, Vec&lt;Ty&gt;, Ty) = match &amp;found.how {
+                How::Sig(sig) =&gt; {
+                    let ps = sig.params.iter().map(|p| p.ty.clone()).collect();
+                    (Subst::new(), ps, sig.ret.clone())
+                }
+                How::Impl(b) =&gt; {
+                    let (generics, impl_ty, method) = &amp;**b;
+                    let map = self.fresh_for(generics);
+                    let impl_ty = impl_ty.substitute(&amp;map).with_self(recv);
+                    let saved = self.metas.clone();
+                    if self.unify(&amp;impl_ty, recv, span).is_err() {
+                        self.metas = saved;
+                        return Err(TyError::NoSuchMethod {
+                            method: m.to_string(),
+                            span,
+                        });
+                    }
+                    self.require_bounds(generics, &amp;map, span);
+                    let ps = method.params.iter().map(|p| p.ty.clone()).collect();
+                    (map, ps, method.ret.clone())
+                }
+            };
+            let inst = |t: &amp;Ty| t.substitute(&amp;map).with_self(recv);
+            Ok((params.iter().map(inst).collect(), inst(&amp;ret)))
+        }
+
+        /// The `from` of the `impl From&lt;src&gt; for tgt` that converts a `?`'s
+        /// error type `src` into the function's `tgt`, with the impl's own
+        /// bounds required. Always `None` before M8, where the two error
+        /// types must agree.
+        pub fn find_from(&amp;mut self, src: &amp;Ty, tgt: &amp;Ty, span: Span) -&gt; Conversion {
+            if !cfg!(feature = "m8") {
+                return None;
+            }
+            let impls = self.program().impls.clone();
+            for imp in &amp;impls {
+                let Some(tr) = &amp;imp.trait_ else { continue };
+                if tr.name != "From" || tr.args.len() != 1 {
+                    continue;
+                }
+                let saved = self.metas.clone();
+                let map = self.fresh_for(&amp;imp.generics);
+                let covers = self.unify(&amp;imp.ty.substitute(&amp;map), tgt, span).is_ok()
+                    &amp;&amp; self.unify(&amp;tr.args[0].substitute(&amp;map), src, span).is_ok();
+                if !covers {
+                    self.metas = saved;
+                    continue;
+                }
+                self.require_bounds(&amp;imp.generics, &amp;map, span);
+                return imp.methods.iter().find(|m| m.name == "from").cloned();
+            }
+            None
+        }
+
+        /// Every `impl` method named `m` for the receiver's head.
+        fn impl_methods(&amp;self, recv: &amp;Ty, m: &amp;str) -&gt; Vec&lt;(Generics, Ty, Method)&gt; {
+            let Some(key) = head_key(recv) else {
+                return Vec::new();
+            };
+            let mut out = Vec::new();
+            for imp in &amp;self.program().impls {
+                if head_key(&amp;imp.ty).as_deref() != Some(key.as_str()) {
+                    continue;
+                }
+                if let Some(meth) = imp.methods.iter().find(|x| x.name == m) {
+                    out.push((imp.generics.clone(), imp.ty.clone(), meth.clone()));
+                }
+            }
+            out
+        }
+
+        /// Of several instances' methods, the one the arguments fit, recorded
+        /// at the call; none fitting keeps the first, for its argument check
+        /// to report. A lambda fits any function type of its arity.
+        fn choose_instance(
+            &amp;mut self,
+            candidates: Vec&lt;(Generics, Ty, Method)&gt;,
+            recv: &amp;Ty,
+            m: &amp;str,
+            args: &amp;[Expr],
+            ctx: &amp;Ctx,
+            span: Span,
+        ) -&gt; Res&lt;Vec&lt;(Generics, Ty, Method)&gt;&gt; {
+            let mut atys: Vec&lt;Result&lt;Ty, usize&gt;&gt; = Vec::with_capacity(args.len());
+            for a in args {
+                atys.push(match a {
+                    Expr::Lambda(ps, _, _) =&gt; Err(ps.len()),
+                    _ =&gt; Ok(self.check_expr(a, ctx, None)?),
+                });
+            }
+            let mut fits = Vec::new();
+            for c in &amp;candidates {
+                let saved = self.metas.clone();
+                let ok = self.fits(c, recv, &amp;atys, span);
+                self.metas = saved;
+                if ok {
+                    fits.push(c.clone());
+                }
+            }
+            match fits.len() {
+                0 =&gt; Ok(candidates.into_iter().take(1).collect()),
+                1 =&gt; {
+                    self.record_conversion(span, fits[0].2.clone());
+                    Ok(fits)
+                }
+                _ =&gt; Err(TyError::AmbiguousMethod {
+                    method: m.to_string(),
+                    span,
+                }),
+            }
+        }
+
+        /// Whether a candidate's signature fits the receiver and arguments.
+        fn fits(
+            &amp;mut self,
+            c: &amp;(Generics, Ty, Method),
+            recv: &amp;Ty,
+            atys: &amp;[Result&lt;Ty, usize&gt;],
+            span: Span,
+        ) -&gt; bool {
+            let map = self.fresh_for(&amp;c.0);
+            let inst = |t: &amp;Ty| t.substitute(&amp;map).with_self(recv);
+            if self.unify(&amp;inst(&amp;c.1), recv, span).is_err() {
+                return false;
+            }
+            if c.2.params.len() != atys.len() {
+                return false;
+            }
+            for (p, t) in c.2.params.iter().zip(atys) {
+                let pty = self.resolve(&amp;inst(&amp;p.ty));
+                let ok = match t {
+                    Ok(t) =&gt; self.unify(&amp;pty, t, span).is_ok(),
+                    Err(arity) =&gt; match &amp;pty.kind {
+                        TyKind::Fn(ps, _) =&gt; ps.len() == *arity,
+                        TyKind::Meta(_) =&gt; true,
+                        _ =&gt; false,
+                    },
+                };
+                if !ok {
+                    return false;
+                }
+            }
+            true
+        }
+
+        /// The signature of `m` in a trait the receiver's built-in type
+        /// conforms to (`1.cmp(2)`).
+        fn builtin_sig(&amp;self, recv: &amp;Ty, m: &amp;str) -&gt; Option&lt;Sig&gt; {
+            let key = head_key(recv)?;
+            for (name, decl) in &amp;self.program().decls {
+                let Decl::Trait(_, sigs) = decl else { continue };
+                if !builtin_conforms(name, Some(&amp;key)) {
+                    continue;
+                }
+                if let Some(sig) = sigs.iter().find(|s| s.name == m) {
+                    return Some(sig.clone());
+                }
+            }
+            None
+        }
+
+        /// The signature of `m` in the bound of a type parameter `recv`,
+        /// with the trait's own parameters read as the bound's arguments.
+        fn bound_sig(&amp;self, recv: &amp;Ty, m: &amp;str) -&gt; Option&lt;Sig&gt; {
+            let TyKind::Named(tvar, _) = &amp;recv.kind else {
+                return None;
+            };
+            let bound: TraitRef = self.bound_of(tvar)?.clone();
+            let Some(Decl::Trait(tg, sigs)) = self.decl(&amp;bound.name) else {
+                return None;
+            };
+            let sig = sigs.iter().find(|s| s.name == m)?;
+            let names = tg.params.iter().map(|p| p.name.clone());
+            let map: Subst = names.zip(bound.args.iter().cloned()).collect();
+            let mut sig = sig.clone();
+            for p in &amp;mut sig.params {
+                p.ty = p.ty.substitute(&amp;map);
+            }
+            sig.ret = sig.ret.substitute(&amp;map);
+            Some(sig)
+        }
+
+        fn found_sig(&amp;self, sig: Sig, recv: &amp;Ty) -&gt; Found {
+            Found {
+                has_self: sig.has_self,
+                ty: recv.to_string(),
+                is_param: self.is_type_param(recv),
+                how: How::Sig(sig),
+            }
+        }
+
+        /// A fresh variable for each of a declaration's type parameters.
+        fn fresh_for(&amp;mut self, generics: &amp;Generics) -&gt; Subst {
+            let names = generics.params.iter().map(|p| p.name.clone());
+            names.map(|n| (n, self.fresh_meta())).collect()
+        }
+
+        /// The bounds a declaration's parameters carry, required of `map`.
+        fn require_bounds(&amp;mut self, generics: &amp;Generics, map: &amp;Subst, span: Span) {
+            for tp in &amp;generics.params {
+                if let Some(bound) = &amp;tp.bound {
+                    let tr = TraitRef {
+                        name: bound.name.clone(),
+                        args: bound.args.iter().map(|a| a.substitute(map)).collect(),
+                        span: bound.span,
+                    };
+                    self.require_trait(tr, map[&amp;tp.name].clone(), span);
+                }
+            }
+        }
+    }
+
+    /// Whether two types are applications of one named type.
+    fn same_head(a: &amp;Ty, b: &amp;Ty) -&gt; bool {
+        match (&amp;a.kind, &amp;b.kind) {
+            (TyKind::Named(x, _), TyKind::Named(y, _)) =&gt; x == y,
+            _ =&gt; false,
+        }
+    }
+
+    /// The type arguments of an instantiation, in declaration order.
+    fn args_of(generics: &amp;Generics, map: &amp;Subst) -&gt; Vec&lt;Ty&gt; {
+        generics
+            .params
+            .iter()
+            .map(|p| map[&amp;p.name].clone())
+            .collect()
+    }
+}</code></pre>
+<h4 id="the-calls-module"><a class="header" href="#the-calls-module">The calls module</a></h4>
+<p>Paste this module at the end of <code>src/relations/check.rs</code>. <a href="#purity">Purity</a> describes its
+functions. It is declared <code>pub</code>, which keeps an unused function from raising a warning.</p>
+<pre><code class="language-rust ignore">/// Provided helpers (Milestone M8): the call graph's method nodes. A method
+/// call or a `?` names a callee key, as a call names a function: `H.m` for
+/// the method head `H`'s `impl` provides, `.m` for every `impl`'s method of
+/// that name, `.from` for a `?`. Paste this module at the end of the file,
+/// unchanged.
+pub mod calls {
+    use crate::ast::{Decl, Expr, Lit, Name, Program, QArg, Rel, Span, SrcId};
+    use crate::ast::{Method, Rule, Stmt, Ty, TyKind};
+    use std::collections::{HashMap, HashSet};
+
+    type Types = HashMap&lt;Name, Ty&gt;;
+    type Head = Option&lt;String&gt;;
+    type Roots&lt;'a&gt; = (Vec&lt;&amp;'a Expr&gt;, Vec&lt;(Name, Ty)&gt;);
+    type Bodies&lt;'a&gt; = Vec&lt;(&amp;'a Expr, Vec&lt;Name&gt;)&gt;;
+    type Methods&lt;'a&gt; = Vec&lt;(&amp;'a Ty, &amp;'a Method)&gt;;
+
+    /// The callee key of a method call or a `?` anywhere in `program`, or
+    /// `None`: for any other node, for a method no `impl` provides (a
+    /// built-in conformance, pure), and for a `?` with no `impl From`. A
+    /// receiver the declarations settle reaches its head's method alone:
+    /// `self`, a parameter or generator variable the body does not rebind,
+    /// a literal, a type or struct name, a struct literal, or a field
+    /// chain from one of these.
+    pub fn method_callee(program: &amp;Program, e: &amp;Expr) -&gt; Option&lt;Name&gt; {
+        match e {
+            Expr::Method(recv, m, _, _) =&gt; {
+                let types = enclosing_types(program, e.span());
+                let head = receiver_head(program, recv, &amp;types);
+                let key = format!("{}.{m}", head.as_deref().unwrap_or(""));
+                provides(program, head.as_deref(), m).then_some(key)
+            }
+            Expr::Try(..) =&gt; provides(program, None, "from").then(|| ".from".into()),
+            _ =&gt; None,
+        }
+    }
+
+    /// The bodies behind a method key, each with the names its
+    /// declaration binds there (`self`, then the parameters).
+    pub fn method_bodies&lt;'a&gt;(program: &amp;'a Program, key: &amp;str) -&gt; Bodies&lt;'a&gt; {
+        let mut out = Vec::new();
+        for (_, meth) in methods_of(program, key) {
+            let mut names = vec!["self".to_string()];
+            names.extend(meth.params.iter().map(|p| p.name.clone()));
+            out.push((&amp;meth.body, names));
+        }
+        out
+    }
+
+    /// The declared parameter types behind a method key, `self` aside.
+    pub fn method_params&lt;'a&gt;(program: &amp;'a Program, key: &amp;str) -&gt; Vec&lt;&amp;'a Ty&gt; {
+        let ms = methods_of(program, key);
+        ms.into_iter()
+            .flat_map(|(_, m)| m.params.iter().map(|p| &amp;p.ty))
+            .collect()
+    }
+
+    /// Every method key of the program: `H.m` and `.m` for each method.
+    pub fn method_keys(program: &amp;Program) -&gt; Vec&lt;Name&gt; {
+        let mut keys = Vec::new();
+        for imp in &amp;program.impls {
+            let head = head_of_ty(&amp;imp.ty).unwrap_or_default();
+            for meth in &amp;imp.methods {
+                keys.push(format!("{head}.{}", meth.name));
+                keys.push(format!(".{}", meth.name));
+            }
+        }
+        keys.sort();
+        keys.dedup();
+        keys
+    }
+
+    /// Whether `name` is one of the prelude's Bridger-written functions
+    /// (`min`, `max`, `minimum`, `maximum`, `len` from M8): trusted to be
+    /// total, so they are exempt from the recursion and higher-order
+    /// checks, though the methods they reach are judged like any other.
+    pub fn is_prelude_fn(program: &amp;Program, name: &amp;str) -&gt; bool {
+        matches!(program.decls.get(name), Some(Decl::Fn(..)))
+            &amp;&amp; program.spans.get(name).is_some_and(|s| s.src == SrcId(0))
+    }
+
+    /// The `impl` methods behind a key, with the type each extends.
+    fn methods_of&lt;'a&gt;(program: &amp;'a Program, key: &amp;str) -&gt; Methods&lt;'a&gt; {
+        let Some((head, m)) = key.split_once('.') else {
+            return Vec::new();
+        };
+        let mut out = Vec::new();
+        for imp in &amp;program.impls {
+            if !head.is_empty() &amp;&amp; head_of_ty(&amp;imp.ty).as_deref() != Some(head) {
+                continue;
+            }
+            out.extend(
+                imp.methods
+                    .iter()
+                    .filter(|x| x.name == m)
+                    .map(|x| (&amp;imp.ty, x)),
+            );
+        }
+        out
+    }
+
+    /// Whether some `impl` (for `head`, if given) provides `m`.
+    fn provides(program: &amp;Program, head: Option&lt;&amp;str&gt;, m: &amp;str) -&gt; bool {
+        program.impls.iter().any(|imp| {
+            head.is_none_or(|h| head_of_ty(&amp;imp.ty).as_deref() == Some(h))
+                &amp;&amp; imp.methods.iter().any(|x| x.name == m)
+        })
+    }
+
+    /// The head key of a written type, as an `impl` extends it.
+    fn head_of_ty(ty: &amp;Ty) -&gt; Option&lt;String&gt; {
+        Some(match &amp;ty.kind {
+            TyKind::Int =&gt; "Int".to_string(),
+            TyKind::Bool =&gt; "Bool".to_string(),
+            TyKind::Str =&gt; "String".to_string(),
+            TyKind::Unit =&gt; "()".to_string(),
+            TyKind::List(_) =&gt; "[]".to_string(),
+            TyKind::Named(n, _) =&gt; n.clone(),
+            _ =&gt; return None,
+        })
+    }
+
+    /// Whether `head` is a type an `impl` can extend (no type parameter).
+    fn is_head(program: &amp;Program, head: &amp;str) -&gt; bool {
+        matches!(head, "Int" | "Bool" | "String" | "()" | "[]")
+            || matches!(
+                program.decls.get(head),
+                Some(Decl::Struct(..) | Decl::Type(..))
+            )
+    }
+
+    /// The head of a receiver the declarations settle, if they do.
+    fn receiver_head(program: &amp;Program, recv: &amp;Expr, types: &amp;Types) -&gt; Head {
+        let head = match recv {
+            Expr::Var(x, _) =&gt; head_of_ty(types.get(x)?)?,
+            Expr::Lit(Lit::Int(_), _) =&gt; "Int".to_string(),
+            Expr::Lit(Lit::Bool(_), _) =&gt; "Bool".to_string(),
+            Expr::Lit(Lit::Str(_), _) =&gt; "String".to_string(),
+            Expr::Lit(Lit::Unit, _) =&gt; "()".to_string(),
+            Expr::Ctor(n, a, _) if a.is_empty() &amp;&amp; is_head(program, n) =&gt; n.clone(),
+            Expr::Struct(name, _, _) =&gt; name.clone(),
+            Expr::Field(e, f, _) =&gt; {
+                let s = receiver_head(program, e, types)?;
+                let Some(Decl::Struct(_, fields)) = program.decls.get(&amp;s) else {
+                    return None;
+                };
+                head_of_ty(&amp;fields.iter().find(|fd| fd.name == *f)?.ty)?
+            }
+            _ =&gt; return None,
+        };
+        is_head(program, &amp;head).then_some(head)
+    }
+
+    /// The declared types in force at `span`: those of the declaration
+    /// whose body contains it, less every name that body rebinds.
+    fn enclosing_types(program: &amp;Program, span: Span) -&gt; Types {
+        let inside = |e: &amp;Expr| {
+            let s = e.span();
+            s.src == span.src &amp;&amp; s.start &lt;= span.start &amp;&amp; span.end &lt;= s.end
+        };
+        let mut found: Option&lt;Roots&gt; = None;
+        for decl in program.decls.values() {
+            if let Decl::Fn(_, params, _, body) = decl {
+                if inside(body) {
+                    let b = params.iter().map(|p| (p.name.clone(), p.ty.clone()));
+                    found = Some((vec![&amp;**body], b.collect()));
+                }
+            }
+        }
+        for imp in &amp;program.impls {
+            for meth in imp.methods.iter().filter(|x| inside(&amp;x.body)) {
+                let mut b = vec![("self".to_string(), imp.ty.clone())];
+                let ps = meth.params.iter();
+                b.extend(ps.map(|p| (p.name.clone(), p.ty.with_self(&amp;imp.ty))));
+                found = Some((vec![&amp;meth.body], b));
+            }
+        }
+        for rule in &amp;program.rules {
+            if rule.body.iter().any(inside) {
+                let b = generator_types(program, rule);
+                found = Some((rule.body.iter().collect(), b));
+            }
+        }
+        let Some((roots, bindings)) = found else {
+            return HashMap::new();
+        };
+        let mut rebound = HashSet::new();
+        for r in roots {
+            bound_names(r, &amp;mut rebound);
+        }
+        bindings
+            .into_iter()
+            .filter(|(x, _)| !rebound.contains(x))
+            .collect()
+    }
+
+    /// A rule's generator-bound variables at their columns' types.
+    fn generator_types(program: &amp;Program, rule: &amp;Rule) -&gt; Vec&lt;(Name, Ty)&gt; {
+        let mut out: Vec&lt;(Name, Ty)&gt; = Vec::new();
+        for conjunct in &amp;rule.body {
+            let Expr::Call(callee, args, _) = conjunct else {
+                continue;
+            };
+            let Expr::Var(rel, _) = &amp;**callee else {
+                continue;
+            };
+            let Some(Decl::Relation(tys)) = program.decls.get(rel) else {
+                continue;
+            };
+            for (a, ty) in args.iter().zip(tys) {
+                if let Expr::Var(x, _) = a {
+                    if !out.iter().any(|(y, _)| y == x) {
+                        out.push((x.clone(), ty.clone()));
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// The names `e` binds within itself.
+    fn bound_names(e: &amp;Expr, out: &amp;mut HashSet&lt;Name&gt;) {
+        match e {
+            Expr::Block(stmts, _, _) =&gt; {
+                for s in stmts {
+                    if let Stmt::Let(x, ..) = s {
+                        out.insert(x.clone());
+                    }
+                }
+            }
+            Expr::Lambda(ps, _, _) =&gt; out.extend(ps.iter().map(|p| p.name.clone())),
+            Expr::Match(_, arms, _) =&gt; {
+                for arm in arms {
+                    out.extend(arm.pat.binders());
+                }
+            }
+            Expr::For(x, ..) =&gt; {
+                out.insert(x.clone());
+            }
+            Expr::ForQuery(q, ..) =&gt; {
+                for a in &amp;q.args {
+                    if let QArg::Hole(Some(x)) = a {
+                        out.insert(x.clone());
+                    }
+                }
+            }
+            _ =&gt; {}
+        }
+        for c in children(e) {
+            bound_names(c, out);
+        }
+    }
+
+    /// The immediate subexpressions of `e`.
+    fn children(e: &amp;Expr) -&gt; Vec&lt;&amp;Expr&gt; {
+        let mut cs: Vec&lt;&amp;Expr&gt; = Vec::new();
+        match e {
+            Expr::Lit(..) | Expr::Var(..) =&gt; {}
+            Expr::Unary(_, e1, _)
+            | Expr::Field(e1, _, _)
+            | Expr::Proj(e1, _, _)
+            | Expr::Return(e1, _)
+            | Expr::Try(e1, _)
+            | Expr::Lambda(_, e1, _) =&gt; cs.push(e1),
+            Expr::Binary(_, l, r, _) | Expr::Assign(l, r, _) =&gt; {
+                cs.extend([&amp;**l, &amp;**r]);
+            }
+            Expr::If(c, t, els, _) =&gt; {
+                cs.extend([&amp;**c, &amp;**t]);
+                cs.extend(els.as_deref());
+            }
+            Expr::While(c, b, _) | Expr::For(_, c, b, _) =&gt; cs.extend([&amp;**c, &amp;**b]),
+            Expr::Call(f, args, _) | Expr::Method(f, _, args, _) =&gt; {
+                cs.push(f);
+                cs.extend(args.iter());
+            }
+            Expr::Tuple(es, _) | Expr::List(es, _) | Expr::Ctor(_, es, _) =&gt; {
+                cs.extend(es);
+            }
+            Expr::Struct(_, fields, _) =&gt; cs.extend(fields.iter().map(|(_, e)| e)),
+            Expr::Match(scrut, arms, _) =&gt; {
+                cs.push(scrut);
+                for a in arms {
+                    cs.extend(a.guard.as_ref());
+                    cs.push(&amp;a.body);
+                }
+            }
+            Expr::Block(stmts, tail, _) =&gt; {
+                for s in stmts {
+                    match s {
+                        Stmt::Let(_, _, e1, _) | Stmt::Expr(e1) =&gt; cs.push(e1),
+                    }
+                }
+                cs.extend(tail.as_deref());
+            }
+            Expr::ForQuery(q, b, _) =&gt; {
+                cs.extend(query_args(q));
+                cs.push(b);
+            }
+            Expr::Relation(rel, _) =&gt; match rel {
+                Rel::Add(q) | Rel::Solutions(q) | Rel::Query(q) =&gt; {
+                    cs.extend(query_args(q));
+                }
+                Rel::Clear(_) =&gt; {}
+            },
+        }
+        cs
+    }
+
+    /// The bound (non-hole) arguments of a query.
+    fn query_args(q: &amp;crate::ast::Query) -&gt; impl Iterator&lt;Item = &amp;Expr&gt; {
+        q.args.iter().filter_map(|a| match a {
+            QArg::Expr(e) =&gt; Some(e),
+            QArg::Hole(_) =&gt; None,
+        })
+    }
+}</code></pre>
+<h2 id="running-a-program"><a class="header" href="#running-a-program">Running a program</a></h2>
+<p><code>cargo run --features m8</code> runs the static checks and then <code>main</code>. <code>media.brg</code> has two structs that
+implement one trait, and one function written over the trait:</p>
+<pre><code class="language-text">$ cat media.brg
+struct Book { title: String, pages: Int }
+struct Song { title: String, secs: Int }
+
+trait Describe { fn describe(self) -&gt; String; }
+
+impl Book {
+    fn new(title: String, pages: Int) -&gt; Self =
+        Book { title: title, pages: pages };
+}
+impl Describe for Book {
+    fn describe(self) -&gt; String =
+        self.title ++ ", " ++ to_string(self.pages) ++ " pp.";
+}
+impl Describe for Song {
+    fn describe(self) -&gt; String =
+        self.title ++ " (" ++ to_string(self.secs) ++ " s)";
+}
+
+fn catalogue&lt;T: Describe&gt;(xs: [T]) -&gt; [String] =
+    map(xs, |x: T| x.describe());
+
+fn main() {
+    println(catalogue([Book.new("Dune", 412), Book.new("Emma", 474)]));
+    println(catalogue([Song { title: "Blue", secs: 191 }]));
+}
+
+$ cargo run -q --features m8 -- media.brg
+["Dune, 412 pp.", "Emma, 474 pp."]
+["Blue (191 s)"]
+</code></pre>
+<p>The line <code>x.describe()</code> inside <code>catalogue</code> runs <code>Book</code>’s method during the first call and <code>Song</code>’s
+during the second. Writing <code>impl Song</code> in place of <code>impl Describe for Song</code> leaves the method in
+place but takes <code>Song</code> out of the trait, and the program no longer starts:</p>
+<pre><code class="language-text">$ cargo run -q --features m8 -- media.brg
+  × no `impl Describe for Song`, so the bound is not satisfied
+    ╭─[media.brg:24:23]
+ 23 │     println(catalogue([Book.new("Dune", 412), Book.new("Emma", 474)]));
+ 24 │     println(catalogue([Song { title: "Blue", secs: 191 }]));
+    ·                       ─────────────────┬─────────────────
+    ·                                        ╰── here
+ 25 │ }
+    ╰────
+</code></pre>
+<p>The exit status is <code>1</code>. As at M7, the checker runs first, so no program with a struct literal or a
+method call runs under <code>--features m8</code> until the checker’s arms are written.</p>
+<h2 id="worked-examples"><a class="header" href="#worked-examples">Worked examples</a></h2>
+<p>The expressions below are checked and run after these declarations:</p>
+<pre><code class="language-text">struct Pos { x: Int, y: Int }
+struct Tag&lt;T&gt; { label: String, item: T }
+type Light = Red | Amber | Green;
+
+impl Pos {
+    fn zero() -&gt; Pos = Pos { x: 0, y: 0 };
+    fn sum(self) -&gt; Int = self.x + self.y;
+    fn shift(self, d: Int) -&gt; Self = Pos { x: self.x + d, y: self.y + d };
+}
+impl Light {
+    fn advance(self) -&gt; Light =
+        match self { Red =&gt; Green, Green =&gt; Amber, Amber =&gt; Red };
+}
+impl String { fn shout(self) -&gt; String = self ++ "!"; }
+</code></pre>
+<p>Each expression has the value at its right:</p>
+<pre><code class="language-text">Pos { y: 2, x: 1 }                            Pos { x: 1, y: 2 }
+Pos { y: 2, x: 1 } == Pos { x: 1, y: 2 }      true
+Pos.zero().shift(3).sum()                     6
+Tag { label: "n", item: [1, 2] }.item         [1, 2]
+Green.advance()                                Amber
+"hi".shout()                                  "hi!"
+[3, 1, 2].length()                            3
+"b".cmp("a")                                  Greater
+match (Pos { x: 1, y: 2 }) { Pos { y } =&gt; y } 2
+</code></pre>
+<p><code>Green.advance()</code> dispatches under <code>Light</code>, the type that declares the constructor, and
+<code>"hi".shout()</code> under <code>String</code>. The checker rejects each of these:</p>
+<pre><code class="language-text">Pos { x: 1 }                       MissingField (y), at the literal
+Pos { x: 1, y: 2, z: 3 }           NoSuchField (z), at 3
+Pos { x: 1, x: 2, y: 3 }           DuplicateField (x), at 2
+Pos { x: 1, y: true }              Mismatch (expected Int, found Bool), at true
+Spot { x: 1 }                      UnknownType (Spot)
+Light { x: 1 }                     NotAStruct (Light)
+Pos.zero().z                       NoSuchField (z), at the access
+(1, 2).x                           FieldOfNonStruct (x, found (Int, Int))
+Pos.sum()                          NoReceiver (sum)
+Pos.zero().zero()                  NotAMethod (zero, on Pos)
+Pos.zero().norm()                  NoSuchMethod (norm)
+Pos.zero().shift(1, 2)             ArityMismatch (shift: 1, given 2)
+Tag { label: "n", item: 1 }.item + "s"
+                                   Mismatch (expected Int, found String), at "s"
+</code></pre>
+<p>A trait at two instances needs the checker’s choice. <code>Log</code> records a string as it is and an integer
+with a mark before it:</p>
+<pre><code class="language-text">struct Log { lines: [String] }
+
+trait Record&lt;T&gt; { fn record(self, x: T) -&gt; Log; }
+
+impl Record&lt;String&gt; for Log {
+    fn record(self, x: String) -&gt; Log = Log { lines: self.lines ++ [x] };
+}
+impl Record&lt;Int&gt; for Log {
+    fn record(self, x: Int) -&gt; Log = self.record("#" ++ to_string(x));
+}
+
+fn main() {
+    let l = Log { lines: [] }.record("start").record(7);
+    println(l.lines);
+}
+</code></pre>
+<p>Checked and run, it prints <code>["start", "#7"]</code>. Both calls have the head <code>Log</code> and the name <code>record</code>,
+and only the recorded choice sends the second to the <code>Int</code> instance. Run unchecked, with
+<code>conversions</code> empty, the second call takes the first <code>impl</code> declared and prints <code>["start", 7]</code>.</p>
+<p>A <code>?</code> that converts its error:</p>
+<pre><code class="language-text">struct NotFound { key: String }
+type AppError = Missing(String) | TooBig(Int);
+
+impl From&lt;NotFound&gt; for AppError {
+    fn from(e: NotFound) -&gt; Self = Missing(e.key);
+}
+
+fn lookup(k: String) -&gt; Result&lt;Int, NotFound&gt; =
+    if k == "a" { Ok(40) } else if k == "b" { Ok(2) }
+    else { Err(NotFound { key: k }) };
+
+fn add(j: String, k: String) -&gt; Result&lt;Int, AppError&gt; {
+    let s = lookup(j)? + lookup(k)?;
+    if s &gt; 100 { Err(TooBig(s)) } else { Ok(s) }
+}
+
+fn main() {
+    println(add("a", "b"));
+    println(add("a", "z"));
+}
+</code></pre>
+<p>This prints <code>Ok(42)</code> and then <code>Err(Missing("z"))</code>. Without the <code>impl</code>, each <code>?</code> in <code>add</code> is
+<code>Mismatch</code> with <code>expected</code> <code>AppError</code> and <code>found</code> <code>NotFound</code>, as at M7. Run unchecked, the second
+line is <code>Err(NotFound { key: "z" })</code>, since no conversion was recorded.</p>
+<h2 id="how-to-know-it-works"><a class="header" href="#how-to-know-it-works">How to know it works</a></h2>
+<p><code>cargo m8</code> runs the provided milestone M8 tests and, with them, every earlier milestone’s. Some run
+a whole program with <code>run_program</code>, which skips the static checks, so the evaluator meets programs
+the checker would have refused and has no recorded choices to read. Some call
+<code>Checker::check_program</code> on a loaded program, and some call <code>check_rules</code> and <code>check_guards</code>. A
+rejection is tested by its error variant and, where it matters, by its payload, and the text of a
+message is never tested.</p>
+<p>Paste the helper modules, then write the evaluator’s <code>Struct</code> and <code>Field</code> arms, then its <code>Method</code>
+arm, since whole-program tests reach them without the checker. Then write the checker’s <code>Struct</code>
+and <code>Field</code> arms and its <code>Method</code> arm. The <code>?</code> conversion and the purity cases can come at any point
+after that.</p>
+<h2 id="design-problems"><a class="header" href="#design-problems">Design problems</a></h2>
+<details>
+<summary><code>catalogue</code> takes a list of one type. Make one catalogue hold a book and a song, and say what each of these extensions then costs: a new struct <code>Film</code> that implements <code>Describe</code>, and a new operation <code>length_in_minutes</code> on all three.</summary>
+<p>A list holds one type, so the mixture needs a sum whose constructors hold the structs, with its own
+<code>impl</code>:</p>
+<pre><code class="language-text">type Media = B(Book) | S(Song);
+
+impl Describe for Media {
+    fn describe(self) -&gt; String =
+        match self { B(b) =&gt; b.describe(), S(s) =&gt; s.describe() };
+}
+
+// catalogue([B(Book.new("Dune", 412)), S(Song { title: "Blue", secs: 191 })])
+//   is ["Dune, 412 pp.", "Blue (191 s)"]
+</code></pre>
+<p><code>Film</code> costs one struct and one <code>impl Describe</code>, and nothing existing changes until a film has to
+share a catalogue with the others. Then <code>Media</code> gains a constructor, and its <code>match</code> gains an arm,
+which exhaustiveness checking insists on. <code>length_in_minutes</code> as a new trait costs one <code>impl</code> per
+struct, plus one for <code>Media</code> that matches and delegates, and edits nothing. Added to <code>Describe</code>
+instead, it fails conformance for every existing <code>impl</code> until each provides it. This is the trade
+<a href="../objects/traits-inheritance.html">Traits vs. inheritance</a> calls the Expression Problem, with
+<code>Media</code> as the place where the two directions meet.</p>
+</details>
+<details>
+<summary>Write a stack of integers whose contents no other code can reach, with operations to push, pop, and report its size. Then say what a <code>private</code> modifier on a struct field would let you write instead, and what it would cost in Bridger.</summary>
+<p>The contents can live in a reference that only closures capture:</p>
+<pre><code class="language-text">struct Stack { push: fn(Int) -&gt; (), pop: fn() -&gt; Option&lt;Int&gt;, size: fn() -&gt; Int }
+
+fn stack() -&gt; Stack {
+    ref items = [];
+    Stack {
+        push: |x: Int| { items := x :: deref items; },
+        pop: || match deref items {
+            [] =&gt; None,
+            h :: t =&gt; { items := t; Some(h) },
+        },
+        size: || len(deref items),
+    }
+}
+
+fn main() {
+    let s = stack();
+    (s.push)(1);
+    (s.push)(2);
+    println((s.pop)());
+    println((s.size)());
+}
+</code></pre>
+<p>It prints <code>Some(2)</code> and <code>1</code>. Each call of <code>stack</code> allocates its own <code>items</code>, and no name for it
+exists outside the closures. The calls need the parentheses, since <code>s.push(1)</code> is a method call and
+<code>push</code> is a field.</p>
+<p>With a <code>private items: ref&lt;[Int]&gt;</code> field and ordinary methods, the stack would be one struct with an
+<code>impl</code>, dispatched like any other, and two stacks could be compared or printed. In a language
+without modules, the only boundary such a field could have is the <code>impl</code>, so a literal or a struct
+pattern naming it would be rejected everywhere else, including in the tests of the type that
+declares it. <a href="../objects/dispatch.html">Dispatch and encapsulation</a> follows that argument through.</p>
+</details>
+<details>
+<summary>Rewrite <code>catalogue</code> without a bound, so that the caller supplies the description. What does the caller gain, and how does this relate to the program that a bound at two instances cannot express?</summary>
+<pre><code class="language-text">fn catalogue_with&lt;T&gt;(xs: [T], d: fn(T) -&gt; String) -&gt; [String] = map(xs, d);
+
+// catalogue_with([Book.new("Dune", 412)], |b: Book| b.describe())
+//   is ["Dune, 412 pp."]
+// catalogue_with([Book.new("Dune", 412)], |b: Book| b.title)
+//   is ["Dune"]
+</code></pre>
+<p>The function now carries the operation it needs as an argument, and the caller may pass any
+function of the right type, including one that is not the type’s method. This is dictionary
+passing by hand, with one method in the dictionary. A bound such as <code>S: Record&lt;Int&gt;</code> on a type that
+implements <code>Record</code> at two instances is rejected because the body dispatches by head and name
+alone. If the caller passed the chosen method along, as here, the body would never have to choose,
+and the restriction would go away. The cost is an extra argument at every call, which the bound
+supplies implicitly.</p>
+</details>
+<details>
+<summary>A rule filter calls <code>same(b).describe()</code>, where <code>same</code> returns its <code>Book</code> argument unchanged and <code>b</code> is a generator variable over a relation of books. The filter is rejected as impure, although <code>Book</code>'s <code>describe</code> has no effect. Why, and what change makes it pure?</summary>
+<p>The receiver is a call’s result, and the purity judgment settles a receiver’s head only from
+<code>self</code>, a parameter, a generator variable, a literal, a type name, or a field chain from one of
+them, never through a call. So the filter reaches every <code>impl</code>’s <code>describe</code>, and if <code>Song</code>’s prints
+something, the filter is rejected with a witness that begins <code>.describe</code>. Writing <code>b.describe()</code>
+lets the relation’s column type settle the head as <code>Book</code>, the filter reaches <code>Book.describe</code>
+alone, and it is accepted. The checker knows that <code>same(b)</code> has type <code>Book</code>. The purity judgment
+runs on the declarations alone, a cheaper analysis that answers a coarser question and errs toward
+rejecting.</p>
+</details>
 
                     </main>
 

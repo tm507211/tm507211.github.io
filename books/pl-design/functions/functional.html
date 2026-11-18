@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e4ccdfa0.js";
+            window.path_to_searchindex_js = "../searchindex-df70b0b3.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -349,7 +349,7 @@ println(f(f, 5));                                       // 120
 next call in turn. Each call passes the function down to the next. Nothing in the program refers to
 itself by name; each closure captures <code>main</code>’s environment, which has no <code>f</code> in it while the lambda
 is being built, and the self-reference travels as an argument. (The parameter is <code>me</code> because
-<code>self</code> is a reserved word in Bridger, kept for the methods of <a href="../objects/structs.html">Part IX</a><!-- xref:../objects/structs.md -->.)</p>
+<code>self</code> is a reserved word in Bridger, kept for the methods of <a href="../objects/structs.html">Part IX</a>.)</p>
 <h3 id="the-equation-fact-solves"><a class="header" href="#the-equation-fact-solves">The equation <code>fact</code> solves</a></h3>
 <p>The extra argument clutters the body. Separate the part that describes one step of factorial from
 the part that ties it to itself. One step, given <em>some</em> function <code>me</code> to use for the smaller case,

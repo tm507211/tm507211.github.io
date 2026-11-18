@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e4ccdfa0.js";
+            window.path_to_searchindex_js = "../searchindex-df70b0b3.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -180,37 +180,538 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="dispatch-and-encapsulation"><a class="header" href="#dispatch-and-encapsulation">Dispatch and Encapsulation</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     Milestone M8 · lecture: Dispatch & Encapsulation · spec §11.
-     Status: placeholder — spine authored just-in-time.
+     Lecture: Dispatch & Encapsulation. Milestone M8.
+     SEAM: structs.md owns struct declarations and literals, fields, inherent impl blocks, self,
+     associated functions, and T-Method on a receiver of known type. THIS chapter owns trait
+     declarations, impl Tr for T, conformance, bounds on fn and impl, T-Method through a bound,
+     E-Method (head and lookup), coherence, the checker's choice handed to the evaluator, the
+     absence of trait objects, and encapsulation. traits-inheritance.md owns the prelude traits
+     (Ord, Len, Eq, Print, From), Wadler and Blott, dictionary passing, inheritance and
+     overriding, and the Expression Problem in full: forward links only here.
+     PROMISES PAID: types/dynamic-gradual.md and types/type-checker.md both say Part IX is the
+     first place the checker hands the evaluator something it decided. Paid in "When the head is
+     not enough" (the Scale<Int> / Scale<Bool> example and self.conversions).
+     EXAMPLE: Circle, Square, trait Shape, total<S: Shape> (opening approved by the author).
+     Encapsulation half: Range (convention), Tally (a ref field anyone can assign), and the
+     closure-record counter.
+     THROUGHLINE: a method call is answered by the receiver's head and the method's name; the
+     checker makes sure that pair names exactly one body, and records its choice where the pair
+     alone would not.
+     RULES: E-Method is copied verbatim from Appendix D. T-Method-Bound is this chapter's name for
+     Appendix D's prose case "the bound of a type parameter"; Appendix D has no separate label.
+     BUILD: the E-Method and T-Method arms are student holes (todo_m8!): prose only. Shown Rust is
+     provided: Expr::Method, Decl::Trait, Sig, Method, Impl, TraitRef from ast.md, and the
+     Interpreter's methods table. Conformance, coherence, and impl-target checks are in the
+     provided declaration pass (types/mod.rs), not in check_expr; the student's T-Method arm uses
+     bound_of, require_trait, and record_conversion.
+     NO TRAIT OBJECTS: [Shape] is "unknown type Shape" in the reference. Heterogeneity is a sum.
+     HIDDEN TESTS: no case from milestones/m8/tests/graded.rs is used or named.
+     EXAMPLES run 2026-11-17, reference interpreter, release --features m8, stdin </dev/null.
+     Error text is pasted from those runs (first line of each diagnostic).
+     SOURCES READ: none newly in this draft (no web access in the drafting session).
+       Kay, HOPL II 1993: "interacting only through messages" was verified in the paper for
+         foundations/paradigms.md and is reused from that note.
+       Liskov et al. 1977 (doi 10.1145/359763.359789): link reused from types/polymorphism.md.
+     WEAKER EVIDENCE (all paraphrased, none quoted; check before review):
+       Parnas 1972, doi 10.1145/361598.361623: the "hide a design decision likely to change"
+         criterion is paraphrased from knowledge. DOI not checked.
+       Deutsch & Schiffman, POPL 1984, doi 10.1145/800017.800542: inline caching described from
+         knowledge. DOI not checked.
+       Simula 67 virtual procedures; CLU rep/cvt inside a cluster; Smalltalk instance variables
+         private to the object; C++ vtables; Rust dyn and monomorphization; Go interface values;
+         Java interfaces; CLOS and Julia multiple dispatch; Java/C++ access modifiers; Rust pub at
+         the module boundary; Python underscore convention and name mangling; JavaScript #private
+         (ES2022): all from knowledge.
+     Status: draft authored 2026-11-17, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p><a href="structs.html">Structs with methods</a> attached methods to a single struct, and a call like <code>s.area()</code>
+ran the one <code>area</code> that <code>Size</code>’s <code>impl</code> provides. The program below has two structs and one method
+name shared between them. <code>Circle</code> holds a radius <code>r</code>, and <code>Square</code> holds the length of a <code>side</code>. A
+<strong>trait</strong> named <code>Shape</code> declares the signature of a method <code>area</code>, with no body, and each struct
+supplies a body in its own <code>impl Shape for …</code> block. The area of a circle is rounded by taking π
+as 3. <code>total</code> adds up the areas of a list of shapes, and its type parameter <code>S</code> carries the
+requirement <code>S: Shape</code>, written in angle brackets where <a href="../types/polymorphism.html">Function types and
+polymorphism</a> wrote bare type parameters:</p>
+<pre><code class="language-text">struct Circle { r: Int }
+struct Square { side: Int }
 
-- Method dispatch and encapsulation.
--->
+trait Shape { fn area(self) -&gt; Int; }
+
+impl Shape for Circle { fn area(self) -&gt; Int = 3 * self.r * self.r; }
+impl Shape for Square { fn area(self) -&gt; Int = self.side * self.side; }
+
+fn total&lt;S: Shape&gt;(xs: [S]) -&gt; Int = fold(xs, 0, |a: Int, s: S| a + s.area());
+
+fn main() {
+    println(total([Circle { r: 1 }, Circle { r: 2 }]));
+    println(total([Square { side: 3 }]));
+}
+</code></pre>
+<p>It prints:</p>
+<pre><code class="language-text">15
+9
+</code></pre>
+<p>The same line of <code>total</code>, <code>s.area()</code>, ran the circle’s formula during the first call and the
+square’s during the second. A third call that mixes the two,
+<code>total([Circle { r: 1 }, Square { side: 3 }])</code>, is rejected before the program runs, with
+<code>type mismatch: expected Circle, found Square</code> at the square.</p>
+<p>The program raises these questions:</p>
+<ul>
+<li><strong>Which <code>area</code> does <code>s.area()</code> run?</strong> The body of <code>total</code> names neither struct.</li>
+<li><strong>When is that decided?</strong> The checker sees <code>s</code> at type <code>S</code>, while the evaluator sees a particular
+struct value.</li>
+<li><strong>What makes <code>s.area()</code> legal at all?</strong> Inside <code>total</code>, <code>S</code> could be any type that a caller
+supplies.</li>
+<li><strong>Why can one list not hold both shapes?</strong> Both structs implement <code>Shape</code>.</li>
+</ul>
+<h2 id="messages-and-methods"><a class="header" href="#messages-and-methods">Messages and methods</a></h2>
+<p>Simula 67 gave a class’s procedures the option of being declared <code>virtual</code>, so that a procedure
+called on an object would run the version belonging to the object’s actual class, which can be a
+more specific class than the one the calling code was written against. <a href="https://doi.org/10.1145/800025.1198392">Nygaard and Dahl’s
+history</a> describes classes built for simulation, in which
+each entity of a modelled system carries its own state and its own behaviour.</p>
+<p>Smalltalk, built by Alan Kay, Dan Ingalls, Adele Goldberg, and others at Xerox PARC in the 1970s,
+made that choice the only kind of call. In Smalltalk a call is a <strong>message</strong> sent to an object.
+The message carries a name, called a selector, and its arguments, and the receiving object decides
+what code answers it. Kay’s “<a href="https://doi.org/10.1145/154766.155364">The Early History of
+Smalltalk</a>” (1993) describes the goal as computers in
+miniature, cells “interacting only through messages”, and places the messages, more than the
+objects themselves, at the centre of the design. A Smalltalk interpreter answered a message by
+looking the selector up in the receiver’s class, and then in that class’s ancestors, each time the
+message was sent.</p>
+<p>That lookup sits on the path of every call, so its cost mattered. L. Peter Deutsch and Allan
+Schiffman’s “<a href="https://doi.org/10.1145/800017.800542">Efficient Implementation of the Smalltalk-80
+System</a>” (1984) observed that the receiver at a given call
+site usually has the same class as at the previous call there. Their implementation remembered,
+at each call site, the class it last saw and the method it found, so that a repeated send could
+skip the search after a single comparison.</p>
+<h2 id="choosing-a-method"><a class="header" href="#choosing-a-method">Choosing a method</a></h2>
+<p>A method call <code>e.m(args)</code> names an operation, and the language has to pick the code that performs
+it. Picking that code is called <strong>dispatch</strong>. In every language in this chapter the choice depends
+on the receiver <code>e</code>, and on nothing else that the call supplies: <strong>single dispatch</strong>.</p>
+<p>The choice can be made at two times. <strong>Static dispatch</strong> makes it before the program runs, from the
+receiver’s type as the checker knows it. When the type is <code>Circle</code>, the call can only mean
+<code>Circle</code>’s <code>area</code>, and a compiler can emit a direct call to that code. <strong>Dynamic dispatch</strong> makes
+the choice at the moment of the call, from the receiver’s value. Each method call then pays for a
+lookup, whose cost depends on how the language keeps its methods: a search through dictionaries in
+an early Smalltalk, a cached comparison after Deutsch and Schiffman, or an index into a table in
+the compiled languages of <a href="#values-that-carry-their-methods">the design space</a>.</p>
+<p>The two times agree when the receiver’s static type determines its runtime value’s type, as it
+does for a struct: an expression of type <code>Circle</code> evaluates to a <code>Circle</code>. Inside <code>total</code> they come
+apart. The checker knows only that <code>s</code> has type <code>S</code> and that <code>S</code> meets <code>Shape</code>. The value of <code>s</code> is
+a circle during one call of <code>total</code> and a square during another, and only that value says which
+<code>area</code> to run.</p>
+<h2 id="traits-in-bridger"><a class="header" href="#traits-in-bridger">Traits in Bridger</a></h2>
+<h3 id="declaring-a-trait"><a class="header" href="#declaring-a-trait">Declaring a trait</a></h3>
+<p>A <code>trait</code> declaration names a set of method signatures, with no bodies. The grammar is in
+<a href="../appendix/grammar.html#functions-types-and-data">Appendix B</a>:</p>
+<pre><code class="language-text">trait_def   ::= 'trait' UpperIdent [ generics ] '{' { fn_sig ';' } '}' ;
+fn_sig      ::= 'fn' ident '(' [ 'self' [ ',' params ] | params ] ')' [ '-&gt;' type ] ;
+</code></pre>
+<p>A signature may mention <code>Self</code>, which stands for whichever type implements the trait. This trait
+describes things that can grow and return something of their own type:</p>
+<pre><code class="language-text">trait Grow { fn grow(self, by: Int) -&gt; Self; }
+</code></pre>
+<p>A trait is a name for a requirement. Bridger does not accept it as a type: a parameter declared
+<code>xs: [Shape]</code> is rejected with the message that <code>Shape</code> is an unknown type, because a trait is not a
+type of values. Traits appear in two places, after <code>impl</code> and in a bound.</p>
+<h3 id="implementing-a-trait"><a class="header" href="#implementing-a-trait">Implementing a trait</a></h3>
+<p>An <code>impl</code> block that names a trait with <code>for</code> supplies the trait’s methods for one type:</p>
+<pre><code class="language-text">impl_def    ::= 'impl' [ generics ] [ trait_ref 'for' ] type
+                '{' { method } '}' ;
+</code></pre>
+<p>The block must <strong>conform</strong> to the trait. It provides every method the trait declares, it provides
+no method the trait lacks, and each method has the trait’s signature with <code>Self</code> replaced by the
+implementing type. Each failure has its own message:</p>
+<pre><code class="language-text">impl Shape for Circle { }
+// `impl Shape` lacks the trait's method `area`
+
+impl Shape for Circle { fn area(self) -&gt; Int = 1; fn perim(self) -&gt; Int = 2; }
+// trait `Shape` declares no method `perim`
+
+impl Shape for Circle { fn area(self) -&gt; String = "big"; }
+// `area` has signature `fn area(self) -&gt; String`, but the trait declares
+//   `fn area(self) -&gt; Int`
+</code></pre>
+<p>The substitution for <code>Self</code> makes the third check specific to each implementing type. An
+<code>impl Grow for Square</code> must have <code>grow</code> return a <code>Square</code>, and one that returns a <code>Circle</code> is
+reported as <code>fn grow(self, _: Int) -&gt; Circle</code> against the trait’s <code>fn grow(self, _: Int) -&gt; Square</code>. Within the impl, a signature may write either <code>Self</code> or <code>Square</code>.</p>
+<h3 id="bounds"><a class="header" href="#bounds">Bounds</a></h3>
+<p>A type parameter may carry one <strong>bound</strong>, a trait it must implement:</p>
+<pre><code class="language-text">tparam      ::= UpperIdent [ ':' trait_ref ] ;
+</code></pre>
+<p>A bound is a requirement on callers. Where <code>total</code> is called, the checker instantiates <code>S</code> as
+<a href="../types/polymorphism.html">T-Inst</a> does and then requires that the type it found satisfy <code>Shape</code>,
+here by an <code>impl Shape</code> for it. A call on a list of integers finds none:</p>
+<pre><code class="language-text">total([1, 2])
+// no `impl Shape for Int`, so the bound is not satisfied
+</code></pre>
+<p>A bound is also a promise to the body. With <code>S: Shape</code> in scope, the checker types <code>s.area()</code> from
+the trait’s signature, with <code>Self</code> read as <code>S</code>:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.363em;vertical-align:-0.936em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">Γ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">.</span><span class="mord mathnormal">m</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">Γ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mspace" style="margin-right:1em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathit">Tr</span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord mathnormal">m</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord texttt">self</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.1132em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.1132em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="mspace"> </span><span class="mord text"><span class="mord">in</span></span><span class="mspace"> </span><span class="mord"><span class="mord mathit">Tr</span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">[</span><span class="mord text"><span class="mord texttt">Self</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mclose">]</span><span class="mspace" style="margin-right:1em;"></span><span class="mord">Γ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.1132em;">τ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.1132em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace"> </span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">i</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.936em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">T-Method-Bound</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p><a href="structs.html">T-Method</a> finds its method in an <code>impl</code> for the receiver’s type, and this rule finds
+it in the bound. With the bound deleted, <code>fn total&lt;S&gt;(…)</code> has nothing to type <code>s.area()</code> against,
+and the checker reports at the call that there is no such method <code>area</code>. <a href="../types/polymorphism.html">Function types and
+polymorphism</a> described a type parameter as a type the body may store and
+pass along but cannot inspect. A bound adds a list of operations the body may apply to it.</p>
+<p>An <code>impl</code> can be generic and bounded as well. This one makes a list of shapes a <code>Shape</code> whose area
+is the sum of its elements’ areas:</p>
+<pre><code class="language-text">impl&lt;S: Shape&gt; Shape for [S] {
+    fn area(self) -&gt; Int = fold(self, 0, |a: Int, s: S| a + s.area());
+}
+</code></pre>
+<p>With the earlier declarations, <code>[Square { side: 1 }, Square { side: 2 }].area()</code> is <code>5</code>, and
+<code>[[Square { side: 3 }]].area()</code> is <code>9</code>: the outer list’s <code>S</code> is <code>[Square]</code>, which is a shape by
+this same impl, since <code>Square</code> is one.</p>
+<h3 id="evaluating-a-method-call"><a class="header" href="#evaluating-a-method-call">Evaluating a method call</a></h3>
+<p>A method call evaluates its receiver and its arguments, left to right, then runs the method that
+the receiver’s runtime type provides. Appendix D writes <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">head</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span> for that type and
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">lookup</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathrm">head</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">m</span><span class="mclose">)</span></span></span></span> for the method found under it:</p>
+<p><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:7.3319em;vertical-align:-0.9419em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:6.39em;"><span style="top:-4.5581em;"><span class="pstrut" style="height:5.25em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">.</span><span class="mord mathnormal">m</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">…</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathsf">Val</span></span><span class="mspace"> </span><span class="mopen">(</span><span class="mord"><span class="mord mathrm">unwrap</span></span><span class="mspace"> </span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-5.48em;"><span class="pstrut" style="height:5.25em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-8.39em;"><span class="pstrut" style="height:5.25em;"></span><span class="mord"><span class="mord"><span class="mtable"><span class="col-align-c"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:3.25em;"><span style="top:-5.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-3.91em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3053em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3053em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:1em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">i</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span><span style="top:-2.41em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathrm">lookup</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathrm">head</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">m</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal">λ</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord texttt">self</span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mord">.</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace"> </span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span><span style="top:-0.91em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord text"><span class="mord texttt">self</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">↦</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.714em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2077em;"><span class="overlay" style="height:0.714em;width:0.471em;"><svg xmlns="http://www.w3.org/2000/svg" width="0.471em" height="0.714em" style="width:0.471em" viewbox="0 0 471 714" preserveaspectratio="xMinYMin"><path d="M377 20c0-5.333 1.833-10 5.5-14S391 0 397 0c4.667 0 8.667 1.667 12 5 3.333 2.667 6.667 9 10 19 6.667 24.667 20.333 43.667 41 57 7.333 4.667 11 10.667 11 18 0 6-1 10-3 12s-6.667 5-14 9c-28.667 14.667-53.667 35.667-75 63 -1.333 1.333-3.167 3.5-5.5 6.5s-4 4.833-5 5.5c-1 .667-2.5 1.333-4.5 2s-4.333 1 -7 1c-4.667 0-9.167-1.833-13.5-5.5S337 184 337 178c0-12.667 15.667-32.333 47-59 H213l-171-1c-8.667-6-13-12.333-13-19 0-4.667 4.333-11.333 13-20h359 c-16-25.333-24-45-24-59z" /></svg></span></span></span></span></span></span></span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⊢</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-2.453em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.247em;"><span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⇓</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord">Δ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8019em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:2.75em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.9419em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mopen">(</span><span class="mord text"><span class="mord textsf">E-Method</span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>The <strong>head</strong> of a value is the outermost name its type is known by:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Value</th><th>Head</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Circle { r: 1 }</code></td><td><code>Circle</code></td></tr>
+<tr><td><code>Add(Num(3), Num(4))</code></td><td><code>Arith</code>, the type declaring <code>Add</code></td></tr>
+<tr><td><code>7</code>, <code>true</code>, <code>"s"</code>, <code>()</code></td><td><code>Int</code>, <code>Bool</code>, <code>String</code>, <code>()</code></td></tr>
+<tr><td><code>[1, 2]</code>, <code>[]</code></td><td>the list head, written <code>[T]</code></td></tr>
+<tr><td><code>(1, 2)</code>, a function, a reference</td><td>none</td></tr>
+</tbody>
+</table>
+</div>
+<p>A value’s head can be read off the value itself, with no type information, because struct and
+constructor values carry their names. The method body <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">b</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> runs in the environment <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9463em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span> where
+it was declared, which is the program’s top level, extended with <code>self</code> and the parameters. As in
+<a href="../functions/calls.html">E-App</a>, a <code>return</code> inside the body ends the method call, which is what
+<span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathrm">unwrap</span></span></span></span></span> records.</p>
+<p>When the receiver is the bare name of a struct, a type, or <code>Int</code>, <code>Bool</code>, or <code>String</code>, the call is
+an <strong>associated call</strong> like <code>Point.origin()</code> from <a href="structs.html">Structs with methods</a>. Its head is
+that name, the method found must be one declared without <code>self</code>, and the body runs with only the
+arguments bound. The two mismatched pairings are stuck at run time and rejected by the checker. With
+that chapter’s <code>Point</code> and a point <code>p</code>:</p>
+<pre><code class="language-text">Point.move_by(1, 2)  // `move_by` takes `self`; call it on a value of the type
+p.origin()           // `origin` takes no `self`, so it is not called on a value
+</code></pre>
+<p>An impl can extend a type with a head, so a program can implement <code>Shape</code> for <code>Int</code> or for its own
+<code>Arith</code>. An impl for a tuple has no head to be found under, and the checker refuses it:</p>
+<pre><code class="language-text">impl Shape for (Int, Int) { fn area(self) -&gt; Int = self.0 * self.1; }
+// `impl` for (Int, Int): an impl extends a declared type, struct, or built-in
+//   type (`Int`, `Bool`, `String`, `()`, or a list `[T]`)
+</code></pre>
+<h3 id="coherence"><a class="header" href="#coherence">Coherence</a></h3>
+<p>E-Method is deterministic only if <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathrm">lookup</span></span></span></span></span> is a partial function, taking a head and a
+method name to at most one body. For a trait without type parameters, Bridger’s <strong>coherence</strong>
+conditions guarantee it. A head has at most one <code>impl</code> of a given trait, and a method name is
+defined at most once for a head, across all of its <code>impl</code> blocks, inherent or not:</p>
+<pre><code class="language-text">impl Shape for Circle { fn area(self) -&gt; Int = 1; }
+impl Shape for Circle { fn area(self) -&gt; Int = 2; }
+// `impl Shape for Circle` is given more than once
+
+impl Circle { fn area(self) -&gt; Int = 1; }
+impl Shape for Circle { fn area(self) -&gt; Int = 2; }
+// method `area` is defined more than once for Circle
+</code></pre>
+<p>The second rule also stops two different traits from both providing <code>area</code> on <code>Circle</code>: a call
+<code>c.area()</code> would name two bodies, and the call gives no way to say which trait is meant.</p>
+<p>Bridger has no way to replace one method body with another. A trait supplies no default bodies, and
+no type inherits methods from another type. Every body for a pair of head and name is therefore the
+only one, and the evaluator never has to choose between candidates, only find the one that exists.</p>
+<p>The same conditions make dispatch by head agree with any static choice. Where the checker knows the
+receiver is a <code>Circle</code>, it can name <code>Circle</code>’s <code>area</code>, and the evaluator, looking up the head
+<code>Circle</code> and the name <code>area</code>, finds that very body. Inside <code>total</code> the checker knows only <code>S</code>; the
+evaluator finds the body under whichever head the value has, and the bound has already established
+that one exists.</p>
+<p>All of this assumes the trait has no type parameters. A trait that takes one can be implemented
+more than once for the same head, and the pair of head and name then stops determining a body.</p>
+<h3 id="when-the-head-is-not-enough"><a class="header" href="#when-the-head-is-not-enough">When the head is not enough</a></h3>
+<p>The full coherence rule counts impls per <strong>instance</strong> of a trait, the trait with its type arguments
+filled in. A head may implement a generic trait at several instances, as long as their type
+arguments have different heads, and a method name still belongs to one trait per head. Here a
+distance scales by an integer factor or by a boolean switch:</p>
+<pre><code class="language-text">struct Meters { m: Int }
+
+trait Scale&lt;T&gt; { fn scale(self, by: T) -&gt; Meters; }
+
+impl Scale&lt;Int&gt; for Meters {
+    fn scale(self, by: Int) -&gt; Meters = Meters { m: self.m * by };
+}
+impl Scale&lt;Bool&gt; for Meters {
+    fn scale(self, by: Bool) -&gt; Meters = if by { self } else { Meters { m: 0 } };
+}
+
+fn main() {
+    let d = Meters { m: 5 };
+    println(d.scale(3));
+    println(d.scale(false));
+}
+</code></pre>
+<p>This prints:</p>
+<pre><code class="language-text">Meters { m: 15 }
+Meters { m: 0 }
+</code></pre>
+<p>Both calls have the head <code>Meters</code> and the name <code>scale</code>, so the pair no longer determines a body.
+The argument does. The checker sees an <code>Int</code> in the first call and a <code>Bool</code> in the second, and
+picks the instance each one fits. The evaluator cannot redo that choice from the head alone, so the
+checker records the method it chose for that call, keyed by the call’s source span, and the
+evaluator runs the recorded method in place of a lookup. <a href="../types/dynamic-gradual.html">Dynamic and gradual
+typing</a> described Bridger’s checker as passing the evaluator nothing.
+This is the first thing it passes: a method chosen from types that no runtime value carries.</p>
+<p>A call through a bound has no checker choice to record, because the checker does not know which
+type will arrive. Bridger therefore rejects a bound that its type meets at more than one instance:</p>
+<pre><code class="language-text">fn twice&lt;S: Scale&lt;Int&gt;&gt;(s: S) -&gt; Meters = s.scale(2);
+
+twice(Meters { m: 5 })
+// Meters implements `Scale` at more than one instance, so a call through
+//   the bound cannot choose one
+</code></pre>
+<p><code>Meters</code> does implement <code>Scale&lt;Int&gt;</code>. But inside <code>twice</code> the call <code>s.scale(2)</code> is answered by head
+and name, and under the head <code>Meters</code> the name <code>scale</code> has two bodies.
+<a href="traits-inheritance.html">Traits vs. inheritance</a> describes an
+implementation of bounds that passes the chosen impl along with the call, under which this program
+would run.</p>
+<p>A program can also be run with no checker at all, as Parts II through V ran. The evaluator then has
+no recorded choices, and a lookup takes the first <code>impl</code> declared for the head.</p>
+<h3 id="one-list-several-shapes"><a class="header" href="#one-list-several-shapes">One list, several shapes</a></h3>
+<p>A list has one element type, and a bound is satisfied by one type at a time, so <code>total</code> sums a list
+of circles or a list of squares. A collection that holds both is a value of a sum type, built with
+the constructors of <a href="../adt/adts.html">Sum and product types</a>. Giving the sum its own <code>impl Shape</code>
+lets it into <code>total</code>:</p>
+<pre><code class="language-text">type AnyShape = C(Circle) | Sq(Square);
+
+impl Shape for AnyShape {
+    fn area(self) -&gt; Int = match self { C(c) =&gt; c.area(), Sq(s) =&gt; s.area() };
+}
+
+// total([C(Circle { r: 1 }), Sq(Square { side: 3 })]) is 12
+</code></pre>
+<p>The head of <code>C(Circle { r: 1 })</code> is <code>AnyShape</code>, so the outer call finds <code>AnyShape</code>’s <code>area</code>. Its
+<code>match</code> selects a constructor, and the inner call finds <code>Circle</code>’s. <code>AnyShape</code> lists its
+alternatives once, so a third struct implementing <code>Shape</code> reaches <code>total</code> only after a new
+constructor and a new arm are added to <code>AnyShape</code>. <a href="traits-inheritance.html">Traits vs.
+inheritance</a> compares that cost with the
+cost of adding an operation.</p>
+<h3 id="building-it"><a class="header" href="#building-it">Building it</a></h3>
+<p>The parser delivers traits and impls in the shapes given in <a href="../foundations/ast.html">The abstract syntax
+tree</a>:</p>
+<pre><code class="language-rust ignore">Trait(Generics, Vec&lt;Sig&gt;),                     // trait Tr&lt;T&gt; { fn m(…); … }
+struct Sig { name: Name, has_self: bool, params: Vec&lt;Param&gt;, ret: Ty, span: Span }
+
+struct Impl {
+    generics: Generics,        // impl&lt;T&gt; …
+    trait_: Option&lt;TraitRef&gt;,  // the trait implemented, if any
+    ty: Ty,                    // the type being extended
+    methods: Vec&lt;Method&gt;,
+    span: Span,
+    head: Span,                // the header, `impl&lt;T&gt; Tr for T`
+}
+
+Method(Box&lt;Expr&gt;, Name, Vec&lt;Expr&gt;, Span),      // method call: e.m(e, …)</code></pre>
+<p>When a program loads, the provided code gathers every <code>impl</code> into one table on the <code>Interpreter</code>,
+keyed by a head and a method name:</p>
+<pre><code class="language-rust ignore">methods: HashMap&lt;(String, Name), Rc&lt;Method&gt;&gt;,  // (head, name) -&gt; first body</code></pre>
+<p>A head’s key in the table is the struct or type name, or <code>"Int"</code>, <code>"Bool"</code>, <code>"String"</code>, <code>"()"</code>, or
+<code>"[]"</code> for every list, the head the table above writes <code>[T]</code>. A constructor value’s key is the name
+of the type that declares the constructor, found among the program’s declarations. Where a head has
+several instances of a trait, the table holds the first impl’s body, and the checker’s choice
+overrides it. The checker collects those choices, by span, into <code>self.conversions</code>, a table named
+for the other choice it holds: the conversion a <code>?</code> applies, which <a href="traits-inheritance.html">Traits vs.
+inheritance</a> covers. The provided declaration checks run before any
+expression is checked: conformance of every trait <code>impl</code>, coherence, and the rule that an impl’s
+target has a head.</p>
+<p>The evaluator’s <code>Method</code> arm follows E-Method. It evaluates the receiver and the arguments in
+order, then looks first in <code>self.conversions</code> at the call’s span and otherwise in <code>self.methods</code>
+under the receiver’s head. With a method in hand it checks the <code>self</code> pairing and the arity, binds
+<code>self</code> and the parameters in a scope built from <code>env.root()</code>, the program’s top level, and runs the
+body between <code>enter_call</code> and <code>leave_call</code>, catching a <code>Return</code> as the <code>Call</code> arm does. A receiver
+whose head has no such method, among the impls and the built-in methods, is stuck with
+<code>NoSuchMethod</code>.</p>
+<p>The checker’s <code>Method</code> arm types the receiver first. A receiver of known type has its method found
+among that head’s impls, using the arguments where several instances provide the name, and records
+the choice with <code>record_conversion</code> when the head alone does not determine it. A receiver whose type
+is a type parameter has its method found in the parameter’s bound, through <code>bound_of</code>, as in
+T-Method-Bound. At a call of a bounded function, the instantiated bound becomes an obligation
+through <code>require_trait</code>, which the provided code discharges once the declaration’s types are solved.</p>
+<h2 id="encapsulation"><a class="header" href="#encapsulation">Encapsulation</a></h2>
+<p>A <code>Range</code> with fields <code>lo</code> and <code>hi</code> is meaningful only when <code>lo &lt;= hi</code>. A property that every
+value of a type must have is an <strong>invariant</strong> of the type, and a type keeps its invariant if every
+value of the type is built and changed by code that respects it. Making the rest of the program
+unable to reach the fields is called <strong>encapsulation</strong>, and it moves the burden of the invariant
+from every use of the type to the code that defines it.</p>
+<p>David Parnas’s “<a href="https://doi.org/10.1145/361598.361623">On the Criteria to Be Used in Decomposing Systems into
+Modules</a>” (1972) argued for dividing a program by the
+design decisions likely to change, with each module concealing one such decision from the others,
+so that changing the decision changes one module. He called the principle <strong>information hiding</strong>.
+CLU, from Barbara Liskov’s group, enforced it for data. A CLU cluster defined an abstract type
+together with its operations, and only the code inside the cluster could see the representation
+underneath (<a href="https://doi.org/10.1145/359763.359789">Liskov et al., 1977</a>). A Smalltalk object’s
+instance variables were visible only to its own methods, so other objects could reach its state only
+by sending it messages.</p>
+<h3 id="bridgers-fields-are-public"><a class="header" href="#bridgers-fields-are-public">Bridger’s fields are public</a></h3>
+<p>Bridger has no visibility modifiers. Any code that can name a struct can build one with a literal,
+read its fields, and take it apart with a <a href="../adt/pattern-matching.html">struct pattern</a>.</p>
+<p>The language has no modules, so the only boundary a privacy rule could use is the <code>impl</code> block:
+fields readable and literals writable only inside <code>impl Range</code>. Code elsewhere could still build
+a <code>Range</code> through <code>Range.new</code>, but <code>Range { lo: 2, hi: 7 }</code> and every pattern of the form
+<code>Range { lo, hi }</code> would be errors outside the impl, so no other function could match on a <code>Range</code>
+at all. Struct patterns arrived with <a href="../milestones/m7.html">Part VIII</a>, and the rule would take them
+away for every struct with a private field. With no module boundary, the functions that work
+closely with a type, and the tests that check it, would lose access along with everything else.</p>
+<p>Encapsulation in Bridger is a convention. A type provides an associated constructor that checks the
+invariant, and methods for everything else:</p>
+<pre><code class="language-text">struct Range { lo: Int, hi: Int }
+
+impl Range {
+    fn new(lo: Int, hi: Int) -&gt; Option&lt;Range&gt; =
+        if lo &lt;= hi { Some(Range { lo: lo, hi: hi }) } else { None };
+    fn width(self) -&gt; Int = self.hi - self.lo;
+}
+
+fn main() {
+    println(Range.new(2, 7));
+    println(Range.new(7, 2));
+    let bad = Range { lo: 7, hi: 2 };
+    println(bad.width());
+}
+</code></pre>
+<p>This prints:</p>
+<pre><code class="language-text">Some(Range { lo: 2, hi: 7 })
+None
+-5
+</code></pre>
+<p><code>Range.new</code> refuses the reversed bounds, and a literal accepts them. Struct values cannot change, so
+a <code>Range</code> built through <code>new</code> keeps its invariant for as long as it exists. A struct with a
+reference field is different, since anyone holding the struct can assign through the field:</p>
+<pre><code class="language-text">struct Tally { n: ref&lt;Int&gt; }
+
+impl Tally {
+    fn new() -&gt; Tally = Tally { n: ref(0) };
+    fn tick(self) { self.n := deref self.n + 1; }
+    fn read(self) -&gt; Int = deref self.n;
+}
+
+fn main() {
+    let t = Tally.new();
+    t.tick();
+    t.tick();
+    t.n := 100;
+    println(t.read());
+}
+</code></pre>
+<p>It prints <code>100</code>.</p>
+<h3 id="hiding-state-in-a-closure"><a class="header" href="#hiding-state-in-a-closure">Hiding state in a closure</a></h3>
+<p><a href="../functions/closures.html">Closures</a> give Bridger a boundary that a struct does not. A closure
+captures the variables in scope where it is created, and code outside that scope has no name for
+them. A counter can be a struct whose fields are closures over a reference that only they can
+reach:</p>
+<pre><code class="language-text">struct Counter { tick: fn() -&gt; (), read: fn() -&gt; Int }
+
+fn counter() -&gt; Counter {
+    ref n = 0;
+    Counter {
+        tick: || { n := deref n + 1; },
+        read: || deref n,
+    }
+}
+
+fn main() {
+    let c = counter();
+    (c.tick)();
+    (c.tick)();
+    println((c.read)());
+    let d = counter();
+    println((d.read)());
+}
+</code></pre>
+<p>This prints <code>2</code> and then <code>0</code>. Each call of <code>counter</code> allocates a fresh <code>n</code>, and the only operations
+on it are the two closures. A caller can replace a field of <code>c</code> by building a new <code>Counter</code>, but has
+no way to reach <code>n</code> itself. The parentheses in <code>(c.tick)()</code> are required: <code>c.tick()</code> is a method
+call, and the checker reports that <code>tick</code> is a field of <code>Counter</code>, with the hint that a function
+held in a field is called as <code>(e.tick)(…)</code>.</p>
+<p>The counter’s two closures are an object in Smalltalk’s sense, state reachable only through its
+operations, assembled from parts of Part V. They are not reached through dispatch: each field holds
+one function, chosen when the counter is built.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<h3 id="static-dispatch-by-specialization"><a class="header" href="#static-dispatch-by-specialization">Static dispatch by specialization</a></h3>
+<p>C++ templates and Rust generics compile a generic function once for each type it is used at, a
+technique called <strong>monomorphization</strong>. A Rust <code>fn total&lt;S: Shape&gt;(xs: &amp;[S])</code> called on circles
+and on squares becomes two functions, and in each, <code>s.area()</code> is a direct call to one known body,
+which the compiler can then inline. The lookup is gone, and the price is a larger program, with a
+copy of <code>total</code> per type and the work of compiling each.</p>
+<p>Bridger’s reference interpreter keeps one copy of <code>total</code> and looks up each call by head, a hash
+lookup per call. Coherence ensures that both strategies run the same <code>area</code>.</p>
+<h3 id="values-that-carry-their-methods"><a class="header" href="#values-that-carry-their-methods">Values that carry their methods</a></h3>
+<p>In C++, a class with <code>virtual</code> member functions gives each object a hidden pointer to a table of
+its class’s implementations, the <strong>vtable</strong>. A virtual call loads that pointer and calls through a
+fixed slot in the table. Rust’s <code>dyn Shape</code> builds the same arrangement on demand: a reference to a
+value travels with a pointer to the table of <code>Shape</code> methods for its type, and <code>Vec&lt;Box&lt;dyn Shape&gt;&gt;</code> holds circles and squares side by side. A Go interface value is a pair of a type’s method
+table and the data, and a Java variable of an interface type can refer to an object of any class
+implementing the interface.</p>
+<p>Each of these turns a trait into a type of values, which is what Bridger’s <code>[Shape]</code> would need.
+Bridger’s sum type <code>AnyShape</code> reaches a similar collection by listing its members in one place,
+while a trait object admits any type implementing the trait, including one written later.</p>
+<h3 id="choosing-on-more-than-the-receiver"><a class="header" href="#choosing-on-more-than-the-receiver">Choosing on more than the receiver</a></h3>
+<p>Single dispatch inspects the receiver alone. Common Lisp’s CLOS and Julia dispatch on the runtime
+types of all the arguments, so an operation like <code>intersect(a, b)</code> can have one body for two
+circles and another for a circle and a square. A call then selects the most specific body that
+applies, and the language needs a rule for when no body is most specific. Bridger’s instances,
+told apart by the heads of their type arguments, are chosen by the checker from static types, and
+the evaluator uses the receiver alone.</p>
+<h3 id="access-control"><a class="header" href="#access-control">Access control</a></h3>
+<p>Java and C++ attach <code>private</code>, <code>protected</code>, and <code>public</code> to each member of a class, and the
+boundary of privacy is the class. Rust puts the boundary at the module: a field without <code>pub</code> is
+visible throughout the module that declares the struct and nowhere outside it, so code in the same
+module may still build the struct with a literal. Python enforces nothing, and a leading underscore
+on a name signals that it is internal. A leading double underscore makes the interpreter rename the
+attribute, which makes accidental access unlikely without preventing deliberate access. JavaScript
+added fields named with <code>#</code>, which code outside the class body cannot read at all.</p>
+<p>These choices place a boundary somewhere in the program text. Bridger places none, and its one
+enforced boundary is the scope of a closure.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Smalltalk</strong>: Kay’s “<a href="https://doi.org/10.1145/154766.155364">The Early History of Smalltalk</a>”
+(1993) runs from Simula and Sketchpad to Smalltalk-80, with the design decisions of each version of
+the language along the way.</p>
+<p><strong>Making dispatch fast</strong>: Deutsch and Schiffman’s “<a href="https://doi.org/10.1145/800017.800542">Efficient Implementation of the Smalltalk-80
+System</a>” (1984) describes translating Smalltalk to machine
+code as methods are first run, and the per-call-site cache of the last class seen.</p>
+<p><strong>Information hiding</strong>: Parnas’s “<a href="https://doi.org/10.1145/361598.361623">On the Criteria to Be Used in Decomposing Systems into
+Modules</a>” (1972) works through two decompositions of one
+small program, a keyword-in-context index, and compares what each must change when a design
+decision changes. Liskov and colleagues’ “<a href="https://doi.org/10.1145/359763.359789">Abstraction Mechanisms in
+CLU</a>” (1977) presents clusters, with complete examples.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary><code>total([Circle { r: 1 }, Square { side: 3 }])</code> is rejected, while <code>total([C(Circle { r: 1 }), Sq(Square { side: 3 })])</code> is accepted. What did <code>AnyShape</code> add?</summary>
+<p>A list literal’s elements share one type, and the first is a <code>Circle</code>, so the <code>Square</code> is a
+mismatch before the bound is consulted. <code>AnyShape</code> is one type whose values are circles or squares
+under a tag, so the list has element type <code>AnyShape</code>, and its <code>impl Shape</code> satisfies the bound. The
+<code>match</code> in that impl is where the choice between the two shapes is made.</p>
+</details>
+<details>
+<summary>Why is <code>twice(Meters { m: 5 })</code> rejected, when <code>Meters</code> implements <code>Scale&lt;Int&gt;</code> and <code>d.scale(3)</code> runs?</summary>
+<p>At <code>d.scale(3)</code> the checker sees the argument is an <code>Int</code>, picks the <code>Scale&lt;Int&gt;</code> method, and
+records the choice for the evaluator. Inside <code>twice</code> it cannot record a choice, since <code>S</code> is
+unknown there, so the evaluator would look up <code>scale</code> under the head <code>Meters</code> alone, where there
+are two bodies. A bound is accepted only when the head and name lead to one.</p>
+</details>
+<details>
+<summary>Suppose Bridger allowed two <code>impl Shape for Circle</code> blocks in one program. What would E-Method need that it does not have?</summary>
+<p>A way to choose between two bodies for one head and one name: an order among impls, a name for the
+impl at the call, or a rule preferring one. Without one, <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathrm">lookup</span></span></span></span></span> is not a function and
+the rule does not say which body runs.</p>
+</details>
+<details>
+<summary>Compare the closure counter with the <code>Tally</code> struct. What can a caller do to each, and what would a <code>private</code> modifier on <code>Tally</code>'s field cost Bridger?</summary>
+<p>A caller can assign <code>t.n := 100</code> and break any invariant <code>Tally</code> means to keep, while the counter’s
+<code>n</code> has no name outside <code>counter</code>. A field private to <code>impl Tally</code> would close that, but code
+outside the impl could then neither write a <code>Tally</code> literal nor match a <code>Tally { n }</code> pattern.
+Languages with modules draw the line at the module, which leaves room for helper code beside the
+type. Bridger has no modules to draw it at.</p>
+</details>
 
                     </main>
 

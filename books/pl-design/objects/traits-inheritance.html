@@ -39,7 +39,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e4ccdfa0.js";
+            window.path_to_searchindex_js = "../searchindex-df70b0b3.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-7edc4796.js"></script>
@@ -180,41 +180,578 @@
                     <main>
                         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <h1 id="traits-vs-inheritance"><a class="header" href="#traits-vs-inheritance">Traits vs. Inheritance</a></h1>
-<!-- Under-construction banner partial. Add it to the top of an incomplete page
-     with mdBook's include directive pointing at this file
-     (../includes/under-construction.md from a chapter). Styled by
-     css/under-construction.css. Kept as one HTML block (no blank lines) so
-     pulldown-cmark passes it through verbatim. Do NOT write the include
-     directive literally in this comment: the links preprocessor rewrites it
-     even inside comments, and the file would include itself (cyclic include). -->
-<div class="under-construction" role="note" aria-label="This page is under construction and incomplete.">
-  
-<hr>
-  
-<p class="uc-label">
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-    Under Construction
-    <svg class="uc-icon" viewbox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" /></svg>
-  </p>
-
-  
-<hr>
-</div>
-
 <!-- AUTHORING NOTE (not rendered)
-     lecture: Traits vs. Inheritance · spec §11 (prelude traits).
-     Status: placeholder — spine authored just-in-time.
+     Lecture: Traits vs. Inheritance. Milestone M8 (closes Part IX's content chapters).
+     SEAM: dispatch.md owns trait declarations, impl Tr for T, conformance, bounds on fn and impl
+     (including the generic impl<S: Shape> Shape for [S]), T-Method-Bound, E-Method, coherence,
+     the checker's recorded choice, monomorphization and vtables, trait objects, and
+     encapsulation. THIS chapter owns the prelude traits (Ord, Len, Eq, Print, From), Strachey's
+     two polymorphisms, Wadler and Blott, dictionary passing, operators, inheritance and
+     overriding, substitution, the diamond, Go and Rust's choices, and the Expression Problem.
+     PROMISES PAID: types/polymorphism.md (the rejected eq<T>, admitted by T: Eq);
+     eval/tree-walking.md (++ over two shapes: it stays built in, and order goes through cmp);
+     eval/error-handling.md and adt/pattern-matching.md (From and the M8 ? conversion);
+     adt/exhaustiveness.md (the other side of the Expression Problem); dispatch.md (dictionary
+     passing would let twice<S: Scale<Int>> run; AnyShape's cost of a new type against a new
+     operation).
+     EXAMPLE: Version (major, minor) for the prelude half; Bag and CountingBag for overriding;
+     Circle, Square, Rect, and the sum Shape for the Expression Problem, continuing dispatch.md.
+     THROUGHLINE: a bound asks for evidence that a type supports some operations; the prelude's
+     overloading becomes evidence a program can supply, and Bridger takes the evidence from the
+     value's head where an inheriting language would take it from a chain of classes.
+     BUILD: no new eval_expr or check_expr arm. Bound satisfaction and T-Method are dispatch.md's
+     student holes; Eq and Print are judged in the provided checker. Shown Rust: Generics,
+     TyParam, TraitRef from ast.md. Prelude source shown as Bridger (prelude.brg,
+     prelude-bounds.brg).
+     HIDDEN TESTS: no case from milestones/m8/tests/graded.rs is used or named.
+     EXAMPLES run 2026-11-17, reference interpreter, release --features m8, stdin </dev/null.
+     Error text is the first line of each diagnostic, pasted from those runs.
+     SOURCES READ:
+       Strachey, Fundamental Concepts, HOSC 13 (2000), publisher PDF text layer, sec 3.6.4,
+         p. 37: "There seem to be two main classes, which can be called ad hoc polymorphism and
+         parametric polymorphism." and "In ad hoc polymorphism there is no single systematic way
+         of determining the type of the result from the type of the arguments." Lectures 1967.
+       Wadler & Blott, authors' version dated October 1988 (class.ps on Wadler's homepage),
+         converted to text: "its name is doubly appropriate"; "thus bring together the two sorts
+         of polymorphism that Strachey separated"; "This suggests that perhaps dictionaries
+         should be passed around independently of objects; now polymorphic equality would be
+         passed one dictionary and two objects (minus dictionaries)." Published POPL 1989; the
+         proceedings text was not compared.
+       Mikhajlov & Sekerinski, ECOOP 1998, author-hosted PDF (McMaster): Bag / CountingBag /
+         Bag' example of their Fig. 1, which they say is adopted from an earlier source. Abstract
+         wording "seemingly acceptable revision of a base class which may damage its
+         extensions" quoted.
+       Liskov & Wing, TOPLAS 16(6) 1994, p. 1812, rendered page image (CMU author copy): the
+         Subtype Requirement as quoted, and the stack/queue put/get example.
+       Simionato, The Python 2.3 Method Resolution Order (python.org): C3 came from Dylan,
+         Pedroni proposed it for 2.3; reference [2] is the Barrett et al. DOI below.
+       Go FAQ, "Why is there no type inheritance?" and "Is Go an object-oriented language?",
+         quoted from go.dev/doc/faq on 2026-11-17.
+       Rust book ch. 10.2 (default implementations) and ch. 20.2 (supertraits): headings checked.
+       DOIs checked against Crossref titles: 10.1145/75277.75283, 10.1145/236337.236343,
+         10.1007/BFb0054099, 10.1145/28697.28702, 10.1145/197320.197383; Strachey's
+         10.1023/A:1010000313106 resolves to Springer.
+     WEAKER EVIDENCE:
+       Snyder, OOPSLA 1986: not read. Paraphrased (inheritance exposes a class's implementation to
+         its subclasses), never quoted.
+       Gamma, Helm, Johnson, Vlissides 1994: the composition-over-inheritance principle is
+         paraphrased. The circulated wording "Favor object composition over class inheritance"
+         was not checked against a printing, so it is not quoted.
+       Simula 67 prefixing, Smalltalk-80 super, C++ virtual base classes, Python's super(), Rust's
+         fully qualified call syntax, Haskell's Num class and Rust's std::ops traits: from
+         knowledge.
+       That Rust's traits draw on Haskell's type classes is widely stated; hedged as such.
+     Status: draft authored 2026-11-17, awaiting review.
 -->
-<!-- Stubbed content, hidden while this page is under construction.
-     Remove this opening line and the closing marker below to restore it.
-This chapter will cover:
+<p><a href="dispatch.html">Dispatch and encapsulation</a> wrote traits and bounds for a program’s own types. The
+prelude has been doing something similar since <a href="../eval/values.html">Part II</a>, without saying how.
+The program below declares <code>Version</code>, a struct holding a release’s <code>major</code> and <code>minor</code> numbers,
+and makes a list <code>vs</code> of two versions. It then calls three prelude functions: <code>len</code>, which gives
+the length of a string or a list; <code>maximum</code>, which returns the greatest element of a list wrapped
+in <code>Some</code>, or <code>None</code> for an empty list; and <code>maximum</code> again, on <code>vs</code>:</p>
+<pre><code class="language-text">struct Version { major: Int, minor: Int }
 
-- Traits / interfaces: subtype polymorphism + dynamic dispatch (spec §11).
+fn main() {
+    let vs = [Version { major: 1, minor: 4 }, Version { major: 2, minor: 0 }];
+    println(len("bridger"));
+    println(len([3, 1, 2]));
+    println(maximum([3, 1, 2]));
+    println(maximum(vs));
+}
+</code></pre>
+<p>The program never starts. The checker accepts the first three calls and reports at <code>vs</code>:</p>
+<pre><code class="language-text">no `impl Ord for Version`, so the bound is not satisfied
+</code></pre>
+<p>A program’s own function that hands its argument to <code>len</code> fares no better:</p>
+<pre><code class="language-text">fn size&lt;T&gt;(x: T) -&gt; Int = len(x);
+// no `impl Len for T`, so the bound is not satisfied
+</code></pre>
+<p>The program raises these questions:</p>
+<ul>
+<li><strong>What type does <code>len</code> have?</strong> It accepts a <code>String</code> and a list, two types with no structure in
+common, and <a href="../types/polymorphism.html">Part V’s</a> type parameters act the same way on every type.</li>
+<li><strong>How can a program’s own type join in?</strong> <code>maximum</code> orders integers but has no way to order
+versions.</li>
+<li><strong>What may a generic function ask of its type parameter?</strong> <a href="../types/polymorphism.html">Function types and
+polymorphism</a> rejected <code>fn eq&lt;T&gt;(a: T, b: T) -&gt; Bool = a == b;</code>, since
+not every type has <code>==</code>.</li>
+<li><strong>Could the ordering be inherited instead?</strong> Many object-oriented languages would have
+<code>Version</code> inherit its comparison operations from a base class of comparable things.</li>
+</ul>
+<h2 id="two-kinds-of-polymorphism"><a class="header" href="#two-kinds-of-polymorphism">Two kinds of polymorphism</a></h2>
+<p>Christopher Strachey’s lecture notes “<a href="https://doi.org/10.1023/A:1010000313106">Fundamental Concepts in Programming
+Languages</a>”, from a 1967 summer school in Copenhagen and
+published in 2000, sorted the ways one operator can serve many types: “There seem to be two main
+classes, which can be called ad hoc polymorphism and parametric polymorphism.” For the first, “In
+ad hoc polymorphism there is no single systematic way of determining the type of the result from
+the type of the arguments.” The ordinary arithmetic operators were his example. He called parametric
+polymorphism “more regular”, and his example was a function <code>Map</code> that applies a function to each
+member of a list, whatever the types of the list’s elements.</p>
+<p>Languages that followed treated the two separately. ML gave parametric polymorphism a type system
+and type inference, which <a href="../types/polymorphism.html">Part V</a> described, and handled overloaded
+arithmetic and equality with special cases built into the language. Philip Wadler and Stephen
+Blott’s “<a href="https://doi.org/10.1145/75277.75283">How to make ad-hoc polymorphism less ad hoc</a>” (POPL
+1989) observed that there was “no widely accepted approach to ad-hoc polymorphism, and so its name
+is doubly appropriate.” Their <strong>type classes</strong> let a program declare a class of types that support
+some operations, declare which types are instances, and write functions over any instance, “and
+thus bring together the two sorts of polymorphism that Strachey separated.” Haskell adopted type
+classes, and Rust’s traits are widely described as drawing on them. Bridger’s prelude traits are
+a small case of the same design.</p>
+<h2 id="overloading-as-evidence"><a class="header" href="#overloading-as-evidence">Overloading as evidence</a></h2>
+<p>A <strong>bound</strong> <code>T: Ord</code> divides a function in two. Its body is parametric: <code>max</code> does the same thing
+for every <code>T</code>, calling <code>cmp</code> and returning one of its arguments. The <code>cmp</code> it calls is ad hoc: each
+type supplies its own, and they share nothing but a signature.</p>
+<p>The checker has to make sure the <code>cmp</code> exists. At each call of a bounded function it needs
+<strong>evidence</strong> that the type at which <code>T</code> was instantiated meets the bound. <a href="../appendix/language-reference.html#functions-methods-and-generics">Appendix
+D</a> accepts three kinds: an <code>impl</code>
+of the trait for that type, a <strong>built-in conformance</strong> the language provides for a primitive type,
+or, inside a declaration, a type parameter that carries the bound itself. In <code>size</code> above, <code>T</code>
+carries no bound, so the checker can find no evidence that <code>T</code> is <code>Len</code>, and it rejects the call to
+<code>len</code> inside <code>size</code>. Writing <code>fn size&lt;T: Len&gt;(x: T) -&gt; Int</code> moves the requirement to <code>size</code>’s
+callers, and each of them supplies the evidence for its own type.</p>
+<p>The evaluator has to run the right <code>cmp</code>. The evidence the checker found has to reach the
+call somehow, and languages differ in how. Bridger reaches it through the receiver’s head, as
+<a href="dispatch.html">Dispatch and encapsulation</a> described, and <a href="#where-the-evidence-travels">the design
+space</a> compares two other routes.</p>
+<h2 id="bridgers-prelude-traits"><a class="header" href="#bridgers-prelude-traits">Bridger’s prelude traits</a></h2>
+<p>The prelude declares five traits, listed in <a href="../appendix/prelude.html">Appendix C</a>:</p>
+<pre><code class="language-text">type Ordering = Less | Equal | Greater;
 
-*Design-space (woven):* **classical inheritance** (Simula/Smalltalk) → fragile base class /
-diamond problems → why Rust/Go chose **traits + composition**. Discussed with pros/cons, not
-implemented.
--->
+trait Eq {}
+trait Print {}
+trait Ord     { fn cmp(self, other: Self) -&gt; Ordering; }
+trait Len     { fn length(self) -&gt; Int; }
+trait From&lt;T&gt; { fn from(x: T) -&gt; Self; }
+</code></pre>
+<h3 id="ord-and-len"><a class="header" href="#ord-and-len">Ord and Len</a></h3>
+<p><code>Ord</code> describes types with an order. <code>a.cmp(b)</code> answers <code>Less</code>, <code>Equal</code>, or <code>Greater</code>, and
+<code>Ordering</code> is an ordinary sum type a program takes apart with <code>match</code>. <code>Len</code> describes types with a
+length. <code>Int</code>, <code>String</code>, and <code>Bool</code> are <code>Ord</code>, and <code>String</code> and every list type are <code>Len</code>, by
+built-in conformance:</p>
+<pre><code class="language-text">println("apple".cmp("pear"));   // Less
+println(true.cmp(false));       // Greater
+println([1, 2].length());       // 2
+</code></pre>
+<p>The comparison operators stay as they were: <code>&lt;</code> and its relatives take integers, and
+<code>"apple" &lt; "pear"</code> is still <code>type mismatch: expected Int, found String</code>. Ordering strings goes
+through <code>cmp</code>. The other operators are fixed in the same way. <a href="../eval/tree-walking.html">Tree-walking
+evaluation</a> gave <code>++</code> two shapes of operand, strings and lists, and it
+keeps exactly those: <code>1 ++ 2</code> is still <code>type mismatch: expected String, found Int</code>, and no trait
+extends an operator to a new type. A program’s own type gets an order through <code>cmp</code> and a length
+through <code>length</code>, called by name.</p>
+<p>Through Part VIII, <code>len</code>, <code>min</code>, <code>max</code>, <code>minimum</code>, and <code>maximum</code> were native functions of the
+interpreter, each with a short list of built-in types it accepted. From M8 they
+are ordinary Bridger, written over the traits. This is the prelude’s own source:</p>
+<pre><code class="language-text">fn min&lt;T: Ord&gt;(a: T, b: T) -&gt; T = match a.cmp(b) { Greater =&gt; b, _ =&gt; a };
+fn max&lt;T: Ord&gt;(a: T, b: T) -&gt; T = match a.cmp(b) { Less =&gt; b, _ =&gt; a };
+
+fn maximum&lt;T: Ord&gt;(xs: [T]) -&gt; Option&lt;T&gt; =
+    match xs {
+        [] =&gt; None,
+        h :: t =&gt; Some(fold(t, h, max)),
+    };
+
+fn len&lt;T: Len&gt;(xs: T) -&gt; Int = xs.length();
+</code></pre>
+<p><code>minimum</code> mirrors <code>maximum</code> with <code>min</code>. <code>len</code>’s type is now <code>fn&lt;T: Len&gt;(T) -&gt; Int</code>, and the
+overloading the prelude used to perform by special case is a bound any program could have written.
+A program that implements <code>Ord</code> for its own type joins the built-in types. Versions compare by major
+number, then by minor:</p>
+<pre><code class="language-text">impl Ord for Version {
+    fn cmp(self, other: Self) -&gt; Ordering =
+        match self.major.cmp(other.major) {
+            Equal =&gt; self.minor.cmp(other.minor),
+            o =&gt; o,
+        };
+}
+
+fn main() {
+    let a = Version { major: 1, minor: 4 };
+    let b = Version { major: 2, minor: 0 };
+    println(a.cmp(b));
+    println(max(a, b));
+    println(maximum([a, b, Version { major: 1, minor: 9 }]));
+}
+</code></pre>
+<p>This prints:</p>
+<pre><code class="language-text">Less
+Version { major: 2, minor: 0 }
+Some(Version { major: 2, minor: 0 })
+</code></pre>
+<p><code>maximum</code> called <code>max</code>, which called <code>a.cmp(b)</code> on two versions, and that call found the <code>cmp</code> in
+<code>impl Ord for Version</code>, although the prelude’s <code>maximum</code> was written with no knowledge of
+<code>Version</code>.</p>
+<p>A built-in conformance counts as an impl for <a href="dispatch.html">coherence</a>, so a program cannot replace
+it:</p>
+<pre><code class="language-text">impl Ord for Int { fn cmp(self, other: Self) -&gt; Ordering = Equal; }
+// `Int` is `Ord` by a built-in rule and cannot be implemented again
+</code></pre>
+<p>A built-in type that lacks a conformance can be given one. Here <code>Int</code> becomes <code>Len</code>, its length
+being its number of decimal digits, with the sign not counted:</p>
+<pre><code class="language-text">impl Len for Int {
+    fn length(self) -&gt; Int =
+        if self &lt; 0 { (0 - self).length() }
+        else if self &lt; 10 { 1 } else { 1 + (self / 10).length() };
+}
+
+fn main() { println(len(12345)); println(len(-42)); println(len("abc")); }
+</code></pre>
+<p>This prints <code>5</code>, <code>2</code>, and <code>3</code>. The <code>length</code> that <code>len</code> reaches depends on the value it is handed.</p>
+<h3 id="eq-and-print"><a class="header" href="#eq-and-print">Eq and Print</a></h3>
+<p><code>Eq</code> and <code>Print</code> declare no methods. A type is <code>Eq</code> when its values can be compared with <code>==</code>, and
+<code>Print</code> when they can be printed. Both are decided by the type’s shape, so no program may write an
+<code>impl</code> of either. A type is <code>Eq</code> when it is data all the way down: the scalar types, tuples, lists,
+and declared types and structs whose components are all <code>Eq</code>. A function anywhere inside makes a
+type fail, since Bridger has no equality on functions. A reference is <code>Eq</code> whatever it holds,
+because references compare by identity. <code>Print</code> follows the same pattern, with a reference
+printable when its contents are.</p>
+<p>The function <code>eq</code> that Part V had to reject is accepted with the bound:</p>
+<pre><code class="language-text">fn eq&lt;T: Eq&gt;(a: T, b: T) -&gt; Bool = a == b;
+
+eq(1, 1)                        // true
+eq(|x: Int| x, |x: Int| x)      // type fn(Int) -&gt; Int admits no equality
+</code></pre>
+<p>The second call is rejected at its first argument, where the bound fails. Before M8, the same
+judgment applied to <code>==</code> itself, to the prelude’s <code>contains</code>, and to <code>print</code>. These now carry the
+bounds <code>Eq</code> and <code>Print</code> in their signatures. A struct that holds a function cannot be printed as a
+whole, though its other fields can:</p>
+<pre><code class="language-text">struct Button { label: String, on_click: fn() -&gt; () }
+
+let b = Button { label: "ok", on_click: || println("clicked") };
+println(b.label);   // ok
+println(b);         // type Button cannot be printed
+</code></pre>
+<p><code>Ord</code> asks for equality as well. <code>impl Ord for τ</code> is accepted only when τ is <code>Eq</code>, and a function
+with an <code>Ord</code> bound may use <code>==</code> on its type parameter:</p>
+<pre><code class="language-text">struct Callback { f: fn(Int) -&gt; Int }
+impl Ord for Callback { fn cmp(self, other: Self) -&gt; Ordering = Equal; }
+// type Callback admits no equality
+</code></pre>
+<h3 id="from-and-the-conversion-in-"><a class="header" href="#from-and-the-conversion-in-">From and the conversion in ?</a></h3>
+<p><code>From&lt;T&gt;</code> is a trait with a type argument, and its method has no <code>self</code>: <code>from</code> is an
+<a href="structs.html">associated function</a> that builds a value of the implementing type out of a <code>T</code>. It is
+the trait that <a href="../eval/error-handling.html">Error handling</a> said <code>?</code> would use. Until now, <code>e?</code> in a
+function returning <code>Result&lt;T, E&gt;</code> has required <code>e</code>’s error type to be exactly <code>E</code>. From M8, when
+the two error types differ, the checker inserts a conversion, so the desugaring becomes</p>
+<pre><code class="language-text">match e { Ok(v) =&gt; v, Err(err) =&gt; return Err(E.from(err)) }
+</code></pre>
+<p>and the conversion is whichever <code>impl From&lt;…&gt; for E</code> accepts <code>err</code>’s type. Here a parse failure
+becomes a configuration error on its way out of <code>port</code>:</p>
+<pre><code class="language-text">struct ParseError { at: Int }
+type ConfigError = BadNumber(Int) | Missing(String);
+
+impl From&lt;ParseError&gt; for ConfigError {
+    fn from(e: ParseError) -&gt; Self = BadNumber(e.at);
+}
+
+fn digit(s: String) -&gt; Result&lt;Int, ParseError&gt; =
+    if s == "7" { Ok(7) } else { Err(ParseError { at: 0 }) };
+
+fn port(s: String) -&gt; Result&lt;Int, ConfigError&gt; {
+    let d = digit(s)?;
+    Ok(8000 + d)
+}
+
+fn main() {
+    println(port("7"));
+    println(port("x"));
+}
+</code></pre>
+<p>This prints:</p>
+<pre><code class="language-text">Ok(8007)
+Err(BadNumber(0))
+</code></pre>
+<p>Without the <code>impl</code>, the <code>?</code> in <code>port</code> is the type error it was in Part VIII. When the error types
+already agree, the checker inserts no call, so every program that type-checked before M8 runs as
+it did. Because <code>from</code> has no receiver, the evaluator has no value whose head could choose among
+several <code>impl From&lt;…&gt; for ConfigError</code>. The checker chooses by the argument’s type and records its
+choice for the evaluator, as it does for the trait instances of <a href="dispatch.html">Dispatch and
+encapsulation</a>. For the same reason, an associated call cannot be made on a type
+parameter. Inside <code>fn make&lt;T: From&lt;Int&gt;&gt;(n: Int) -&gt; T</code>, the call <code>T.from(n)</code> is rejected with
+the message that <code>T</code> is a type parameter and an associated call names a concrete type, since at run
+time there is no head for <code>T</code> to dispatch on.</p>
+<h3 id="building-it"><a class="header" href="#building-it">Building it</a></h3>
+<p>No new arm appears in <code>eval_expr</code> or <code>check_expr</code>. The bounds are written with the shapes <a href="../foundations/ast.html">the AST
+chapter</a> gave every declaration:</p>
+<pre><code class="language-rust ignore">struct TyParam {
+    name: Name,               // T
+    bound: Option&lt;TraitRef&gt;,  // : Ord, the trait bound, if any
+    span: Span,
+}
+
+struct TraitRef { name: Name, args: Vec&lt;Ty&gt;, span: Span }   // Ord, or From&lt;T&gt;</code></pre>
+<p>At run time, <code>len("abc")</code> calls the Bridger function <code>len</code>, whose body is the method call
+<code>xs.length()</code>. That call is the E-Method of <a href="dispatch.html">Dispatch and encapsulation</a>: the head of
+<code>"abc"</code> is <code>String</code>, no <code>impl</code> provides <code>length</code> for it, and the built-in conformance runs a native
+primitive. A user <code>impl Len for Int</code> puts an entry for <code>Int</code> in the same method table, and the
+same arm finds it. The bound checks that <a href="dispatch.html">Dispatch and encapsulation</a> built cover the
+prelude’s bounds as well, with the built-in conformances added to the evidence. <code>Eq</code> and <code>Print</code>
+are judged by the provided checker, which walks a type’s structure, looking through each declared
+type and struct to its components.</p>
+<h2 id="the-design-space"><a class="header" href="#the-design-space">The design space</a></h2>
+<h3 id="where-the-evidence-travels"><a class="header" href="#where-the-evidence-travels">Where the evidence travels</a></h3>
+<p>Bridger finds a type’s <code>cmp</code> from the head of the value it is called on. Wadler and Blott’s
+translation takes another route, which Haskell implementations use. A bounded function receives
+an extra argument, a <strong>dictionary</strong> holding the instance’s methods, and each call site passes the
+dictionary for its type. Their paper arrives at the idea by noticing that when objects carry their
+methods, two arguments of an equality test carry the same table: “This suggests that perhaps
+dictionaries should be passed around independently of objects; now polymorphic equality would be
+passed one dictionary and two objects (minus dictionaries).”</p>
+<p>A Bridger program can write that translation by hand, with a one-method dictionary passed as a
+function:</p>
+<pre><code class="language-text">fn largest&lt;T&gt;(xs: [T], cmp: fn(T, T) -&gt; Ordering) -&gt; Option&lt;T&gt; =
+    match xs {
+        [] =&gt; None,
+        h :: t =&gt; Some(fold(t, h, |a: T, b: T| match cmp(a, b) {
+            Less =&gt; b,
+            _ =&gt; a,
+        })),
+    };
+
+fn main() {
+    println(largest([3, 9, 2], |a: Int, b: Int| a.cmp(b)));
+    println(largest([3, 9, 2], |a: Int, b: Int| b.cmp(a)));
+}
+</code></pre>
+<p>This prints <code>Some(9)</code> and then <code>Some(2)</code>. Here the caller chooses the ordering at each call, and
+two calls on the same type can choose differently. A bound gives each type one <code>cmp</code>, and the
+checker builds and passes the dictionary itself.</p>
+<p>Passing dictionaries removes two of Bridger’s restrictions. A dictionary does not depend on a
+receiver, so a method like <code>from</code>, or Haskell’s <code>read</code>, which produces a value of the type and
+consumes none, is chosen by the type the context expects. A dictionary also names one instance,
+so <a href="dispatch.html">Dispatch and encapsulation’s</a> <code>twice&lt;S: Scale&lt;Int&gt;&gt;</code> would receive the
+<code>Scale&lt;Int&gt;</code> methods for <code>Meters</code>, and the second instance under the same head would never be
+consulted. The cost is an extra argument at every bounded call, and an evaluator that has to know
+where the checker put it.</p>
+<p>Monomorphization, also described in <a href="dispatch.html">Dispatch and encapsulation</a>, passes nothing at
+run time. A copy of <code>maximum</code> is made for <code>Version</code>, its <code>cmp</code> resolved during compilation. Rust
+compiles bounded generics this way.</p>
+<h3 id="operators"><a class="header" href="#operators">Operators</a></h3>
+<p>Haskell’s numeric operators are the methods of a type class, so a program can define <code>+</code> for its
+own type by declaring an instance. Rust’s <code>+</code> is the <code>add</code> method of the trait <code>std::ops::Add</code>, and
+<code>a + b</code> is a call to it. Bridger keeps its operators fixed. Each operator then has one meaning per
+operand type, which a reader can look up in <a href="../appendix/language-reference.html">Appendix D</a>, at
+the cost of writing <code>a.cmp(b)</code> where an ordered type might have used <code>&lt;</code>.</p>
+<h3 id="inheritance"><a class="header" href="#inheritance">Inheritance</a></h3>
+<p>Simula 67 let a class be written with another class as its <strong>prefix</strong>. The new class, a
+<strong>subclass</strong>, has every attribute and procedure of the prefix plus its own. A procedure the prefix
+declared <code>virtual</code> could be redefined in the subclass, and calls on the object then ran the
+redefinition, including calls made from inside the prefix’s own code. Smalltalk-80 put every class
+in one tree of superclasses, let any subclass method <strong>override</strong> an inherited one, and provided
+<code>super</code> for calling the overridden version. In such a language, <code>Version</code> could be a subclass of
+a base class of comparable things, supply its comparison by overriding one method, and inherit
+operations such as a maximum that the base class wrote in terms of that method.</p>
+<p>The redirection of the prefix’s own calls is what makes reuse by inheritance work, since a base
+class written once can call methods supplied later. It also ties a subclass to how its base class
+is written. Leonid Mikhajlov and Emil Sekerinski’s “<a href="https://www.cas.mcmaster.ca/~emil/Publications_files/MikhajlovSekerinski98FragileBaseClassProblem.pdf">A Study of the Fragile Base Class
+Problem</a>”
+(ECOOP 1998) describes a developer who produces “a seemingly acceptable revision of a base class
+which may damage its extensions.” Their example, adapted from earlier work, starts from a class
+<code>Bag</code> with methods <code>add</code>, <code>addAll</code>, which calls <code>add</code> once per element, and <code>cardinality</code>. A user
+writes a subclass <code>CountingBag</code> that overrides <code>add</code> to count each addition in a field <code>n</code> and
+overrides <code>cardinality</code> to return <code>n</code>. Later the framework’s developers rewrite <code>addAll</code> to insert
+its elements directly, without calling <code>add</code>. That is a correct change to <code>Bag</code> taken alone, but
+<code>CountingBag</code>’s count no longer sees what <code>addAll</code> inserts, and its <code>cardinality</code> is wrong. Alan
+Snyder’s “<a href="https://doi.org/10.1145/28697.28702">Encapsulation and Inheritance in Object-Oriented Programming
+Languages</a>” (OOPSLA 1986) had argued earlier that inheritance
+exposes a class’s implementation to its subclasses, which then depend on it.</p>
+<p>Bridger has no subclasses and no overriding. Every <code>impl</code> supplies the only body for its pair of
+head and method name, so a call <code>b.add(x)</code> on a <code>Bag</code> always runs <code>Bag</code>’s <code>add</code>. Reuse is by
+<strong>composition</strong>: the new struct holds the old one as a field and calls its methods. Bridger’s
+values are immutable, so each method returns a new bag:</p>
+<pre><code class="language-text">struct Bag { items: [String] }
+
+impl Bag {
+    fn add(self, x: String) -&gt; Bag = Bag { items: x :: self.items };
+    fn add_all(self, xs: [String]) -&gt; Bag =
+        fold(xs, self, |b: Bag, x: String| b.add(x));
+    fn size(self) -&gt; Int = len(self.items);
+}
+
+struct CountingBag { bag: Bag, adds: Int }
+
+impl CountingBag {
+    fn add(self, x: String) -&gt; CountingBag =
+        CountingBag { bag: self.bag.add(x), adds: self.adds + 1 };
+    fn add_all(self, xs: [String]) -&gt; CountingBag =
+        CountingBag { bag: self.bag.add_all(xs), adds: self.adds + len(xs) };
+    fn size(self) -&gt; Int = self.bag.size();
+}
+
+fn main() {
+    let c = CountingBag { bag: Bag { items: [] }, adds: 0 };
+    let c2 = c.add("a").add_all(["b", "c"]);
+    println(c2.size());
+    println(c2.adds);
+}
+</code></pre>
+<p>It prints <code>3</code> twice. The <code>b.add(x)</code> inside <code>Bag</code>’s <code>add_all</code> reaches <code>Bag</code>’s <code>add</code> and nothing
+else, so rewriting <code>add_all</code> to build its list directly cannot change <code>CountingBag</code>’s count. The
+price is visible in <code>CountingBag</code>: it has to write <code>size</code>, which only forwards to the bag, and it
+has to write its own <code>add_all</code>. In a subclass, <code>size</code> would have been inherited. Bridger’s traits
+have no default method bodies either, so two impls of one trait that share an implementation
+each spell it out.</p>
+<h3 id="substitution"><a class="header" href="#substitution">Substitution</a></h3>
+<p>A subclass is meant to stand in wherever its base class is expected. Barbara Liskov and Jeannette
+Wing’s “<a href="https://doi.org/10.1145/197320.197383">A Behavioral Notion of Subtyping</a>” (1994) states
+what standing in requires, as their Subtype Requirement: “Let <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ϕ</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span> be a property provable
+about objects <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> of type <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span>. Then <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">ϕ</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span></span></span></span> should be true for objects <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span> of type <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span> where <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">S</span></span></span></span>
+is a subtype of <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span></span></span></span>.” They observe that matching signatures fall short of this. A stack and a queue
+can both have a <code>put</code> and a <code>get</code>, and a program written for a stack is unlikely to work on a
+queue.</p>
+<p>Bridger’s conformance check is the signature half. An <code>impl Ord</code> whose <code>cmp</code> is not a consistent
+order satisfies the checker, and then <code>maximum</code>’s answer can depend on the order of the list. Any
+further property a trait’s users rely on, such as transitivity of <code>cmp</code>, is a matter between each
+impl and its callers that the checker does not see. Nor does <code>cmp</code> have to agree with <code>==</code>, which
+stays structural: if <code>Version</code> had a field <code>tag</code> that its <code>cmp</code> ignored, two versions differing
+only in <code>tag</code> would compare <code>Equal</code> and yet be unequal under <code>==</code>.</p>
+<h3 id="several-parents"><a class="header" href="#several-parents">Several parents</a></h3>
+<p>C++ and others let a class have several base classes. When two of them inherit from one common
+ancestor, the derived class reaches the ancestor along two paths, the <strong>diamond</strong>, and the language
+must say whether it holds one copy of the ancestor’s fields or two, and which inherited method a
+call finds. C++ answers the first with <code>virtual</code> base classes, which share one copy. Dylan answered
+the second with a lookup order called C3, from Kim Barrett and colleagues’ “<a href="https://doi.org/10.1145/236337.236343">A Monotonic
+Superclass Linearization for Dylan</a>” (OOPSLA 1996). Python
+adopted C3 in version 2.3, and Michele Simionato’s essay “<a href="https://www.python.org/download/releases/2.3/mro/">The Python 2.3 Method Resolution
+Order</a>” explains the algorithm.</p>
+<p>Bridger’s traits carry no bodies, so a type implementing several traits inherits no code from any
+of them. The question that remains is a method name two traits share. Bridger rejects it on one
+head:</p>
+<pre><code class="language-text">trait Speak { fn name(self) -&gt; String; }
+trait Label { fn name(self) -&gt; String; }
+struct Robot { id: Int }
+impl Speak for Robot { fn name(self) -&gt; String = "speaker"; }
+impl Label for Robot { fn name(self) -&gt; String = "label"; }
+// method `name` is defined more than once for Robot
+</code></pre>
+<p>Rust accepts both impls and asks a call to say which trait it means, when the receiver alone
+leaves the choice open.</p>
+<h3 id="go-and-rust"><a class="header" href="#go-and-rust">Go and Rust</a></h3>
+<p>Go and Rust both left out class inheritance. The <a href="https://go.dev/doc/faq#inheritance">Go FAQ</a>
+explains: “Rather than requiring the programmer to declare ahead of time that two types are
+related, in Go a type automatically satisfies any interface that specifies a subset of its
+methods.” A Go type never names the interfaces it satisfies, so an interface can be written after
+the types that meet it. Go also lets a struct embed another type, whose methods are then callable
+on the outer struct, which the FAQ calls “analogous—but not identical—to subclassing”. Bridger’s
+<code>impl Tr for T</code> names its trait, so a type meets a bound only where an <code>impl</code> says it does.</p>
+<p>Rust’s traits are declared and implemented by name, as Bridger’s are. They also allow a
+<a href="https://doc.rust-lang.org/book/ch10-02-traits.html">default body</a> for a method, which an impl may
+keep or replace, and a <a href="https://doc.rust-lang.org/book/ch20-02-advanced-traits.html">supertrait</a>
+requirement, under which implementing one trait requires implementing another. A default body
+that calls another method of its trait reproduces, on a small scale, the redirection that makes a
+base class fragile. Bridger’s traits have neither feature, and <code>Ord</code>’s requirement of <code>Eq</code> is the
+one fixed relation between them. The design patterns book of Erich Gamma, Richard Helm, Ralph
+Johnson, and John Vlissides (1994) put the general advice as a principle: prefer object
+composition to class inheritance.</p>
+<h3 id="the-expression-problem-from-the-other-side"><a class="header" href="#the-expression-problem-from-the-other-side">The Expression Problem, from the other side</a></h3>
+<p><a href="../adt/exhaustiveness.html">Exhaustiveness checking</a> quoted Wadler’s statement of the Expression
+Problem: “The goal is to define a datatype by cases, where one can add new cases to the datatype
+and new functions over the datatype, without recompiling existing code, and while retaining static
+type safety (e.g., no casts).” Shapes as a sum type look like this:</p>
+<pre><code class="language-text">type Shape = Circle(Int) | Square(Int);
+
+fn area(s: Shape) -&gt; Int =
+    match s { Circle(r) =&gt; 3 * r * r, Square(side) =&gt; side * side };
+
+fn perimeter(s: Shape) -&gt; Int =
+    match s { Circle(r) =&gt; 6 * r, Square(side) =&gt; 4 * side };
+</code></pre>
+<p>Adding <code>perimeter</code> was one new function, and nothing existing changed. Adding a constructor
+<code>Rect(Int, Int)</code> changes the declaration, and the checker then reports <code>match is not exhaustive</code>
+at <code>area</code> and at <code>perimeter</code> until each gains an arm.</p>
+<p>With structs and traits, as in <a href="dispatch.html">Dispatch and encapsulation</a>, the costs fall the
+other way round. Adding a new shape touches nothing that exists:</p>
+<pre><code class="language-text">struct Rect { w: Int, h: Int }
+impl Shape for Rect { fn area(self) -&gt; Int = self.w * self.h; }
+</code></pre>
+<p>Adding perimeter as a method of <code>Shape</code> changes the trait, after which every existing impl fails
+conformance until it provides one. Bridger also allows the operation to arrive as a new trait,
+with impls written beside the old ones and none of them edited:</p>
+<pre><code class="language-text">trait Perimeter { fn perimeter(self) -&gt; Int; }
+impl Perimeter for Circle { fn perimeter(self) -&gt; Int = 6 * self.r; }
+impl Perimeter for Square { fn perimeter(self) -&gt; Int = 4 * self.side; }
+impl Perimeter for Rect { fn perimeter(self) -&gt; Int = 2 * (self.w + self.h); }
+</code></pre>
+<p>Both kinds of extension are then additions, with one condition. A value whose type is a struct has
+that struct’s type, so a list of shapes of different kinds needs the sum type <code>AnyShape</code> from
+<a href="dispatch.html">Dispatch and encapsulation</a>, and <code>AnyShape</code> has to be edited for every new kind of
+shape. An arithmetic tree raises the same trade-off. With generic structs and bounded impls, it can
+be built from traits, with no sum type:</p>
+<pre><code class="language-text">trait Eval { fn value(self) -&gt; Int; }
+
+struct Num { n: Int }
+struct Add&lt;L, R&gt; { l: L, r: R }
+
+impl Eval for Num { fn value(self) -&gt; Int = self.n; }
+impl&lt;L: Eval, R: Eval&gt; Eval for Add&lt;L, R&gt; {
+    fn value(self) -&gt; Int = self.l.value() + self.r.value();
+}
+</code></pre>
+<p>A <code>Mul</code> is a new struct and a new impl, and a <code>Show</code> is a new trait and its impls, all without
+editing a line above. The cost is in the types. <code>Add { l: Num { n: 3 }, r: Num { n: 4 } }</code> has
+type <code>Add&lt;Num, Num&gt;</code>, so each tree’s type spells out its shape, as the tagged tuples at the start
+of <a href="../adt/adts.html">Sum and product types</a> did. A conditional that builds a number in one branch
+and a sum in the other is rejected with <code>type mismatch: expected Num, found Add&lt;Num, Num&gt;</code>, and a
+function that parses a tree from a string has no single result type to declare.</p>
+<h2 id="further-reading"><a class="header" href="#further-reading">Further reading</a></h2>
+<p><strong>Ad hoc and parametric polymorphism</strong>: Section 3.6.4 of Strachey’s <a href="https://doi.org/10.1023/A:1010000313106">Fundamental
+Concepts</a> names the two kinds in under two pages, with
+arithmetic as the example of the first and a list-mapping function as the example of the second.
+Wadler and Blott’s <a href="https://doi.org/10.1145/75277.75283">type classes paper</a> introduces classes
+through equality and arithmetic, gives the dictionary translation by example, and puts the formal
+rules in an appendix. An <a href="https://homepages.inf.ed.ac.uk/wadler/papers/class/class.ps">authors’ version</a>
+is on Wadler’s homepage.</p>
+<p><strong>Inheritance and its problems</strong>: Mikhajlov and Sekerinski’s <a href="https://www.cas.mcmaster.ca/~emil/Publications_files/MikhajlovSekerinski98FragileBaseClassProblem.pdf">study of the fragile base
+class</a>
+begins with the <code>Bag</code> example and then works through further examples, each showing a different
+way a revised base class breaks an extension, before turning to a formal treatment. Liskov and
+Wing’s <a href="https://doi.org/10.1145/197320.197383">paper</a> opens with the stack and queue example and
+the Subtype Requirement before giving its formal definitions.</p>
+<p><strong>Method resolution order</strong>: Simionato’s <a href="https://www.python.org/download/releases/2.3/mro/">essay on Python
+2.3</a> computes C3 by hand on small class
+hierarchies, including ones it rejects. The <a href="https://doi.org/10.1145/236337.236343">Dylan paper</a> is
+the original.</p>
+<h2 id="concept-checks"><a class="header" href="#concept-checks">Concept checks</a></h2>
+<details>
+<summary>Why is <code>fn size&lt;T&gt;(x: T) -&gt; Int = len(x);</code> rejected, and what does adding the bound <code>T: Len</code> change about where a mistake is reported?</summary>
+<p><code>len</code> requires evidence that its argument’s type is <code>Len</code>. Inside <code>size</code>, <code>T</code> is a type parameter
+with no bound, so no impl, built-in conformance, or bound in scope supplies that evidence, and the
+call to <code>len</code> is rejected in <code>size</code>’s body. With <code>T: Len</code>, the bound in scope is the evidence, and
+the requirement moves to each call of <code>size</code>: <code>size(3)</code> is reported at the caller, where <code>Int</code> has
+no <code>Len</code> unless the program provides one.</p>
+</details>
+<details>
+<summary>Why does Bridger accept <code>impl Ord</code> only for a type that admits equality?</summary>
+<p>A function with an <code>Ord</code> bound may compare its values with <code>==</code> as well as <code>cmp</code>, since <code>Ord</code>
+grants equality. If a type with a function inside it could be <code>Ord</code>, a bounded function could reach
+<code>==</code> on two functions, which Bridger has no way to answer, and the checker would have accepted a
+program that gets stuck.</p>
+</details>
+<details>
+<summary>In the composition version of <code>CountingBag</code>, the maintainer of <code>Bag</code> rewrites <code>add_all</code> to prepend all of <code>xs</code> in one step without calling <code>add</code>. Does <code>CountingBag</code>'s count change? Why did the same rewrite break the subclass in Mikhajlov and Sekerinski's example?</summary>
+<p>It does not change. <code>CountingBag</code> counts in its own <code>add</code> and <code>add_all</code>, and <code>Bag</code>’s <code>add_all</code>
+calling <code>b.add</code> reaches <code>Bag</code>’s <code>add</code> whatever the rewrite does. In the subclass, the base class’s
+<code>addAll</code> called <code>add</code> on the object itself, so it ran the subclass’s overriding <code>add</code>, which did
+the counting. The subclass depended on that call, a detail of how <code>addAll</code> was written, and
+removing it removed the counting.</p>
+</details>
+<details>
+<summary>Take the shapes as a sum type and as structs with traits. For each, list the declarations a programmer edits to add a <code>Triangle</code>, and those edited to add a <code>scale</code> operation. What does the trait version give up?</summary>
+<p>As a sum, a <code>Triangle</code> edits the <code>type</code> declaration and every function that matches on <code>Shape</code>;
+<code>scale</code> is a new function and edits nothing. With traits, a <code>Triangle</code> is a new struct with new
+impls and edits nothing; <code>scale</code> added to the existing trait edits the trait and every impl,
+while <code>scale</code> as a new trait edits nothing. The trait version gives up a single type for all
+shapes: a list of mixed shapes, or a function that returns a circle or a square depending on its
+input, needs a sum type again, and that sum must be edited for each new shape.</p>
+</details>
+<details>
+<summary>Bridger finds a bounded method by the receiver's head, Haskell implementations pass dictionaries, and Rust monomorphizes. Which of these can choose a method that has no receiver, such as <code>from</code>, at a call through a bound <code>T: From&lt;Int&gt;</code>?</summary>
+<p>Dictionary passing and monomorphization can. A dictionary for <code>T</code> arrives with the call and holds
+<code>T</code>’s <code>from</code>, and a monomorphized copy knows <code>T</code> when it is compiled. Head dispatch needs a value
+whose head names the type, and <code>from</code> is given an <code>Int</code>, which says nothing about the <code>T</code> to
+build. Bridger’s checker can choose for a call like <code>C.from(3)</code>, where the type is written, and
+it rejects <code>T.from(n)</code>, reporting that an associated call has to name a concrete type.</p>
+</details>
 
                     </main>
 
