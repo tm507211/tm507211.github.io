@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Quiz 11 Study Guide — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 70rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    .objectives li { margin: .35em 0; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    .terms-cols { column-count: 2; column-gap: 2rem; }
+    .terms-cols ul { margin-top: 0; }
+    @media (max-width: 34rem) { .terms-cols { column-count: 1; } }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Quiz 11 <small>Study Guide</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      This guide lists what you should be able to do, not the questions you will be asked. It
+      ranges a little wider than the quiz itself, and covers Lectures 29 and 30 and their textbook
+      chapters: exhaustiveness checking, and structs with methods. Type checking of structs and
+      method calls is not on this quiz. Answers are short: a sentence or two, in your own words,
+      earns full credit.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>What to expect</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>When</dt><dd>At the start of class, on the date shown in the schedule.</dd>
+          <dt>Length</dt><dd>About 15 minutes.</dd>
+          <dt>Rules</dt><dd>Closed book, handwritten.</dd>
+          <dt>Format</dt><dd>A handful of short conceptual questions, each asking one thing. Most
+            give you a small Bridger program &mdash; say whether a <code>match</code> covers every
+            value and what it misses, why a program is rejected, or what it prints.</dd>
+          <dt>Answers</dt><dd>Explanations in your own words &mdash; no memorized dates or trivia.
+            You will not be asked to trace the usefulness algorithm (<em>U</em>, <em>S</em>,
+            <em>D</em>) step by step; reasoning about which values each arm covers is enough.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>Exhaustiveness checking
+      <small class="text-muted">Lecture 29</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/adt/exhaustiveness.html">Exhaustiveness Checking</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-29/index.html">Lecture 29</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Say what it means for a list of arms to be exhaustive for a type, and what happens to a
+        program with a gap: with the checker, and on the untyped path at run time.</li>
+      <li>Decide whether a <code>match</code> is exhaustive by reasoning about which values each arm
+        covers. If it is not, give a value no arm matches, or describe all of them as a pattern.</li>
+      <li>Find a gap that only appears in a combination of components, as in <code>zip_with</code>,
+        where each column looks covered on its own.</li>
+      <li>Give a type's signature, its set of head constructors, and say which types have a finite
+        one (<code>Bool</code>, tuples, lists, <code>Option</code>, declared types, structs) and
+        which do not (<code>Int</code>, <code>String</code>, functions, a type parameter). Say why
+        only a wildcard or variable can complete the arms of a type without one.</li>
+      <li>Explain why a finite set of patterns can be checked against a type with infinitely many
+        values, such as <code>[Int]</code>.</li>
+      <li>Say why a guarded arm does not count toward coverage, and why a <code>match</code> whose
+        guards together cover every value is still rejected. Fix one by changing a single arm.</li>
+      <li>State the idea behind the check: arms are exhaustive when a wildcard added after them could
+        never match anything they miss. Say what an unreachable arm is, and that Bridger accepts
+        one without comment.</li>
+      <li>Say what a catch-all arm hides when a constructor is added to a type later.</li>
+      <li>Recognize the design space: rejecting a gap (Rust, Swift, Elm, Bridger) compared with
+        warning about it (OCaml, GHC, Scala); languages without the check (Python, TypeScript's
+        <code>never</code> idiom); open types (<code>#[non_exhaustive]</code>, Swift's
+        <code>@unknown default</code>, Java's sealed hierarchies); printing a missing value.</li>
+    </ul>
+
+    <h2>Structs with methods
+      <small class="text-muted">Lecture 30</small></h2>
+    <p class="refs text-muted">
+      Reading:
+      <a href="../../../../books/pl-design/objects/structs.html">Structs with Methods</a>
+      &nbsp;|&nbsp; Slides: <a href="../slides/lecture-30/index.html">Lecture 30</a>
+    </p>
+    <p>Be able to:</p>
+    <ul class="objectives">
+      <li>Say what goes wrong when two different things share a tuple type such as
+        <code>(Int, Int)</code>, and how naming the type and each field prevents it.</li>
+      <li>Compare a tuple, a one-constructor <code>type</code>, and a struct as ways to write a
+        product: which have a name, which name their components, and how each is read back.</li>
+      <li>Count a struct's values as a product of its fields' counts.</li>
+      <li>Apply <code>E-Struct</code>: a literal evaluates its fields in the order written, and the
+        value holds them in the order the declaration lists them. Say when two struct values are
+        equal under <code>==</code>, and what a literal that omits, repeats, or invents a field
+        does.</li>
+      <li>Apply <code>E-Field</code>, and tell field access (<code>p.x</code>) apart from tuple
+        projection (<code>t.0</code>).</li>
+      <li>Read an <code>impl</code> block: a method with <code>self</code> is called on a value,
+        an associated function without <code>self</code> is called on the type's name, and the type
+        name evaluates to a value standing for the type.</li>
+      <li>Say what a method body can see: <code>self</code>, its parameters, and the top-level
+        names, but not the caller's locals.</li>
+      <li>Explain why a method that "changes" a struct returns a new one, and how a
+        <code>ref</code> field lets two copies of a struct share state.</li>
+      <li>Recognize the design space: Hoare's record classes and Simula's classes; fields and
+        methods declared together (Java, C++) compared with separate <code>impl</code> blocks (Rust,
+        Go); an implicit <code>this</code> compared with an explicit <code>self</code>; uniform
+        call syntax in D and Nim; functional update in OCaml and Rust; nominal compared with
+        structural record types.</li>
+    </ul>
+
+    <h2>Sample questions
+      <small class="text-muted">Practice</small></h2>
+    <p>
+      These are the same kind and size of question as the quiz, on different programs. No answers
+      are given: work each one by hand first. Once your interpreter handles <code>match</code> and
+      structs, run the programs to check yourself.
+    </p>
+
+    <ol class="objectives">
+      <li>
+        <p><strong>Nested patterns.</strong> Is this <code>match</code> exhaustive? If it is not,
+          give a value that no arm matches.</p>
+<pre>fn g(p: (Bool, Option&lt;Bool&gt;)) -> Int = match p {
+    (true, None) => 0,
+    (_, Some(false)) => 1,
+    (false, _) => 2,
+};</pre>
+      </li>
+      <li>
+        <p><strong>Lists.</strong> Is this <code>match</code> exhaustive? If it is not, describe
+          every list that no arm matches, and write one arm that closes the gap.</p>
+<pre>fn sum3(xs: [Int]) -> Int = match xs {
+    [] => 0,
+    [x] => x,
+    [x, y] => x + y,
+};</pre>
+      </li>
+      <li>
+        <p><strong>Guards.</strong> Every <code>Option&lt;Bool&gt;</code> fits one of these arms when
+          the program runs, yet the checker rejects the <code>match</code>. Which value does the
+          checker consider missing, and why?</p>
+<pre>fn describe(o: Option&lt;Bool&gt;) -> String = match o {
+    Some(b) if b => "yes",
+    Some(false) => "no",
+    None => "none",
+};</pre>
+      </li>
+      <li>
+        <p><strong>What a wildcard hides.</strong> <code>Neg(Arith)</code> was just added to
+          <code>Arith</code>. The checker rejects one of these functions and accepts the other.
+          Which, and what does <code>depth(Neg(Add(Num(1), Num(2))))</code> return?</p>
+<pre>type Arith = Num(Int) | Add(Arith, Arith) | Mul(Arith, Arith) | Neg(Arith);
+
+fn show(e: Arith) -> String = match e {
+    Num(n) => to_string(n),
+    Add(l, r) => "(" ++ show(l) ++ " + " ++ show(r) ++ ")",
+    Mul(l, r) => "(" ++ show(l) ++ " * " ++ show(r) ++ ")",
+};
+
+fn depth(e: Arith) -> Int = match e {
+    Add(l, r) => 1 + max(depth(l), depth(r)),
+    Mul(l, r) => 1 + max(depth(l), depth(r)),
+    _ => 0,
+};</pre>
+      </li>
+      <li>
+        <p><strong>Struct literals.</strong> What does <code>main</code> print?</p>
+<pre>struct Pair { left: Int, right: Int }
+
+fn note(n: Int) -> Int { println(n); n }
+
+fn main() {
+    let p = Pair { right: note(2), left: note(1) };
+    println(p);
+    println(p == Pair { left: 1, right: 2 });
+}</pre>
+      </li>
+      <li>
+        <p><strong>Methods and shared state.</strong> What does <code>main</code> print?</p>
+<pre>struct Account { owner: String, balance: ref&lt;Int&gt; }
+
+impl Account {
+    fn open(owner: String) -> Account =
+        Account { owner: owner, balance: ref(0) };
+    fn deposit(self, n: Int) { self.balance := deref self.balance + n; }
+    fn rename(self, owner: String) -> Account =
+        Account { owner: owner, balance: self.balance };
+}
+
+fn main() {
+    let a = Account.open("ann");
+    let b = a.rename("bo");
+    a.deposit(5);
+    b.deposit(10);
+    println(a.owner);
+    println(b.owner);
+    println(deref a.balance);
+}</pre>
+      </li>
+    </ol>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>How to practice</strong></div>
+      <div class="panel-body">
+        The single best rehearsal is the <strong>Concept Checks</strong> at the end of each textbook
+        chapter &mdash; they are the same kind of short, conceptual question, with worked answers you
+        can check yourself against. Work them with the answers hidden first. Beyond that: take a
+        <code>match</code> over a small type, list every value of the type, and name the arm that
+        catches each one; delete an arm and find the value that falls through; add a constructor to
+        a type and see which functions the checker flags. For structs, predict what a program prints
+        before running it, paying attention to field order and to which values share a
+        <code>ref</code>.
+      </div>
+    </div>
+
+    <h2>Terms you should be able to define in a sentence</h2>
+    <div class="terms-cols">
+      <ul>
+        <li>exhaustive</li>
+        <li>signature (of a type)</li>
+        <li>complete set of constructors</li>
+        <li>pattern matrix</li>
+        <li>usefulness</li>
+        <li>unreachable (useless) arm</li>
+        <li>catch-all arm</li>
+        <li>open vs. closed type</li>
+        <li>Expression Problem</li>
+        <li>record</li>
+        <li>struct</li>
+        <li>field</li>
+        <li>struct literal</li>
+        <li>field access</li>
+        <li>method</li>
+        <li>receiver (<code>self</code>)</li>
+        <li>associated function</li>
+        <li>inherent <code>impl</code></li>
+        <li>functional update</li>
+        <li>nominal vs. structural typing</li>
+      </ul>
+    </div>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages.
+      This guide is a study aid; it does not reproduce the quiz.
+    </footer>
+
+  </div>
+</body>
+</html>
