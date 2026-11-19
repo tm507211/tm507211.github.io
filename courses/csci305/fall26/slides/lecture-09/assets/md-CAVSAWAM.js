@@ -1,0 +1,12 @@
+import{$ as e,B as t,C as n,D as r,S as i,bt as a,v as o,vt as s,y as c}from"./modules/shiki-BDOa5D_m.js";import{_t as l,nt as u,rt as d}from"./index-BachITar.js";import{t as f}from"./slidev/VClicks-BfpD07fr.js";import{t as p}from"./slidev/VClick-CGAMU7AL.js";import{t as m}from"./slidev/CodeBlockWrapper-DDyG9FRH.js";import{t as h}from"./slidev/two-cols-header-DcH4_a5r.js";var g=l({__name:`slides.md__slidev_11`,setup(l){let{$slidev:g,$nav:_,$clicksContext:v,$clicks:y,$page:b,$renderContext:x,$frontmatter:S}=d();return v.setup(),(l,d)=>{let g=m,_=f,v=p;return t(),c(h,a(r(s(u)(s(S),10))),{left:e(t=>[n(g,{title:``,ranges:[]},{default:e(()=>[...d[0]||=[o(`pre`,{class:`shiki shiki-themes vitesse-dark vitesse-light slidev-code`,style:{"--shiki-dark":`#dbd7caee`,"--shiki-light":`#393a34`,"--shiki-dark-bg":`#121212`,"--shiki-light-bg":`#ffffff`}},[o(`code`,{class:`language-text`},[o(`span`,{class:`line`},[o(`span`,null,`{`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`  let x = 1;`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`  {`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`    let x = 2;`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`    {`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`      let x = 3;`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`      x`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`    };`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`    x`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`  };`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`  x`)]),i(`
+`),o(`span`,{class:`line`},[o(`span`,null,`}`)])])],-1)]]),_:1})]),right:e(t=>[n(_,null,{default:e(()=>[...d[1]||=[o(`ul`,null,[o(`li`,null,[i(`innermost `),o(`code`,null,`x`),i(` → `),o(`strong`,null,`3`)]),o(`li`,null,[i(`middle `),o(`code`,null,`x`),i(` → `),o(`strong`,null,`2`),i(` — the `),o(`code`,null,`x = 3`),i(` scope has closed`)]),o(`li`,null,[i(`outer `),o(`code`,null,`x`),i(` → `),o(`strong`,null,`1`),i(` — both inner scopes have closed`)])],-1)]]),_:1}),n(v,null,{default:e(()=>[...d[2]||=[o(`div`,{class:`note`},[i(" Each `x` takes the nearest "),o(`code`,null,`let x`),i(` still open around it. Three bindings of one name, three nested scopes. `)],-1)]]),_:1})]),default:e(()=>[d[3]||=o(`h2`,null,[i(`Deeper: read each `),o(`code`,null,`x`),i(` outward`)],-1)]),_:1},16)}}},[[`__scopeId`,`data-v-cb1871aa`]]);export{g as default};

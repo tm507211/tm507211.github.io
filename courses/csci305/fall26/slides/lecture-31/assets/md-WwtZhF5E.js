@@ -1,0 +1,12 @@
+import{H as e,L as t,T as n,X as r,Z as i,_ as a,_t as o,b as s,g as c,ht as l,y as u}from"./modules/shiki-B6CMAte1.js";import{nt as d,tt as f}from"./index-DR98KW2g.js";import{t as p}from"./slidev/default-r-WX4f_l.js";var m={class:`cols2`,style:{"align-items":`start`}},h={class:`col`,style:{"align-items":`stretch`}},g={class:`mono`,style:{"font-size":`.66em`}},_={class:`term`},v={class:`col`,style:{"align-items":`stretch`}},y={class:`read`,style:{"margin-top":`.6rem`,"text-align":`center`}},b={__name:`slides.md__slidev_14`,setup(b){let{$slidev:x,$nav:S,$clicksContext:C,$clicks:w,$page:T,$renderContext:E,$frontmatter:D}=d();return C.setup(),(d,b)=>{let x=e(`click`);return t(),a(p,o(n(l(f)(l(D),13))),{default:r(()=>[b[7]||=c(`h2`,null,`Struct fields are open to all`,-1),c(`div`,m,[c(`div`,h,[b[2]||=c(`pre`,{class:`code`,style:{"font-size":`.62em`}},`struct Range { lo: Int, hi: Int }
+impl Range {
+    fn new(lo: Int, hi: Int) -> Option<Range> =
+        if lo <= hi { Some(Range { lo: lo, hi: hi }) }
+        else { None };
+    fn width(self) -> Int = self.hi - self.lo;
+}`,-1),b[3]||=c(`div`,{class:`mono`,style:{"font-size":`.66em`}},`Range.new(2, 7) \xA0 Range.new(7, 2)`,-1),b[4]||=c(`div`,{class:`term`},[c(`div`,{class:`ok`},`Some(Range { lo: 2, hi: 7 })`),c(`div`,{class:`ok`},`None`)],-1),i((t(),u(`div`,g,[...b[0]||=[s(`Range { lo: 7, hi: 2 }.width()`,-1)]])),[[x,1]]),i((t(),u(`div`,_,[...b[1]||=[c(`div`,{class:`err`},`-5`,-1)]])),[[x,1]])]),i((t(),u(`div`,v,[...b[5]||=[c(`pre`,{class:`code`,style:{"font-size":`.62em`}},`struct Tally { n: ref<Int> }
+impl Tally {
+    fn new() -> Tally = Tally { n: ref(0) };
+    fn tick(self) { self.n := deref self.n + 1; }
+    fn read(self) -> Int = deref self.n;
+}`,-1),c(`div`,{class:`mono`,style:{"font-size":`.66em`}},`t.tick(); t.tick(); t.n := 100; t.read()`,-1),c(`div`,{class:`term`},[c(`div`,{class:`err`},`100`)],-1),c(`div`,{class:`cap`},[s(`anyone holding the struct can write through its `),c(`code`,null,`ref`),s(` field`)],-1)]])),[[x,2]])]),i((t(),u(`div`,y,[...b[6]||=[s(`Bridger has no `,-1),c(`code`,null,`private`,-1),s(`: any code that can name a struct can build it, read it, and match it`,-1)]])),[[x,3]])]),_:1},16)}}};export{b as default};

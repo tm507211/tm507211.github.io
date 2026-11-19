@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Milestone M8 — CSCI 305</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="author" content="Charlie Murphy" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" />
+  <style>
+    /* Small additions on top of Bootstrap 3 to match the course page's plain look. */
+    .container { max-width: 100rem; }
+    h2 { margin-top: 1.9rem; }
+    h2 small { display: block; margin-top: .35rem; text-transform: uppercase; letter-spacing: .04em; font-size: .62em; }
+    h3 { margin-top: 1.4rem; }
+    .lead { font-size: 1.08rem; }
+    .refs { font-size: .9em; margin: .2rem 0 .9rem; }
+    pre { font-size: .9em; }
+    table code { white-space: nowrap; }
+    .grade-table td:first-child { white-space: nowrap; }
+    footer { margin: 2.5rem 0 3rem; color: #777; font-size: .9em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="page-header text-center">
+      <h1>Milestone M8 <small>Structs, Methods, and Traits</small></h1>
+      <h3>CSCI 305: Concepts of Programming Languages</h3>
+    </div>
+
+    <p class="lead">
+      In this milestone Bridger gets objects. You build struct literals, field access, and method
+      calls, in both the evaluator and the type checker. A method call dispatches on the head of its
+      receiver, a bounded type parameter reaches its trait's methods, and <code>?</code> converts an
+      error through an <code>impl From</code>. Your M6 purity judgment learns to follow method calls.
+      This is the last milestone: with it, your interpreter runs the whole language.
+    </p>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><strong>At a glance</strong></div>
+      <div class="panel-body">
+        <dl class="dl-horizontal" style="margin-bottom:0">
+          <dt>Due</dt><dd>Monday, December 7, at 11:59&nbsp;PM.</dd>
+          <dt>Submit</dt><dd>Through Gradescope, linked from the course Canvas page.</dd>
+          <dt>Attempts</dt><dd><strong>Unlimited.</strong> Resubmit as many times as you like before
+            the deadline. Only your last submission is graded.</dd>
+          <dt>Deliverables</dt><dd>A single <code>.zip</code> containing your <code>src/</code>
+            folder and the <code>.md</code> files from the project root, including your
+            <code>Description.md</code>.</dd>
+          <dt>Reading</dt><dd>The textbook's
+            <a href="../../../../books/pl-design/milestones/m8.html">Milestone M8</a> chapter is the
+            full specification. This page adds the course-specific rules: how to submit and how it is
+            graded.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h2>What to build <small class="text-muted">the specification</small></h2>
+    <p class="refs text-muted">
+      Full specification:
+      <a href="../../../../books/pl-design/milestones/m8.html">Textbook &mdash; Milestone M8: structs, methods, and traits</a>
+      &nbsp;|&nbsp; Previous milestone:
+      <a href="m7.html">Milestone M7: algebraic data types</a>
+    </p>
+    <p>
+      Read the <a href="../../../../books/pl-design/milestones/m8.html">Milestone M8 chapter</a> before
+      you start. It is the authoritative specification. Its table of forms is the checklist your code
+      is measured against. The rules themselves are in the
+      <a href="../../../../books/pl-design/appendix/language-reference.html#structs-fields-and-methods">language reference</a>
+      appendix (under structs, fields, and methods), and the static errors are
+      <a href="../../../../books/pl-design/appendix/language-reference.html#the-static-errors-by-name">catalogued by name</a>.
+      The ideas are in the Part IX chapters:
+      <a href="../../../../books/pl-design/objects/structs.html">Structs with methods</a>,
+      <a href="../../../../books/pl-design/objects/dispatch.html">Dispatch and encapsulation</a>, and
+      <a href="../../../../books/pl-design/objects/traits-inheritance.html">Traits vs. inheritance</a>.
+      The work is in three files you have already edited:
+    </p>
+    <pre><code>// src/interp/eval.rs
+Expr::Struct(..) =&gt; todo_m8!("E-Struct"),
+Expr::Field(..) =&gt; todo_m8!("E-Field (struct field access)"),
+Expr::Method(..) =&gt; todo_m8!("E-Method (head-type dispatch)"),
+
+// src/types/check.rs
+Expr::Struct(..) =&gt; todo_m8!("T-Struct"),
+Expr::Field(..) =&gt; todo_m8!("T-Field"),
+Expr::Method(..) =&gt; todo_m8!("T-Method (dispatch on the receiver's type; bounds)"),
+
+// src/relations/check.rs
+// no marker: your purity walk meets struct literals, fields, method calls, and a converting ?</code></pre>
+    <p>
+      Three changes have no <code>todo_m8!</code> marker. The checker's <code>Try</code> arm accepts a
+      <code>?</code> whose error type differs from the function's when an <code>impl From</code>
+      converts it. The evaluator's <code>Try</code> arm runs that conversion. And your purity judgment
+      from M6 and M7 must handle the new forms, which no earlier program could reach. The chapter spells
+      out the contracts the tests hold each file to. These are the ones that most often cause trouble:
+    </p>
+    <ul>
+      <li><strong>A struct value keeps declaration order.</strong> The evaluator runs the field
+        expressions in the order the literal writes them, then stores the fields in the order the
+        declaration lists them, so <code>Pos { y: 2, x: 1 } == Pos { x: 1, y: 2 }</code>.</li>
+      <li><strong>The two sides report struct errors at different places.</strong> The evaluator
+        reports <code>DuplicateField</code>, <code>NotAStruct</code>, <code>MissingField</code>, and
+        <code>NoSuchField</code>, in that order, all at the literal. The checker reports a repeated or
+        undeclared field at that field's value and a missing one at the literal.</li>
+      <li><strong>The recorded choice comes first.</strong> The evaluator's <code>Method</code> arm
+        runs the method <code>conversions</code> holds at the call's span if there is one, then the one
+        <code>methods</code> holds under the receiver's head key, then a built-in conformance. Only then
+        is it <code>NoSuchMethod</code>.</li>
+      <li><strong>A method body runs in the root scope.</strong> Build its scope from
+        <code>env.root()</code>, not the caller's environment, with <code>self</code> bound when the
+        method takes one and then each parameter. A <code>Return</code> from it is the call's value, as
+        in your <code>Call</code> arm.</li>
+      <li><strong>Pairings are the method's, not the syntax's.</strong> A method with
+        <code>self</code> called on a type name is <code>NoReceiver</code>, and one without called on a
+        value is <code>NotAMethod</code>. A bare type parameter as a receiver is
+        <code>TypeParamCall</code>, since it has no head at run time.</li>
+      <li><strong>Convert only when the types differ.</strong> The <code>Try</code> arm calls
+        <code>find_from</code> just before it would report <code>Mismatch</code>. When the error types
+        already agree nothing is recorded, so an M7 program checks and runs as it did.</li>
+      <li><strong>A method call is a callee.</strong> In your purity walk a method call or a
+        <code>?</code> names a callee key, as a function call names a function, and your
+        <code>check_guards</code> also walks every method body in <code>program.impls</code>.</li>
+    </ul>
+    <p>
+      Everything outside the holes is provided, including <code>Value::Struct</code> and
+      <code>Value::Type</code>, the <code>methods</code> and <code>conversions</code> tables built when
+      a program loads, <code>prelude::builtin_method</code>, and every declaration check (conformance,
+      coherence, and the discharge of the bounds your arms register). The chapter lists the provided
+      runtime the M8 arms use.
+    </p>
+
+    <div class="panel panel-info">
+      <div class="panel-heading"><strong>First: paste in the three helper modules</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The starter leaves out the bookkeeping that connects objects to the rest of the interpreter.
+          The chapter's
+          <a href="../../../../books/pl-design/milestones/m8.html#the-helper-modules">helper modules</a>
+          section prints it as three modules, one for each file you edit. Copy each, unchanged, to the
+          <strong>end</strong> of its file, after everything else:
+        </p>
+        <ul style="margin-bottom:.6em">
+          <li><code>mod head</code> goes at the end of <strong><code>src/interp/eval.rs</code></strong>.
+            It gives <code>head_key</code>, the key a value's head has in the method table.</li>
+          <li><code>mod objects</code> goes at the end of <strong><code>src/types/check.rs</code></strong>,
+            after the M5 helpers and the M7 <code>exhaustive</code> module. It gives
+            <code>struct_decl</code>, <code>type_receiver</code>, <code>instantiate_struct</code>,
+            <code>find_method</code>, <code>method_sig</code>, and <code>find_from</code>.</li>
+          <li><code>pub mod calls</code> goes at the end of
+            <strong><code>src/relations/check.rs</code></strong>. It gives the call graph's method nodes:
+            <code>method_callee</code>, <code>method_bodies</code>, <code>method_params</code>,
+            <code>method_keys</code>, and <code>is_prelude_fn</code>.</li>
+        </ul>
+        <ul style="margin-bottom:0">
+          <li><strong>Each must live in the file named above.</strong> Only the submitted files are
+            collected, so code you put in a new file of your own is not part of what is graded, and your
+            submission will not compile on Gradescope.</li>
+          <li>Each module brings its own <code>use</code> lines, so it cannot clash with the imports your
+            arms add, and an item you have not called yet raises no warning. None of them contains a
+            typing or evaluation rule. You may read them freely, but you do not need to change them.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Getting the code and running the tests</h2>
+    <p>
+      M8 builds directly on your M1&ndash;M7 code. Because the milestones are
+      <strong>cumulative</strong>, <code>cargo m8</code> runs every M7, M6, M5, M4, M3, M2, and M1 test
+      too, and the provided-test gate (below) will fail the whole milestone if any of them fail.
+      <strong>Finish <a href="m7.html">Milestone M7</a> first</strong>, and keep working in the same
+      clone with your completed evaluator, checker, and rule checks in place. The <code>Try</code> arm
+      you extend is your M7 one, the purity walk you extend is your M6 one, and every program goes
+      through your M5 checker before it runs.
+    </p>
+    <p>
+      The toolchain, the clone, and the layout of the codebase are the ones from
+      <a href="m1.html#getting-the-code-and-running-the-tests">Milestone M1</a>. That setup is done once,
+      and this milestone does not change it. If you are starting fresh, follow the M1 page to install
+      <a href="https://rustup.rs"><code>rustup</code></a>, clone
+      <a href="https://github.com/chaluli/bridger-interpreter"><code>bridger-interpreter</code></a>, and
+      complete M1 through M7. Then pick up the same loop, with the milestone number advanced:
+    </p>
+    <pre><code>cargo m8                                    # run the Milestone-8 tests
+cargo fmt                                   # format your code
+cargo clippy --all-targets -- -D warnings   # lint</code></pre>
+    <p>
+      <code>cargo m8</code> is short for <code>cargo test --features m8</code>, and runs the M8 tests
+      <em>and</em> every earlier milestone's. To list the milestone-tagged holes at any time:
+    </p>
+    <pre><code>grep -rn 'todo_m8!' src</code></pre>
+    <p>
+      A suggested order: paste the helper modules, then write the evaluator's <code>Struct</code> and
+      <code>Field</code> arms, then its <code>Method</code> arm, since many provided tests run whole
+      programs <em>without</em> the checker. Then write the checker's <code>Struct</code> and
+      <code>Field</code> arms and its <code>Method</code> arm. The <code>?</code> conversion and the
+      purity cases can come at any point after that.
+    </p>
+
+    <h3>Running a program</h3>
+    <p>
+      With <code>--features m8</code>, <code>cargo run</code> runs the static checks and then
+      <code>main</code>. <code>media.brg</code> has two structs that implement one trait, and one
+      function written over the trait:
+    </p>
+    <pre><code>$ cat media.brg
+struct Book { title: String, pages: Int }
+struct Song { title: String, secs: Int }
+
+trait Describe { fn describe(self) -&gt; String; }
+
+impl Book {
+    fn new(title: String, pages: Int) -&gt; Self =
+        Book { title: title, pages: pages };
+}
+impl Describe for Book {
+    fn describe(self) -&gt; String =
+        self.title ++ ", " ++ to_string(self.pages) ++ " pp.";
+}
+impl Describe for Song {
+    fn describe(self) -&gt; String =
+        self.title ++ " (" ++ to_string(self.secs) ++ " s)";
+}
+
+fn catalogue&lt;T: Describe&gt;(xs: [T]) -&gt; [String] =
+    map(xs, |x: T| x.describe());
+
+fn main() {
+    println(catalogue([Book.new("Dune", 412), Book.new("Emma", 474)]));
+    println(catalogue([Song { title: "Blue", secs: 191 }]));
+}
+
+$ cargo run -q --features m8 -- media.brg
+["Dune, 412 pp.", "Emma, 474 pp."]
+["Blue (191 s)"]</code></pre>
+    <p>
+      Writing <code>impl Song</code> in place of <code>impl Describe for Song</code> leaves the method in
+      place but takes <code>Song</code> out of the trait. The program no longer starts, and the exit
+      status is <code>1</code>:
+    </p>
+    <pre><code>$ cargo run -q --features m8 -- media.brg
+  × no `impl Describe for Song`, so the bound is not satisfied
+    ╭─[media.brg:24:23]
+ 23 │     println(catalogue([Book.new("Dune", 412), Book.new("Emma", 474)]));
+ 24 │     println(catalogue([Song { title: "Blue", secs: 191 }]));
+    ·                       ─────────────────┬─────────────────
+    ·                                        ╰── here
+ 25 │ }
+    ╰────</code></pre>
+    <p>
+      As at M7, the checker runs first, so no program with a struct literal or a method call runs under
+      <code>--features m8</code> until the checker's arms are written.
+    </p>
+
+    <h3>A few examples</h3>
+    <p>After these declarations:</p>
+    <pre><code>struct Pos { x: Int, y: Int }
+type Light = Red | Amber | Green;
+
+impl Pos {
+    fn zero() -&gt; Pos = Pos { x: 0, y: 0 };
+    fn sum(self) -&gt; Int = self.x + self.y;
+    fn shift(self, d: Int) -&gt; Self = Pos { x: self.x + d, y: self.y + d };
+}
+impl Light {
+    fn advance(self) -&gt; Light =
+        match self { Red =&gt; Green, Green =&gt; Amber, Amber =&gt; Red };
+}</code></pre>
+    <p>each expression has the value at its right:</p>
+    <pre><code>Pos { y: 2, x: 1 }                            Pos { x: 1, y: 2 }
+Pos.zero().shift(3).sum()                     6
+Green.advance()                               Amber
+[3, 1, 2].length()                            3
+"b".cmp("a")                                  Greater</code></pre>
+    <p>These are <em>rejected</em> before the program runs, with the error and where it is reported
+      (the chapter has more):</p>
+    <pre><code>Pos { x: 1 }                       MissingField (y), at the literal
+Pos { x: 1, y: 2, z: 3 }           NoSuchField (z), at 3
+Light { x: 1 }                     NotAStruct (Light)
+(1, 2).x                           FieldOfNonStruct (x, found (Int, Int))
+Pos.sum()                          NoReceiver (sum)
+Pos.zero().zero()                  NotAMethod (zero, on Pos)
+Pos.zero().shift(1, 2)             ArityMismatch (shift: 1, given 2)</code></pre>
+    <p>
+      The provided tests come in three kinds. Some run a whole program with <code>run_program</code>,
+      which skips the static checks, so the evaluator meets programs the checker would have refused and
+      has no recorded choices to read. Some call <code>Checker::check_program</code> on a loaded
+      program, and some call <code>check_rules</code> and <code>check_guards</code>. A rejection is
+      tested by its error variant and, where it matters, by its payload, never by the text of its
+      message. When <code>cargo m8</code> is all green, your implementation is very likely correct.
+    </p>
+
+    <h2>How M8 is graded</h2>
+    <p>M8 is worth <strong>100 points</strong>:</p>
+    <div class="table-responsive">
+      <table class="table table-bordered grade-table">
+        <thead>
+          <tr><th>Item</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Auto-graded tests</td>
+            <td><strong>80</strong>, split <strong>40 / 40</strong>: <strong>40</strong> on the new M8
+              behavior (five properties, <strong>8 points each</strong>) and <strong>40</strong> on
+              carried-over regression tests for the past milestones (M1 through M7), since M8 is
+              cumulative. The carried-over 40 is divided <strong>evenly among M1 through M7</strong>
+              (about 5.7 points each), then across each milestone's properties, so a regression in any
+              one of them is weighted against that milestone's own share. These are held-back tests, run
+              on Gradescope against the public interface, separate from the provided tests you run
+              locally with <code>cargo m8</code>.</td>
+          </tr>
+          <tr>
+            <td>Formatting &amp; linting</td>
+            <td><strong>10</strong>: <strong>5</strong> for <code>cargo fmt</code> (checked on your
+              submitted files) and <strong>5</strong> for <code>cargo clippy</code> (checked with
+              <code>-D warnings</code>). Run both before submitting. The starter is clean on a fresh
+              clone, so a warning means something you introduced.</td>
+          </tr>
+          <tr>
+            <td><code>Description.md</code></td>
+            <td><strong>10</strong>, human-graded (see below).</td>
+          </tr>
+          <tr class="danger">
+            <td>Does not compile</td>
+            <td><strong>0</strong> for the entire milestone. The autograder builds your files against its
+              own copies of the frozen files, so make sure your code builds with those files
+              unmodified.</td>
+          </tr>
+          <tr class="danger">
+            <td>Fails any provided test</td>
+            <td><strong>0</strong> for the entire milestone. The provided (visible) tests are a hard
+              gate: you must pass all of them, the M8 tests <em>and</em> the carried-over M7&ndash;M1
+              tests, before any of the 80 auto-graded points are counted.</td>
+          </tr>
+          <tr class="danger">
+            <td>Description does not match your code</td>
+            <td>The <code>Description.md</code> can be scored <strong>negative</strong>, roughly
+              <strong>&minus;20</strong> and up to <strong>&minus;40</strong>, at the discretion of the TA
+              or instructor (see below). Passing every test does not by itself secure full credit.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The two <strong>0 gates</strong> come first. Code that does not compile, or that fails any of the
+      tests shipped with the repository, earns no credit for the milestone regardless of anything else.
+      Because M8 is cumulative, a change that breaks an earlier milestone's test trips this gate too.
+      Only after both gates pass are the 80 auto-graded points, the 10 style points, and the 10
+      description points assessed.
+    </p>
+    <p>
+      Each of the 80 points is tied to one <strong>property</strong>, a single rule your implementation
+      must obey. Five properties cover the new M8 behavior:
+    </p>
+    <ul>
+      <li><strong>Structs</strong>: a struct literal builds a value of its declared type and field
+        access reads a field. A literal missing a field is <code>MissingField</code>, one with an
+        ill-typed field is a <code>Mismatch</code>, and access of an unknown field is
+        <code>NoSuchField</code>. A struct prints in canonical form.</li>
+      <li><strong>Methods</strong>: a method runs with <code>self</code> bound to the receiver and its
+        arguments in scope, dispatched on the receiver's type. A call of a method the type does not have
+        is rejected by the checker (<code>NoSuchMethod</code>) and, unchecked, is a clean
+        <code>NoSuchMethod</code> stuck state.</li>
+      <li><strong>Bounds</strong>: a generic bound such as <code>T: Show</code> resolves a method call
+        on the type parameter through the trait, and requires the caller to supply a type that
+        implements it, an <code>UnsatisfiedBound</code> otherwise.</li>
+      <li><strong>Self</strong>: inside an <code>impl</code>, <code>Self</code> names the implemented
+        type in signatures and bodies. Outside any <code>impl</code>, <code>Self</code> names no
+        type.</li>
+      <li><strong>Try conversion</strong>: when an <code>e?</code>'s error type differs from the
+        enclosing function's, the checker finds the matching <code>impl From</code>'s
+        <code>from</code> and the evaluator runs it, so the error is converted on the way out.</li>
+    </ul>
+    <p>
+      The purity cases are not a separate property. The provided tests cover them, so they count
+      through the provided-test gate.
+    </p>
+    <p>
+      A property is <strong>all-or-nothing</strong>. It is checked by several cases, some
+      <strong>visible</strong> and some <strong>hidden</strong>, and you earn its points only when all
+      of them pass. When a property fails, Gradescope reports <strong>which property</strong> it was and
+      states the rule it checks, so you know what behavior to fix. If the failing case is a visible one,
+      you also see a short description of it. If it is a hidden one, you see a hint about what kind of
+      case it is, but not the specific input. Because attempts are unlimited, the workflow is: submit, read
+      which properties failed, fix them, and resubmit.
+    </p>
+
+    <h2>The write-up: <code>Description.md</code></h2>
+    <p>
+      You may use generative AI on this project, and a coding assistant can likely solve M8 on its
+      own. That is fine. What I grade is not <em>only</em> that the code works, but that
+      <strong>you understand the code you submitted</strong>. The <code>Description.md</code> is how I
+      judge that. Write it yourself, in your own words, about the code you are actually turning in.
+    </p>
+    <p>Put a <code>Description.md</code> at the root of the repository that answers all of the following.</p>
+
+    <h3>Concept questions</h3>
+    <p>
+      A few sentences each, in your own words. These are about the code <em>you</em> wrote. Point at
+      your own implementation where a question asks you to, rather than repeating the textbook's answers.
+    </p>
+    <ol>
+      <li>
+        In <code>media.brg</code> (above), the one call <code>x.describe()</code> inside
+        <code>catalogue</code> runs <code>Book</code>'s method during the first call and
+        <code>Song</code>'s during the second. Trace how your evaluator's <code>Method</code> arm picks
+        the body each time: what head key it computes, which table it looks in, and how it builds the
+        body's scope. Then explain why <code>Book.new("Dune", 412)</code> is accepted while
+        <code>Pos.sum()</code> is <code>NoReceiver</code>. Why does the body's scope start from
+        <code>env.root()</code> and not from the caller's environment?
+      </li>
+      <li>
+        When <code>media.brg</code>'s checker meets <code>x.describe()</code>, <code>x</code> has type
+        <code>T</code>, which has no <code>impl</code>. Explain how your <code>Method</code> arm still
+        finds <code>describe</code> and its result type, and what changes when <code>impl Describe for
+        Song</code> becomes <code>impl Song</code>. Why is a call such as <code>T.describe()</code>, with
+        the type parameter itself as the receiver, rejected as <code>TypeParamCall</code>?
+      </li>
+      <li>
+        The chapter's <code>Log</code> example implements <code>Record&lt;String&gt;</code> and
+        <code>Record&lt;Int&gt;</code>, and <code>Log { lines: [] }.record("start").record(7)</code>
+        prints <code>["start", "#7"]</code> when checked but <code>["start", 7]</code> when run
+        unchecked. Both calls have the head <code>Log</code> and the name <code>record</code>. Explain
+        what the checker records, where your evaluator's <code>Method</code> arm reads it, and why the
+        unchecked run takes the other path. What does this say about whether dispatch by head alone
+        determines the method?
+      </li>
+      <li>
+        In the chapter's <code>?</code> example, <code>add("a", "z")</code> prints
+        <code>Err(Missing("z"))</code>. Trace what your checker's <code>Try</code> arm does with
+        <code>lookup(k)?</code>, whose error type is <code>NotFound</code> inside a function returning
+        <code>Result&lt;Int, AppError&gt;</code>, and what your evaluator's <code>Try</code> arm does with
+        the <code>Err</code>. Why does the same program run unchecked print
+        <code>Err(NotFound { key: "z" })</code>, and why must nothing be recorded when the two error
+        types already agree?
+      </li>
+      <li>
+        A rule filter that calls <code>same(b).describe()</code>, where <code>same</code> returns its
+        <code>Book</code> argument and <code>b</code> is a generator variable over a relation of books,
+        is rejected as impure when <code>Song</code>'s <code>describe</code> prints, although
+        <code>Book</code>'s has no effect. Writing <code>b.describe()</code> is accepted. Explain both
+        results through the callee keys your purity walk gets from <code>calls::method_callee</code>,
+        and say how your code builds the witness. Why is the purity judgment coarser here than the
+        checker, which knows that <code>same(b)</code> has type <code>Book</code>?
+      </li>
+    </ol>
+
+    <h3>How you implemented it</h3>
+    <ul>
+      <li>
+        Walk through your evaluator's <code>Struct</code>, <code>Field</code>, and <code>Method</code>
+        arms: the order in which each evaluates its parts and makes its checks, and how
+        <code>Struct</code> arrives at declaration order. Naming the provided tools you used
+        (<code>Value::Struct</code>, <code>Value::Type</code>, <code>head_key</code>,
+        <code>builtin_method</code>, <code>enter_call</code>/<code>leave_call</code>) is encouraged.
+      </li>
+      <li>
+        Describe your checker's <code>Struct</code>, <code>Field</code>, and <code>Method</code> arms: how
+        you use <code>instantiate_struct</code> and <code>Ty::substitute</code> to check a generic
+        struct's fields, how the <code>Method</code> arm decides what its receiver is, and how it tells
+        <code>FieldNotMethod</code> from <code>NoSuchMethod</code>.
+      </li>
+      <li>
+        Describe how you extended your purity walk and <code>check_guards</code>: which new forms only
+        descend, how a method key joins your impurity fixpoint and recursion check, and where
+        <code>is_prelude_fn</code> comes in.
+      </li>
+      <li>
+        Point out anything that was tricky, a bug you fixed, or a design choice you made. If you used an
+        assistant, say what you had it do and how you checked its work.
+      </li>
+    </ul>
+
+    <div class="panel panel-warning">
+      <div class="panel-heading"><strong>Understanding what you submit</strong></div>
+      <div class="panel-body">
+        <p style="margin-bottom:.6em">
+          The <code>Description.md</code> is worth up to <strong>10 points</strong>, graded by hand.
+          But it can also be scored <strong>negative</strong>. If your description does not match the code
+          you submitted (it describes an approach your code does not take, gets the behavior wrong, or
+          reads as though you cannot explain your own submission), you can lose roughly <strong>20
+          points, and up to 40</strong>, as judged by the TA or instructor, who may also ask you to explain
+          your submission in person. Passing every test does not by itself secure full credit.
+        </p>
+        <p style="margin-bottom:0">
+          You are welcome to use a coding assistant to <em>write</em> the code. You are responsible for
+          <em>understanding</em> it. Code you cannot explain will not earn full credit. This expectation
+          grows across the semester. M8 touches the evaluator, the checker, and the rule checks, so make
+          sure you can explain your changes to each of them.
+        </p>
+      </div>
+    </div>
+
+    <h2>Submitting</h2>
+    <p>
+      First write your <code>Description.md</code> at the root of the repository. Then, from inside the
+      project folder, check the code:
+    </p>
+    <pre><code>cd bridger-interpreter                       # the project root
+
+cargo m8                                     # all Milestone-8 tests pass (M7–M1 too)?
+cargo fmt                                    # format your code
+cargo clippy --all-targets -- -D warnings    # lint — fix any warnings</code></pre>
+    <p>
+      Then package <code>src/</code> and the root <code>.md</code> files into a <code>.zip</code>.
+      Run the command for your system from the project root.
+    </p>
+    <p><strong>macOS / Linux</strong> (Terminal):</p>
+    <pre><code>zip -r ../m8-submission.zip src *.md</code></pre>
+    <p><strong>Windows</strong> (PowerShell):</p>
+    <pre><code>Compress-Archive -Path src, *.md -DestinationPath ..\m8-submission.zip -Force</code></pre>
+    <p>
+      Either one writes <code>m8-submission.zip</code> in the folder just above the project, with
+      <code>src/</code> and <code>Description.md</code> at the top of the archive. The autograder
+      replaces <code>Cargo.toml</code>, <code>tests/</code>, and the frozen <code>src/</code> files with its
+      own copies, so any changes you make to them are discarded. The same five files as at M7 are graded
+      as your code:
+    </p>
+    <ul>
+      <li><code>src/interp/eval.rs</code></li>
+      <li><code>src/types/check.rs</code></li>
+      <li><code>src/relations/unify.rs</code></li>
+      <li><code>src/relations/engine.rs</code></li>
+      <li><code>src/relations/check.rs</code></li>
+    </ul>
+    <p>
+      Any helper functions you write, and every pasted-in helper module, must live in one of those five
+      files.
+    </p>
+    <p>
+      Upload <code>m8-submission.zip</code> to the <strong>Milestone M8</strong> assignment on
+      Gradescope (linked from Canvas). Some tests are visible, so you will get results back shortly and
+      can resubmit before the deadline. Other tests are hidden, so passing every visible test does not
+      guarantee full credit.
+    </p>
+    <p class="text-muted" style="font-size:.92em">
+      No <code>zip</code> command on Linux? Install it (on Debian/Ubuntu,
+      <code>sudo apt install zip</code>). Alternatively, in Finder (macOS) or File Explorer (Windows),
+      select the <code>src</code> folder and the <code>.md</code> files inside the project folder (not
+      the project folder itself) and choose <strong>Compress</strong> /
+      <strong>Send to &rarr; Compressed (zipped) folder</strong>.
+    </p>
+    <p>
+      See the <strong>Course Project Policies</strong> on the
+      <a href="../../fall26.html">main course page</a> for the collaboration, generative-AI, and
+      late-work rules that apply to every milestone.
+    </p>
+
+    <footer class="text-center">
+      CSCI 305 &middot; Concepts of Programming Languages &middot;
+      <a href="../../fall26.html">Course home</a>
+    </footer>
+
+  </div>
+</body>
+</html>

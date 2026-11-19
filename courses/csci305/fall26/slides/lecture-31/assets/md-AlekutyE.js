@@ -1,0 +1,11 @@
+import{H as e,L as t,T as n,X as r,Z as i,_ as a,_t as o,b as s,g as c,ht as l,y as u}from"./modules/shiki-B6CMAte1.js";import{nt as d,tt as f}from"./index-DR98KW2g.js";import{t as p}from"./slidev/default-r-WX4f_l.js";var m={class:`cols2`,style:{"align-items":`center`}},h={class:`col`},g={class:`mono`,style:{"font-size":`.7em`,"margin-top":`.7rem`}},_={class:`term`},v={class:`cap`},y={__name:`slides.md__slidev_6`,setup(y){let{$slidev:b,$nav:x,$clicksContext:S,$clicks:C,$page:w,$renderContext:T,$frontmatter:E}=d();return S.setup(),(d,y)=>{let b=e(`click`);return t(),a(p,o(n(l(f)(l(E),5))),{default:r(()=>[y[8]||=c(`h2`,null,`A trait lists required methods`,-1),c(`div`,m,[y[7]||=c(`div`,{class:`col`,style:{"align-items":`stretch`}},[c(`pre`,{class:`code`},`struct Circle { r: Int }
+struct Square { side: Int }
+\xA0
+trait Shape { fn area(self) -> Int; }
+\xA0
+impl Shape for Circle {
+    fn area(self) -> Int = 3 * self.r * self.r;
+}
+impl Shape for Square {
+    fn area(self) -> Int = self.side * self.side;
+}`)],-1),c(`div`,h,[y[3]||=c(`div`,{class:`box ab`},[c(`b`,null,`trait Shape`),c(`br`),c(`span`,{class:`mono`},`fn area(self) -> Int;`),s(` \xA0`),c(`span`,{class:`cap`},`no body`)],-1),y[4]||=c(`div`,{class:`pair`,style:{gap:`1.2rem`,"margin-top":`.2rem`}},[c(`span`,{class:`arrow`},`↙`),c(`span`,{class:`arrow`},`↘`)],-1),y[5]||=c(`div`,{class:`pair`,style:{gap:`.8rem`}},[c(`div`,{class:`box blu`},[c(`b`,null,`Circle`),c(`br`),c(`span`,{class:`mono`},`3 * self.r * self.r`)]),c(`div`,{class:`box gr`},[c(`b`,null,`Square`),c(`br`),c(`span`,{class:`mono`},`self.side * self.side`)])],-1),y[6]||=c(`div`,{class:`cap`},[s(`each `),c(`code`,null,`impl Shape for …`),s(` supplies the body for one type`)],-1),i((t(),u(`div`,g,[...y[0]||=[s(`fn f(xs: [Shape]) -> Int = …`,-1)]])),[[b,1]]),i((t(),u(`div`,_,[...y[1]||=[c(`div`,{class:`err`},"× unknown type `Shape`",-1)]])),[[b,1]]),i((t(),u(`div`,v,[...y[2]||=[s(`a trait names a requirement:`,-1),c(`br`,null,null,-1),s(`it appears after `,-1),c(`code`,null,`impl`,-1),s(` and in a `,-1),c(`b`,null,`bound`,-1)]])),[[b,1]])])])]),_:1},16)}}};export{y as default};

@@ -1,0 +1,13 @@
+import{H as e,L as t,T as n,X as r,Z as i,_ as a,_t as o,b as s,g as c,ht as l,y as u}from"./modules/shiki-B6CMAte1.js";import{nt as d,tt as f}from"./index-DR98KW2g.js";import{t as p}from"./slidev/default-r-WX4f_l.js";var m={class:`cols2`,style:{"align-items":`start`}},h={class:`col`},g={class:`term`,style:{width:`100%`,"margin-top":`.5rem`}},_={class:`mono`,style:{"font-size":`.6em`,"margin-top":`.5rem`}},v={class:`term`,style:{width:`100%`,"font-size":`.56em`}},y={__name:`slides.md__slidev_19`,setup(y){let{$slidev:b,$nav:x,$clicksContext:S,$clicks:C,$page:w,$renderContext:T,$frontmatter:E}=d();return S.setup(),(d,y)=>{let b=e(`click`);return t(),a(p,o(n(l(f)(l(E),18))),{default:r(()=>[y[5]||=c(`h2`,null,`The prelude is written with bounds`,-1),c(`div`,m,[y[4]||=c(`div`,{class:`col`,style:{"align-items":`stretch`}},[c(`pre`,{class:`code`,style:{"font-size":`.6em`}},`type Ordering = Less | Equal | Greater;
+\xA0
+trait Ord { fn cmp(self, other: Self) -> Ordering; }
+trait Len { fn length(self) -> Int; }
+\xA0
+fn max<T: Ord>(a: T, b: T) -> T =
+    match a.cmp(b) { Less => b, _ => a };
+fn maximum<T: Ord>(xs: [T]) -> Option<T> =
+    match xs {
+        [] => None,
+        h :: t => Some(fold(t, h, max)),
+    };
+fn len<T: Len>(xs: T) -> Int = xs.length();`),c(`div`,{class:`cap`,style:{"text-align":`left`}},`ordinary Bridger from M8: native functions through Part VIII`)],-1),c(`div`,h,[y[3]||=c(`div`,{class:`mt`,style:{"grid-template-columns":`auto auto auto`}},[c(`div`,{class:`h`}),c(`div`,{class:`h`},`Ord`),c(`div`,{class:`h`},`Len`),c(`div`,null,`Int`),c(`div`,{class:`hit`},`built in`),c(`div`,{class:`nil`},`—`),c(`div`,null,`Bool`),c(`div`,{class:`hit`},`built in`),c(`div`,{class:`nil`},`—`),c(`div`,null,`String`),c(`div`,{class:`hit`},`built in`),c(`div`,{class:`hit`},`built in`),c(`div`,null,`[T]`),c(`div`,{class:`nil`},`—`),c(`div`,{class:`hit`},`built in`)],-1),i((t(),u(`div`,g,[...y[0]||=[c(`div`,{class:`ok`},`"apple".cmp("pear") ⇒ Less`,-1),c(`div`,{class:`ok`},`maximum([3, 1, 2]) ⇒ Some(3)`,-1),c(`div`,{class:`err`},`"apple" < "pear" × expected Int, found String`,-1)]])),[[b,1]]),i((t(),u(`div`,_,[...y[1]||=[s(`impl Ord for Int { … }`,-1)]])),[[b,2]]),i((t(),u(`div`,v,[...y[2]||=[c(`div`,{class:`err`},"× `Int` is `Ord` by a built-in rule and cannot",-1),c(`div`,{class:`err`},`\xA0 be implemented again`,-1)]])),[[b,2]])])])]),_:1},16)}}};export{y as default};

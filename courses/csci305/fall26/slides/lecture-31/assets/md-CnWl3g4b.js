@@ -1,0 +1,10 @@
+import{H as e,L as t,T as n,X as r,Z as i,_ as a,_t as o,b as s,g as c,ht as l,x as u,y as d}from"./modules/shiki-B6CMAte1.js";import{nt as f,tt as p}from"./index-DR98KW2g.js";import{t as m}from"./Record-FQV3bhhb.js";import{t as h}from"./slidev/default-r-WX4f_l.js";var g={class:`cols2`,style:{"align-items":`start`}},_={class:`col`},v={class:`pair2`},y={class:`col`,style:{"margin-top":`.4rem`}},b={class:`cap`,style:{"margin-top":`.6rem`}},x={__name:`slides.md__slidev_13`,setup(x){let{$slidev:S,$nav:C,$clicksContext:w,$clicks:T,$page:E,$renderContext:D,$frontmatter:O}=f();return w.setup(),(f,x)=>{let S=m,C=e(`click`);return t(),a(h,o(n(l(p)(l(O),12))),{default:r(()=>[x[4]||=c(`h2`,null,`Mixed lists need a sum type`,-1),c(`div`,g,[x[3]||=c(`div`,{class:`col`,style:{"align-items":`stretch`}},[c(`pre`,{class:`code`},`type AnyShape = C(Circle) | Sq(Square);
+\xA0
+impl Shape for AnyShape {
+    fn area(self) -> Int = match self {
+        C(c) => c.area(),
+        Sq(s) => s.area(),
+    };
+}
+\xA0
+total([C(Circle { r: 1 }), Sq(Square { side: 3 })])`),c(`div`,{class:`term`},[c(`div`,{class:`ok`},`12`)])],-1),c(`div`,_,[c(`div`,v,[u(S,{name:`AnyShape · C`,fields:`0=Circle { r: 1 }`,scale:.75}),u(S,{name:`AnyShape · Sq`,fields:`0=Square { side: 3 }`,scale:.75})]),x[2]||=c(`div`,{class:`cap`},[s(`one element type: the list is `),c(`code`,null,`[AnyShape]`)],-1),i((t(),d(`div`,y,[...x[0]||=[c(`div`,{class:`box`,style:{"border-color":`#7c3aed`}},[s(`(AnyShape, area) `),c(`span`,{class:`cap`},`match`)],-1),c(`div`,{class:`pair`,style:{gap:`1rem`}},[c(`span`,{class:`arrow`},`↙`),c(`span`,{class:`arrow`},`↘`)],-1),c(`div`,{class:`pair`,style:{gap:`.8rem`}},[c(`div`,{class:`box blu`},`(Circle, area)`),c(`div`,{class:`box gr`},`(Square, area)`)],-1)]])),[[C,1]]),i((t(),d(`div`,b,[...x[1]||=[s(`adding a third shape means editing `,-1),c(`code`,null,`AnyShape`,-1),s(` and its `,-1),c(`code`,null,`match`,-1)]])),[[C,2]])])])]),_:1},16)}}};export{x as default};

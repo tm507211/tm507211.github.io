@@ -1,8 +1,0 @@
-import{H as e,L as t,T as n,X as r,Z as i,_ as a,_t as o,b as s,g as c,ht as l,y as u}from"./modules/shiki-B6CMAte1.js";import{nt as d,tt as f}from"./index-DT-oSyzn.js";import{t as p}from"./slidev/default-ufuASoRM.js";var m={class:`cols2`,style:{"align-items":`start`}},h={class:`col`,style:{"align-items":`stretch`}},g={class:`read`,style:{"margin-top":`.8rem`,"text-align":`center`}},_={__name:`slides.md__slidev_25`,setup(_){let{$slidev:v,$nav:y,$clicksContext:b,$clicks:x,$page:S,$renderContext:C,$frontmatter:w}=d();return b.setup(),(d,_)=>{let v=e(`click`);return t(),a(p,o(n(l(f)(l(w),24))),{default:r(()=>[_[3]||=c(`h2`,null,`Where methods live`,-1),c(`div`,m,[_[1]||=c(`div`,{class:`col`,style:{"align-items":`stretch`}},[c(`div`,{class:`cap`},`Java, C++: one class body, closed when it ends`),c(`pre`,{class:`code`},`class Size {
-    int w, h;
-    int area() { return w * h; }
-}`)],-1),i((t(),u(`div`,h,[..._[0]||=[c(`div`,{class:`cap`},[s(`Rust, Go, Bridger: data in one place, `),c(`code`,null,`impl`),s(` blocks elsewhere`)],-1),c(`pre`,{class:`code`},`struct Size { w: Int, h: Int }
-impl Size { fn area(self) -> Int = … }
-impl String {
-    fn shout(self) -> String = self ++ "!";
-}`,-1),c(`div`,{class:`term`},[c(`div`,{class:`ok`},`"hi".shout() ⇒ hi!`)],-1)]])),[[v,1]])]),i((t(),u(`div`,g,[..._[2]||=[s(`Rust and Go require a method to be declared in the same crate (Rust) or package (Go) as its type`,-1)]])),[[v,2]])]),_:1},16)}}};export{_ as default};
